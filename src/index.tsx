@@ -836,4 +836,167 @@ app.get('/api/analysis-history/:userId', async (c) => {
   }
 })
 
+// Authentication API endpoints
+// Helper functions
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+function generateSessionToken(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+// Register API
+app.post('/api/auth/register', async (c) => {
+  try {
+    const { name, email, password, age, gender } = await c.req.json()
+
+    if (!name || !email || !password) {
+      return c.json({ success: false, error: '必須項目が不足しています' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Check if email already exists
+    const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
+    if (existingUser) {
+      return c.json({ success: false, error: 'このメールアドレスは既に登録されています' }, 400)
+    }
+
+    // Hash password
+    const passwordHash = await hashPassword(password)
+
+    // Insert user
+    const result = await db.prepare(
+      'INSERT INTO users (name, email, password_hash, age, gender) VALUES (?, ?, ?, ?, ?)'
+    ).bind(name, email, passwordHash, age, gender).run()
+
+    return c.json({
+      success: true,
+      user_id: result.meta.last_row_id,
+      message: 'ユーザー登録が完了しました'
+    })
+  } catch (error) {
+    console.error('Error registering user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Login API
+app.post('/api/auth/login', async (c) => {
+  try {
+    const { email, password } = await c.req.json()
+
+    if (!email || !password) {
+      return c.json({ success: false, error: 'メールアドレスとパスワードを入力してください' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Find user
+    const user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first()
+    if (!user) {
+      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
+    }
+
+    // Verify password
+    const passwordHash = await hashPassword(password)
+    if (passwordHash !== user.password_hash) {
+      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
+    }
+
+    // Create session
+    const sessionToken = generateSessionToken()
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+
+    await db.prepare(
+      'INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)'
+    ).bind(user.id, sessionToken, expiresAt.toISOString()).run()
+
+    // Update last login
+    await db.prepare('UPDATE users SET last_login = ? WHERE id = ?')
+      .bind(new Date().toISOString(), user.id).run()
+
+    // Set cookie
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`)
+
+    return c.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    })
+  } catch (error) {
+    console.error('Error logging in:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Logout API
+app.post('/api/auth/logout', async (c) => {
+  try {
+    const cookies = c.req.header('cookie') || ''
+    const sessionToken = cookies.split(';').find(c => c.trim().startsWith('session_token='))?.split('=')[1]
+
+    if (sessionToken) {
+      const db = c.env.DB
+      await db.prepare('DELETE FROM sessions WHERE session_token = ?').bind(sessionToken).run()
+    }
+
+    c.header('Set-Cookie', 'session_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
+
+    return c.json({ success: true, message: 'ログアウトしました' })
+  } catch (error) {
+    console.error('Error logging out:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get current user
+app.get('/api/auth/me', async (c) => {
+  try {
+    const cookies = c.req.header('cookie') || ''
+    const sessionToken = cookies.split(';').find(c => c.trim().startsWith('session_token='))?.split('=')[1]
+
+    if (!sessionToken) {
+      return c.json({ success: false, error: '認証が必要です' }, 401)
+    }
+
+    const db = c.env.DB
+
+    // Find session
+    const session = await db.prepare(
+      'SELECT * FROM sessions WHERE session_token = ? AND expires_at > ?'
+    ).bind(sessionToken, new Date().toISOString()).first()
+
+    if (!session) {
+      return c.json({ success: false, error: 'セッションが無効です' }, 401)
+    }
+
+    // Get user
+    const user = await db.prepare('SELECT id, name, email, age, gender FROM users WHERE id = ?')
+      .bind(session.user_id).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    return c.json({
+      success: true,
+      user: user
+    })
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 export default app
