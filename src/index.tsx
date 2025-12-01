@@ -5,6 +5,8 @@ import { analysisRoutes } from './routes-analysis'
 import { authRoutes } from './routes-auth'
 import { dashboardRoutes } from './routes-dashboard'
 import { passwordResetRoutes } from './routes-password-reset'
+import { historyRoutes } from './routes-history'
+import { adminRoutes } from './routes-admin'
 
 type Bindings = {
   DB: D1Database
@@ -22,6 +24,8 @@ app.route('/password-reset', passwordResetRoutes)
 app.route('/dashboard', dashboardRoutes)
 app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
+app.route('/history', historyRoutes)
+app.route('/admin', adminRoutes)
 
 // ======================
 // HTML Pages Routes
@@ -404,6 +408,15 @@ app.get('/exam', (c) => {
 
             async function saveExamData() {
                 try {
+                    // Get current user
+                    const userResponse = await axios.get('/api/auth/me');
+                    if (!userResponse.data.success) {
+                        showError('ログインが必要です');
+                        setTimeout(() => window.location.href = '/auth/login', 1500);
+                        return;
+                    }
+                    const currentUserId = userResponse.data.user.id;
+
                     const examDate = document.getElementById('examDate').value;
                     const examType = document.getElementById('examType').value;
 
@@ -469,7 +482,7 @@ app.get('/exam', (c) => {
 
                     // Save to API
                     const response = await axios.post('/api/exam', {
-                        user_id: 1, // Default user for now
+                        user_id: currentUserId,
                         exam_date: examDate,
                         exam_type: examType,
                         measurements: measurements
@@ -838,6 +851,43 @@ app.get('/api/analysis-history/:userId', async (c) => {
   }
 })
 
+// Get exam history with measurements (for history charts)
+app.get('/api/history/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const startDate = c.req.query('start_date') || '2022-01-01'
+    const db = c.env.DB
+
+    // Get exam data with date filter
+    const examData = await db.prepare(
+      'SELECT * FROM exam_data WHERE user_id = ? AND exam_date >= ? ORDER BY exam_date ASC'
+    ).bind(userId, startDate).all()
+
+    if (!examData.results || examData.results.length === 0) {
+      return c.json({ success: true, exams: [] })
+    }
+
+    // Get measurements for each exam
+    const examsWithMeasurements = await Promise.all(
+      examData.results.map(async (exam) => {
+        const measurements = await db.prepare(
+          'SELECT * FROM exam_measurements WHERE exam_data_id = ?'
+        ).bind(exam.id).all()
+
+        return {
+          ...exam,
+          measurements: measurements.results || []
+        }
+      })
+    )
+
+    return c.json({ success: true, exams: examsWithMeasurements })
+  } catch (error) {
+    console.error('Error fetching exam history:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // Authentication API endpoints
 // Helper functions
 async function hashPassword(password: string): Promise<string> {
@@ -1086,6 +1136,169 @@ app.post('/api/password-reset/reset', async (c) => {
     })
   } catch (error) {
     console.error('Error resetting password:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Admin API endpoints
+// Admin login
+app.post('/api/admin/login', async (c) => {
+  try {
+    const { username, password } = await c.req.json()
+
+    if (!username || !password) {
+      return c.json({ success: false, error: 'ユーザー名とパスワードを入力してください' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Find admin user
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE username = ?').bind(username).first()
+    if (!admin) {
+      return c.json({ success: false, error: 'ユーザー名またはパスワードが正しくありません' }, 401)
+    }
+
+    // Verify password
+    const passwordHash = await hashPassword(password)
+    if (passwordHash !== admin.password_hash) {
+      return c.json({ success: false, error: 'ユーザー名またはパスワードが正しくありません' }, 401)
+    }
+
+    // Create session
+    const sessionToken = generateSessionToken()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await db.prepare(
+      'INSERT INTO admin_sessions (admin_user_id, session_token, expires_at) VALUES (?, ?, ?)'
+    ).bind(admin.id, sessionToken, expiresAt.toISOString()).run()
+
+    // Update last login
+    await db.prepare('UPDATE admin_users SET last_login = ? WHERE id = ?')
+      .bind(new Date().toISOString(), admin.id).run()
+
+    // Set cookie
+    c.header('Set-Cookie', `admin_session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${24 * 60 * 60}`)
+
+    return c.json({
+      success: true,
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        full_name: admin.full_name
+      }
+    })
+  } catch (error) {
+    console.error('Error logging in admin:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Admin logout
+app.post('/api/admin/logout', async (c) => {
+  try {
+    const cookies = c.req.header('cookie') || ''
+    const sessionToken = cookies.split(';').find(c => c.trim().startsWith('admin_session_token='))?.split('=')[1]
+
+    if (sessionToken) {
+      const db = c.env.DB
+      await db.prepare('DELETE FROM admin_sessions WHERE session_token = ?').bind(sessionToken).run()
+    }
+
+    c.header('Set-Cookie', 'admin_session_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
+
+    return c.json({ success: true, message: 'ログアウトしました' })
+  } catch (error) {
+    console.error('Error logging out admin:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get current admin user
+app.get('/api/admin/me', async (c) => {
+  try {
+    const cookies = c.req.header('cookie') || ''
+    const sessionToken = cookies.split(';').find(c => c.trim().startsWith('admin_session_token='))?.split('=')[1]
+
+    if (!sessionToken) {
+      return c.json({ success: false, error: '認証が必要です' }, 401)
+    }
+
+    const db = c.env.DB
+
+    // Find session
+    const session = await db.prepare(
+      'SELECT * FROM admin_sessions WHERE session_token = ? AND expires_at > ?'
+    ).bind(sessionToken, new Date().toISOString()).first()
+
+    if (!session) {
+      return c.json({ success: false, error: 'セッションが無効です' }, 401)
+    }
+
+    // Get admin user
+    const admin = await db.prepare('SELECT id, username, full_name FROM admin_users WHERE id = ?')
+      .bind(session.admin_user_id).first()
+
+    if (!admin) {
+      return c.json({ success: false, error: '管理者が見つかりません' }, 404)
+    }
+
+    return c.json({
+      success: true,
+      admin: admin
+    })
+  } catch (error) {
+    console.error('Error getting current admin:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get all users with statistics
+app.get('/api/admin/users', async (c) => {
+  try {
+    const db = c.env.DB
+
+    // Get all users
+    const { results: users } = await db.prepare(
+      'SELECT id, name, email, age, gender, created_at, last_login FROM users ORDER BY created_at DESC'
+    ).all()
+
+    // Get statistics
+    const { results: examStats } = await db.prepare('SELECT COUNT(*) as count FROM exam_data').all()
+    const { results: questionnaireStats } = await db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM questionnaire_responses').all()
+    const { results: analysisStats } = await db.prepare('SELECT COUNT(*) as count FROM analysis_results').all()
+
+    return c.json({
+      success: true,
+      users: users || [],
+      statistics: {
+        total_exams: examStats?.[0]?.count || 0,
+        total_questionnaires: questionnaireStats?.[0]?.count || 0,
+        total_analyses: analysisStats?.[0]?.count || 0
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get specific user details
+app.get('/api/admin/user/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    const user = await db.prepare(
+      'SELECT id, name, email, age, gender, created_at, last_login FROM users WHERE id = ?'
+    ).bind(userId).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    return c.json({ success: true, user })
+  } catch (error) {
+    console.error('Error fetching user:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })

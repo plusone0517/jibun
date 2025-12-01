@@ -82,6 +82,14 @@ dashboardRoutes.get('/', async (c) => {
                 </div>
             </div>
 
+            <!-- History Chart Button -->
+            <div class="mb-8">
+                <a href="/history" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg text-lg font-bold">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    3年間の検査履歴グラフを表示
+                </a>
+            </div>
+
             <!-- Data History -->
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- Exam History -->
