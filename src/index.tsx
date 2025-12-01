@@ -353,6 +353,16 @@ app.get('/exam', (c) => {
                 <strong class="font-bold">エラー！</strong>
                 <span class="block sm:inline" id="errorText"></span>
             </div>
+
+            <!-- Exam History Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-history mr-2"></i>検査履歴
+                </h3>
+                <div id="examHistoryList" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">読み込み中...</p>
+                </div>
+            </div>
         </main>
 
         <script>
@@ -480,19 +490,34 @@ app.get('/exam', (c) => {
                         return;
                     }
 
-                    // Save to API
-                    const response = await axios.post('/api/exam', {
-                        user_id: currentUserId,
-                        exam_date: examDate,
-                        exam_type: examType,
-                        measurements: measurements
-                    });
+                    // Check if editing or creating new
+                    let response;
+                    if (window.currentExamId) {
+                        // Update existing exam
+                        response = await axios.put(\`/api/exam/\${window.currentExamId}\`, {
+                            exam_date: examDate,
+                            exam_type: examType,
+                            measurements: measurements
+                        });
+                        window.currentExamId = null;
+                        document.querySelector('button[onclick="saveExamData()"]').innerHTML = '<i class="fas fa-save mr-2"></i>保存する';
+                    } else {
+                        // Create new exam
+                        response = await axios.post('/api/exam', {
+                            user_id: currentUserId,
+                            exam_date: examDate,
+                            exam_type: examType,
+                            measurements: measurements
+                        });
+                    }
 
                     if (response.data.success) {
                         showSuccess();
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 1500);
+                        // Reload history after save
+                        loadExamHistory();
+                        // Reset form
+                        document.getElementById('examDate').valueAsDate = new Date();
+                        clearFormInputs();
                     } else {
                         showError(response.data.error || '保存に失敗しました');
                     }
@@ -516,6 +541,164 @@ app.get('/exam', (c) => {
                     document.getElementById('errorMessage').classList.add('hidden');
                 }, 5000);
             }
+
+            function clearFormInputs() {
+                // Clear all input fields
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = '';
+                });
+            }
+
+            // Load exam history
+            async function loadExamHistory() {
+                try {
+                    const userResponse = await axios.get('/api/auth/me');
+                    if (!userResponse.data.success) {
+                        document.getElementById('examHistoryList').innerHTML = '<p class="text-gray-500 text-center py-4">ログインしてください</p>';
+                        return;
+                    }
+                    const userId = userResponse.data.user.id;
+
+                    const response = await axios.get(\`/api/history/\${userId}?start_date=2022-01-01\`);
+                    if (response.data.success && response.data.exams.length > 0) {
+                        displayExamHistory(response.data.exams);
+                    } else {
+                        document.getElementById('examHistoryList').innerHTML = '<p class="text-gray-500 text-center py-4">まだ検査データがありません</p>';
+                    }
+                } catch (error) {
+                    console.error('Error loading exam history:', error);
+                    document.getElementById('examHistoryList').innerHTML = '<p class="text-red-500 text-center py-4">履歴の読み込みに失敗しました</p>';
+                }
+            }
+
+            function displayExamHistory(exams) {
+                const container = document.getElementById('examHistoryList');
+                const typeNames = {
+                    'blood_pressure': '血圧測定',
+                    'body_composition': '体組成',
+                    'blood_test': '血液検査',
+                    'custom': 'カスタム検査'
+                };
+
+                container.innerHTML = exams.slice(0, 10).map(exam => \`
+                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="font-bold text-lg text-gray-800">\${typeNames[exam.exam_type] || exam.exam_type}</span>
+                                    <span class="text-sm text-gray-600">\${exam.exam_date}</span>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    \${exam.measurements.map(m => \`
+                                        <div class="flex justify-between">
+                                            <span>\${formatMeasurementKey(m.measurement_key)}:</span>
+                                            <span class="font-semibold">\${m.measurement_value} \${m.measurement_unit}</span>
+                                        </div>
+                                    \`).join('')}
+                                </div>
+                            </div>
+                            <div class="flex space-x-2 ml-4">
+                                <button onclick="editExam(\${exam.id})" class="text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-600 hover:bg-blue-50">
+                                    <i class="fas fa-edit mr-1"></i>編集
+                                </button>
+                                <button onclick="deleteExam(\${exam.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded border border-red-600 hover:bg-red-50">
+                                    <i class="fas fa-trash mr-1"></i>削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                \`).join('');
+
+                if (exams.length > 10) {
+                    container.innerHTML += \`
+                        <div class="text-center mt-4">
+                            <a href="/history" class="text-blue-600 hover:text-blue-700 font-bold">
+                                すべての履歴を見る（\${exams.length}件）
+                            </a>
+                        </div>
+                    \`;
+                }
+            }
+
+            function formatMeasurementKey(key) {
+                const keyMap = {
+                    'systolic_bp': '収縮期血圧',
+                    'diastolic_bp': '拡張期血圧',
+                    'pulse': '脈拍',
+                    'weight': '体重',
+                    'body_fat': '体脂肪率',
+                    'muscle_mass': '筋肉量',
+                    'bmi': 'BMI',
+                    'blood_sugar': '血糖値',
+                    'hba1c': 'HbA1c',
+                    'total_cholesterol': '総コレステロール',
+                    'ldl_cholesterol': 'LDLコレステロール',
+                    'hdl_cholesterol': 'HDLコレステロール',
+                    'triglycerides': '中性脂肪',
+                    'ast': 'AST',
+                    'alt': 'ALT'
+                };
+                return keyMap[key] || key;
+            }
+
+            async function editExam(examId) {
+                try {
+                    const response = await axios.get(\`/api/history/detail/\${examId}\`);
+                    if (!response.data.success) {
+                        alert('データの読み込みに失敗しました');
+                        return;
+                    }
+
+                    const exam = response.data.exam;
+                    
+                    // Set exam date and type
+                    document.getElementById('examDate').value = exam.exam_date;
+                    document.getElementById('examType').value = exam.exam_type;
+                    
+                    // Trigger exam type change to show correct form
+                    document.getElementById('examType').dispatchEvent(new Event('change'));
+                    
+                    // Fill in measurements
+                    exam.measurements.forEach(m => {
+                        const input = document.getElementById(m.measurement_key);
+                        if (input) {
+                            input.value = m.measurement_value;
+                        }
+                    });
+
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Store exam ID for update
+                    window.currentExamId = examId;
+                    document.querySelector('button[onclick="saveExamData()"]').innerHTML = '<i class="fas fa-save mr-2"></i>更新する';
+                } catch (error) {
+                    console.error('Error loading exam for edit:', error);
+                    alert('データの読み込みに失敗しました');
+                }
+            }
+
+            async function deleteExam(examId) {
+                if (!confirm('この検査データを削除してもよろしいですか？\\nこの操作は取り消せません。')) {
+                    return;
+                }
+
+                try {
+                    const response = await axios.delete(\`/api/exam/\${examId}\`);
+                    if (response.data.success) {
+                        alert('検査データを削除しました');
+                        loadExamHistory();
+                    } else {
+                        alert('削除に失敗しました: ' + response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Error deleting exam:', error);
+                    alert('削除中にエラーが発生しました');
+                }
+            }
+
+            // Load history on page load
+            loadExamHistory();
         </script>
     </body>
     </html>
@@ -860,7 +1043,7 @@ app.get('/api/history/:userId', async (c) => {
 
     // Get exam data with date filter
     const examData = await db.prepare(
-      'SELECT * FROM exam_data WHERE user_id = ? AND exam_date >= ? ORDER BY exam_date ASC'
+      'SELECT * FROM exam_data WHERE user_id = ? AND exam_date >= ? ORDER BY exam_date DESC'
     ).bind(userId, startDate).all()
 
     if (!examData.results || examData.results.length === 0) {
@@ -884,6 +1067,89 @@ app.get('/api/history/:userId', async (c) => {
     return c.json({ success: true, exams: examsWithMeasurements })
   } catch (error) {
     console.error('Error fetching exam history:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get exam detail for editing
+app.get('/api/history/detail/:examId', async (c) => {
+  try {
+    const examId = c.req.param('examId')
+    const db = c.env.DB
+
+    const exam = await db.prepare('SELECT * FROM exam_data WHERE id = ?').bind(examId).first()
+    if (!exam) {
+      return c.json({ success: false, error: '検査データが見つかりません' }, 404)
+    }
+
+    const measurements = await db.prepare(
+      'SELECT * FROM exam_measurements WHERE exam_data_id = ?'
+    ).bind(examId).all()
+
+    return c.json({ 
+      success: true, 
+      exam: {
+        ...exam,
+        measurements: measurements.results || []
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching exam detail:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Update exam data
+app.put('/api/exam/:examId', async (c) => {
+  try {
+    const examId = c.req.param('examId')
+    const { exam_date, exam_type, measurements } = await c.req.json()
+
+    const db = c.env.DB
+
+    // Update exam_data
+    await db.prepare(
+      'UPDATE exam_data SET exam_date = ?, exam_type = ? WHERE id = ?'
+    ).bind(exam_date, exam_type, examId).run()
+
+    // Delete old measurements
+    await db.prepare('DELETE FROM exam_measurements WHERE exam_data_id = ?').bind(examId).run()
+
+    // Insert new measurements
+    for (const measurement of measurements) {
+      await db.prepare(
+        'INSERT INTO exam_measurements (exam_data_id, measurement_key, measurement_value, measurement_unit) VALUES (?, ?, ?, ?)'
+      ).bind(examId, measurement.key, measurement.value, measurement.unit || '').run()
+    }
+
+    return c.json({ 
+      success: true,
+      message: '検査データが更新されました'
+    })
+  } catch (error) {
+    console.error('Error updating exam data:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Delete exam data
+app.delete('/api/exam/:examId', async (c) => {
+  try {
+    const examId = c.req.param('examId')
+    const db = c.env.DB
+
+    // Delete measurements first
+    await db.prepare('DELETE FROM exam_measurements WHERE exam_data_id = ?').bind(examId).run()
+
+    // Delete exam data
+    await db.prepare('DELETE FROM exam_data WHERE id = ?').bind(examId).run()
+
+    return c.json({ 
+      success: true,
+      message: '検査データが削除されました'
+    })
+  } catch (error) {
+    console.error('Error deleting exam data:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
