@@ -369,6 +369,9 @@ app.get('/exam', (c) => {
             // Set today's date as default
             document.getElementById('examDate').valueAsDate = new Date();
 
+            // Store all exams globally
+            let allExams = [];
+
             // Handle exam type change
             document.getElementById('examType').addEventListener('change', function() {
                 const forms = document.querySelectorAll('.exam-form');
@@ -384,6 +387,11 @@ app.get('/exam', (c) => {
 
                 if (formMap[selectedType]) {
                     document.getElementById(formMap[selectedType]).classList.remove('hidden');
+                }
+
+                // Update history when type changes
+                if (allExams.length > 0) {
+                    displayExamHistory(allExams);
                 }
             });
 
@@ -573,6 +581,7 @@ app.get('/exam', (c) => {
 
             function displayExamHistory(exams) {
                 const container = document.getElementById('examHistoryList');
+                const currentType = document.getElementById('examType').value;
                 const typeNames = {
                     'blood_pressure': '血圧測定',
                     'body_composition': '体組成',
@@ -580,13 +589,24 @@ app.get('/exam', (c) => {
                     'custom': 'カスタム検査'
                 };
 
-                container.innerHTML = exams.slice(0, 10).map(exam => \`
+                // Filter exams by current type
+                const filteredExams = exams.filter(exam => exam.exam_type === currentType);
+
+                if (filteredExams.length === 0) {
+                    container.innerHTML = \`
+                        <p class="text-gray-500 text-center py-4">
+                            \${typeNames[currentType]}の履歴がまだありません
+                        </p>
+                    \`;
+                    return;
+                }
+
+                container.innerHTML = filteredExams.slice(0, 10).map(exam => \`
                     <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3 mb-2">
-                                    <span class="font-bold text-lg text-gray-800">\${typeNames[exam.exam_type] || exam.exam_type}</span>
-                                    <span class="text-sm text-gray-600">\${exam.exam_date}</span>
+                                    <span class="font-bold text-lg text-gray-800">\${exam.exam_date}</span>
                                 </div>
                                 <div class="text-sm text-gray-600 space-y-1">
                                     \${exam.measurements.map(m => \`
@@ -609,11 +629,11 @@ app.get('/exam', (c) => {
                     </div>
                 \`).join('');
 
-                if (exams.length > 10) {
+                if (filteredExams.length > 10) {
                     container.innerHTML += \`
                         <div class="text-center mt-4">
                             <a href="/history" class="text-blue-600 hover:text-blue-700 font-bold">
-                                すべての履歴を見る（\${exams.length}件）
+                                すべての履歴を見る（\${filteredExams.length}件）
                             </a>
                         </div>
                     \`;

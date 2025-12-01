@@ -90,28 +90,14 @@ dashboardRoutes.get('/', async (c) => {
                 </a>
             </div>
 
-            <!-- Data History -->
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- Exam History -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fas fa-history text-blue-600 mr-2"></i>
-                        検査データ履歴
-                    </h3>
-                    <div id="examHistory" class="space-y-3">
-                        <p class="text-gray-500 text-center py-4">データを読み込み中...</p>
-                    </div>
-                </div>
-
-                <!-- Analysis History -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fas fa-chart-line text-purple-600 mr-2"></i>
-                        解析結果履歴
-                    </h3>
-                    <div id="analysisHistory" class="space-y-3">
-                        <p class="text-gray-500 text-center py-4">データを読み込み中...</p>
-                    </div>
+            <!-- Analysis History -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                    解析結果履歴
+                </h3>
+                <div id="analysisHistory" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">データを読み込み中...</p>
                 </div>
             </div>
 
@@ -153,18 +139,6 @@ dashboardRoutes.get('/', async (c) => {
             }
 
             async function loadDashboardData() {
-                // Load exam history
-                try {
-                    const examResponse = await axios.get(\`/api/exam/\${currentUser.id}\`);
-                    if (examResponse.data.success && examResponse.data.exams.length > 0) {
-                        displayExamHistory(examResponse.data.exams);
-                    } else {
-                        document.getElementById('examHistory').innerHTML = '<p class="text-gray-500 text-center py-4">まだ検査データがありません</p>';
-                    }
-                } catch (error) {
-                    console.error('Error loading exam history:', error);
-                }
-
                 // Load analysis history
                 try {
                     const analysisResponse = await axios.get(\`/api/analysis-history/\${currentUser.id}\`);
@@ -179,29 +153,6 @@ dashboardRoutes.get('/', async (c) => {
 
                 // Display profile
                 displayProfile();
-            }
-
-            function displayExamHistory(exams) {
-                const container = document.getElementById('examHistory');
-                const limitedExams = exams.slice(0, 5);
-                
-                container.innerHTML = limitedExams.map(exam => \`
-                    <div class="border-l-4 border-blue-500 pl-4 py-2">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-bold">\${getExamTypeName(exam.exam_type)}</p>
-                                <p class="text-sm text-gray-600">\${exam.exam_date}</p>
-                            </div>
-                            <a href="/exam/view/\${exam.id}" class="text-blue-600 hover:text-blue-700">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </div>
-                    </div>
-                \`).join('');
-
-                if (exams.length > 5) {
-                    container.innerHTML += '<p class="text-sm text-gray-500 text-center mt-3">他 ' + (exams.length - 5) + ' 件</p>';
-                }
             }
 
             function displayAnalysisHistory(analyses) {
@@ -247,16 +198,6 @@ dashboardRoutes.get('/', async (c) => {
                         <p class="font-bold">\${currentUser.gender || '未設定'}</p>
                     </div>
                 \`;
-            }
-
-            function getExamTypeName(type) {
-                const names = {
-                    'blood_pressure': '血圧測定',
-                    'body_composition': '体組成計',
-                    'blood_test': '血液検査',
-                    'custom': 'カスタム検査'
-                };
-                return names[type] || type;
             }
 
             async function logout() {
