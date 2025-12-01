@@ -206,7 +206,13 @@ authRoutes.get('/login', (c) => {
                     </button>
                 </form>
 
-                <div class="mt-6 text-center">
+                <div class="mt-4 text-center">
+                    <a href="/password-reset/forgot" class="text-sm text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-key mr-1"></i>パスワードを忘れた方
+                    </a>
+                </div>
+
+                <div class="mt-4 text-center">
                     <p class="text-sm text-gray-600">
                         アカウントをお持ちでない方は
                         <a href="/auth/register" class="text-blue-600 hover:text-blue-700 font-bold">新規登録</a>

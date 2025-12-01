@@ -4,6 +4,7 @@ import { questionnaireRoutes } from './routes-questionnaire'
 import { analysisRoutes } from './routes-analysis'
 import { authRoutes } from './routes-auth'
 import { dashboardRoutes } from './routes-dashboard'
+import { passwordResetRoutes } from './routes-password-reset'
 
 type Bindings = {
   DB: D1Database
@@ -17,6 +18,7 @@ app.use('/api/*', cors())
 
 // Mount sub-routes
 app.route('/auth', authRoutes)
+app.route('/password-reset', passwordResetRoutes)
 app.route('/dashboard', dashboardRoutes)
 app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
@@ -995,6 +997,95 @@ app.get('/api/auth/me', async (c) => {
     })
   } catch (error) {
     console.error('Error getting current user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Password Reset API endpoints
+// Request password reset token
+app.post('/api/password-reset/request', async (c) => {
+  try {
+    const { email } = await c.req.json()
+
+    if (!email) {
+      return c.json({ success: false, error: 'メールアドレスを入力してください' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Find user
+    const user = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
+    if (!user) {
+      // セキュリティ上、ユーザーが存在しない場合でも成功レスポンスを返す（実運用）
+      // 開発環境では実際のエラーを返す
+      return c.json({ success: false, error: 'このメールアドレスは登録されていません' }, 404)
+    }
+
+    // Generate reset token
+    const resetToken = generateSessionToken()
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Save reset token
+    await db.prepare(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)'
+    ).bind(user.id, resetToken, expiresAt.toISOString()).run()
+
+    return c.json({
+      success: true,
+      token: resetToken,
+      message: 'リセットトークンを発行しました'
+    })
+  } catch (error) {
+    console.error('Error requesting password reset:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Reset password with token
+app.post('/api/password-reset/reset', async (c) => {
+  try {
+    const { token, new_password } = await c.req.json()
+
+    if (!token || !new_password) {
+      return c.json({ success: false, error: '必須項目が不足しています' }, 400)
+    }
+
+    if (new_password.length < 6) {
+      return c.json({ success: false, error: 'パスワードは6文字以上にしてください' }, 400)
+    }
+
+    const db = c.env.DB
+
+    // Find valid reset token
+    const resetToken = await db.prepare(
+      'SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > ? AND used = 0'
+    ).bind(token, new Date().toISOString()).first()
+
+    if (!resetToken) {
+      return c.json({ success: false, error: 'トークンが無効または期限切れです' }, 400)
+    }
+
+    // Hash new password
+    const passwordHash = await hashPassword(new_password)
+
+    // Update password
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+      .bind(passwordHash, resetToken.user_id).run()
+
+    // Mark token as used
+    await db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?')
+      .bind(resetToken.id).run()
+
+    // Invalidate all sessions for this user (force re-login)
+    await db.prepare('DELETE FROM sessions WHERE user_id = ?')
+      .bind(resetToken.user_id).run()
+
+    return c.json({
+      success: true,
+      message: 'パスワードが変更されました'
+    })
+  } catch (error) {
+    console.error('Error resetting password:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
