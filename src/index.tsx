@@ -396,13 +396,38 @@ app.get('/exam', (c) => {
             });
 
             let customFieldCount = 0;
+            let customItemSuggestions = [];
+
+            async function loadCustomItemSuggestions() {
+                try {
+                    const userResponse = await axios.get('/api/auth/me');
+                    if (userResponse.data.success) {
+                        const userId = userResponse.data.user.id;
+                        const response = await axios.get(\`/api/custom-items/\${userId}\`);
+                        if (response.data.success) {
+                            customItemSuggestions = response.data.items;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading custom item suggestions:', error);
+                }
+            }
+
             function addCustomField() {
                 customFieldCount++;
+                const suggestionsDatalist = customItemSuggestions.map(item => 
+                    \`<option value="\${item.measurement_key}" data-unit="\${item.measurement_unit}">\`
+                ).join('');
+                
                 const fieldHTML = \`
                     <div class="grid md:grid-cols-3 gap-2 items-end" id="customField\${customFieldCount}">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">項目名</label>
-                            <input type="text" class="w-full px-4 py-2 border rounded-lg custom-key" placeholder="例: ビタミンD">
+                            <input type="text" list="customItemsList" class="w-full px-4 py-2 border rounded-lg custom-key" placeholder="例: ビタミンD" 
+                                   onchange="autofillUnit(this, \${customFieldCount})">
+                            <datalist id="customItemsList">
+                                \${suggestionsDatalist}
+                            </datalist>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">測定値</label>
@@ -410,7 +435,7 @@ app.get('/exam', (c) => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">単位</label>
-                            <input type="text" class="w-full px-4 py-2 border rounded-lg custom-unit" placeholder="例: ng/mL">
+                            <input type="text" class="w-full px-4 py-2 border rounded-lg custom-unit" id="unit\${customFieldCount}" placeholder="例: ng/mL">
                         </div>
                         <button onclick="removeCustomField(\${customFieldCount})" class="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">
                             <i class="fas fa-trash"></i>
@@ -418,6 +443,14 @@ app.get('/exam', (c) => {
                     </div>
                 \`;
                 document.getElementById('customFields').insertAdjacentHTML('beforeend', fieldHTML);
+            }
+
+            function autofillUnit(input, fieldId) {
+                const selectedKey = input.value;
+                const item = customItemSuggestions.find(i => i.measurement_key === selectedKey);
+                if (item) {
+                    document.getElementById('unit' + fieldId).value = item.measurement_unit;
+                }
             }
 
             function removeCustomField(id) {
@@ -555,6 +588,13 @@ app.get('/exam', (c) => {
                 document.querySelectorAll('input[type="number"]').forEach(input => {
                     input.value = '';
                 });
+                // Reset custom fields
+                document.getElementById('customFields').innerHTML = '';
+                customFieldCount = 0;
+                addCustomField();
+                // Reset edit mode
+                window.currentExamId = null;
+                document.querySelector('button[onclick="saveExamData()"]').innerHTML = '<i class="fas fa-save mr-2"></i>保存する';
             }
 
             // Load exam history
@@ -569,12 +609,15 @@ app.get('/exam', (c) => {
 
                     const response = await axios.get(\`/api/history/\${userId}?start_date=2022-01-01\`);
                     if (response.data.success && response.data.exams.length > 0) {
-                        displayExamHistory(response.data.exams);
+                        allExams = response.data.exams; // Store globally
+                        displayExamHistory(allExams);
                     } else {
+                        allExams = [];
                         document.getElementById('examHistoryList').innerHTML = '<p class="text-gray-500 text-center py-4">まだ検査データがありません</p>';
                     }
                 } catch (error) {
                     console.error('Error loading exam history:', error);
+                    allExams = [];
                     document.getElementById('examHistoryList').innerHTML = '<p class="text-red-500 text-center py-4">履歴の読み込みに失敗しました</p>';
                 }
             }
@@ -717,8 +760,12 @@ app.get('/exam', (c) => {
                 }
             }
 
-            // Load history on page load
+            // Load history and custom item suggestions on page load
             loadExamHistory();
+            loadCustomItemSuggestions().then(() => {
+                // Add initial custom field after suggestions are loaded
+                addCustomField();
+            });
         </script>
     </body>
     </html>
@@ -778,6 +825,27 @@ app.get('/api/exam/:userId', async (c) => {
     return c.json({ success: true, exams: results })
   } catch (error) {
     console.error('Error fetching exam data:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get custom exam items for user
+app.get('/api/custom-items/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    const { results } = await db.prepare(`
+      SELECT DISTINCT em.measurement_key, em.measurement_unit
+      FROM exam_measurements em
+      JOIN exam_data ed ON em.exam_data_id = ed.id
+      WHERE ed.user_id = ? AND ed.exam_type = 'custom'
+      ORDER BY em.measurement_key
+    `).bind(userId).all()
+
+    return c.json({ success: true, items: results })
+  } catch (error) {
+    console.error('Error fetching custom items:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
