@@ -198,6 +198,17 @@ npm run db:reset
 ### AI解析
 
 - `POST /api/analysis` - AI解析実行（OpenAI API呼び出し）
+- `GET /api/analysis-history/:userId` - 解析結果履歴取得
+
+## ページ一覧
+
+- `/` - トップページ（認証状態により自動リダイレクト）
+- `/auth/register` - ユーザー登録
+- `/auth/login` - ログイン
+- `/dashboard` - ダッシュボード（要認証）
+- `/exam` - 検査データ入力
+- `/questionnaire` - 健康問診
+- `/analysis` - AI解析結果表示
 
 ## デプロイ手順
 
