@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { questionnaireRoutes } from './routes-questionnaire'
 import { analysisRoutes } from './routes-analysis'
+import { authRoutes } from './routes-auth'
+import { dashboardRoutes } from './routes-dashboard'
 
 type Bindings = {
   DB: D1Database
@@ -14,6 +16,8 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('/api/*', cors())
 
 // Mount sub-routes
+app.route('/auth', authRoutes)
+app.route('/dashboard', dashboardRoutes)
 app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
 
@@ -21,8 +25,46 @@ app.route('/analysis', analysisRoutes)
 // HTML Pages Routes
 // ======================
 
-// Home page
+// Home page - redirect to dashboard or login
 app.get('/', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>じぶんサプリ育成アプリ</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    </head>
+    <body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p class="text-gray-600">読み込み中...</p>
+        </div>
+        <script>
+            async function checkAuth() {
+                try {
+                    const response = await axios.get('/api/auth/me');
+                    if (response.data.success) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        window.location.href = '/auth/login';
+                    }
+                } catch (error) {
+                    window.location.href = '/auth/login';
+                }
+            }
+            checkAuth();
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// Landing page (for non-authenticated users)
+app.get('/welcome', (c) => {
   return c.html(`
     <!DOCTYPE html>
     <html lang="ja">
@@ -41,7 +83,14 @@ app.get('/', (c) => {
                         <i class="fas fa-heartbeat mr-2"></i>
                         じぶんサプリ育成
                     </h1>
-                    <div class="text-sm text-gray-600">医療機関監修</div>
+                    <div class="flex space-x-4">
+                        <a href="/auth/login" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-sign-in-alt mr-1"></i>ログイン
+                        </a>
+                        <a href="/auth/register" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            新規登録
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -50,6 +99,11 @@ app.get('/', (c) => {
             <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-gray-800 mb-4">あなた専用の健康サポート</h2>
                 <p class="text-lg text-gray-600">検査データをAI解析して、最適な栄養指導とサプリメントを提案します</p>
+                <div class="mt-8">
+                    <a href="/auth/register" class="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 text-lg font-bold">
+                        <i class="fas fa-user-plus mr-2"></i>今すぐ始める
+                    </a>
+                </div>
             </div>
 
             <div class="grid md:grid-cols-3 gap-6 mb-12">
@@ -764,5 +818,22 @@ function parseSupplements(text: string): Array<{name: string, type: string, dosa
     }
   ]
 }
+
+// Get analysis history for user
+app.get('/api/analysis-history/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    const { results } = await db.prepare(
+      'SELECT * FROM analysis_results WHERE user_id = ? ORDER BY analysis_date DESC LIMIT 20'
+    ).bind(userId).all()
+
+    return c.json({ success: true, analyses: results })
+  } catch (error) {
+    console.error('Error fetching analysis history:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
 
 export default app
