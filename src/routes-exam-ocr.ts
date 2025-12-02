@@ -54,9 +54,10 @@ examOcrRoutes.get('/', (c) => {
                 
                 <div class="flex flex-col gap-4">
                     <label class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-6 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer text-center font-bold shadow-lg">
-                        <i class="fas fa-folder-open mr-2 text-2xl"></i>
-                        <span class="text-xl">ファイルを選択</span>
-                        <input type="file" id="imageUpload" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(this)">
+                        <i class="fas fa-image mr-2 text-2xl"></i>
+                        <span class="text-xl">画像を選択</span>
+                        <p class="text-sm mt-2 opacity-90">カメラ撮影 または ファイルから選択</p>
+                        <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
                     </label>
                     
                     <div id="imagePreviewContainer" class="hidden">
