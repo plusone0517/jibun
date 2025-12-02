@@ -267,8 +267,12 @@ analysisRoutes.get('/', (c) => {
                     'custom': 'カスタム検査'
                 };
 
-                container.innerHTML = exams.map(exam => \`
-                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                container.innerHTML = exams.map(exam => {
+                    const isOcr = exam.data_source === 'ocr';
+                    const borderClass = isOcr ? 'border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50' : 'border';
+                    
+                    return \`
+                    <div class="\${borderClass} rounded-lg p-4 hover:shadow-md transition">
                         <label class="flex items-start cursor-pointer">
                             <input type="checkbox" 
                                    class="exam-checkbox mt-1 mr-3 w-5 h-5 text-blue-600"
@@ -276,11 +280,12 @@ analysisRoutes.get('/', (c) => {
                                    onchange="toggleExamSelection(\${exam.id})"
                                    checked>
                             <div class="flex-1">
-                                <div class="flex items-center space-x-3 mb-2">
+                                <div class="flex items-center space-x-2 mb-2 flex-wrap">
                                     <span class="font-bold text-gray-800">\${exam.exam_date}</span>
                                     <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                         \${examTypeNames[exam.exam_type] || exam.exam_type}
                                     </span>
+                                    \${isOcr ? '<span class="text-xs bg-purple-600 text-white px-2 py-1 rounded-full font-bold">🪄 AI解析</span>' : '<span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">✏️ 手入力</span>'}
                                 </div>
                                 <div class="text-sm text-gray-600 space-y-1">
                                     \${exam.measurements.map(m => \`
@@ -293,7 +298,8 @@ analysisRoutes.get('/', (c) => {
                             </div>
                         </label>
                     </div>
-                \`).join('');
+                    \`;
+                }).join('');
 
                 // Initially select all exams
                 selectedExamIds = exams.map(e => e.id);

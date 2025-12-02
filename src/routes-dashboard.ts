@@ -71,7 +71,7 @@ dashboardRoutes.get('/', async (c) => {
                         <div class="text-5xl mb-4">📸</div>
                         <h3 class="text-xl font-bold mb-3 text-purple-700">画像読み取り</h3>
                         <p class="text-gray-600 mb-4 text-sm">OCRで検査結果を読取</p>
-                        <a href="/exam#ocr" class="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                        <a href="/exam/ocr" class="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
                             OCR入力
                         </a>
                     </div>

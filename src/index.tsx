@@ -7,6 +7,7 @@ import { dashboardRoutes } from './routes-dashboard'
 import { passwordResetRoutes } from './routes-password-reset'
 import { historyRoutes } from './routes-history'
 import { adminRoutes } from './routes-admin'
+import { examOcrRoutes } from './routes-exam-ocr'
 
 type Bindings = {
   DB: D1Database
@@ -26,6 +27,7 @@ app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
 app.route('/history', historyRoutes)
 app.route('/admin', adminRoutes)
+app.route('/exam/ocr', examOcrRoutes)
 
 // Mount API routes
 app.route('/api/auth', authRoutes)
@@ -227,42 +229,10 @@ app.get('/exam', (c) => {
         </nav>
 
         <main class="max-w-4xl mx-auto px-4 pb-12">
-            <h2 class="text-3xl font-bold text-gray-800 mb-8">検査データ入力</h2>
-
-            <!-- OCR Section -->
-            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 mb-6 border-2 border-purple-200">
-                <h3 class="text-xl font-bold text-purple-800 mb-4">
-                    <i class="fas fa-camera mr-2"></i>
-                    📸 検査結果を撮影して自動入力
-                </h3>
-                <p class="text-gray-700 mb-4">
-                    病院や健康診断の検査結果用紙を撮影すると、AIが自動で読み取って入力します
-                </p>
-                
-                <div class="flex flex-col gap-4">
-                    <div class="flex gap-2">
-                        <label class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition cursor-pointer text-center font-bold">
-                            <i class="fas fa-camera mr-2"></i>カメラで撮影
-                            <input type="file" id="examImageCamera" accept="image/*" capture="camera" class="hidden" onchange="handleImageUpload(this)">
-                        </label>
-                        <label class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition cursor-pointer text-center font-bold">
-                            <i class="fas fa-folder-open mr-2"></i>ファイルを選択
-                            <input type="file" id="examImageFile" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
-                        </label>
-                    </div>
-                    
-                    <div id="imagePreviewContainer" class="hidden">
-                        <img id="imagePreview" class="w-full max-h-96 object-contain rounded-lg border-2 border-gray-300 mb-3">
-                        <button onclick="analyzeImage()" id="analyzeBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-bold">
-                            <i class="fas fa-magic mr-2"></i>AIで解析する
-                        </button>
-                        <div id="analyzeProgress" class="hidden mt-3 text-center">
-                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                            <p class="text-gray-600 mt-2">AI解析中...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">
+                <i class="fas fa-keyboard mr-2"></i>
+                検査データ入力（手動）
+            </h2>
 
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                 <div class="mb-6">
@@ -581,20 +551,14 @@ app.get('/exam', (c) => {
                         window.currentExamId = null;
                         document.querySelector('button[onclick="saveExamData()"]').innerHTML = '<i class="fas fa-save mr-2"></i>保存する';
                     } else {
-                        // Create new exam
-                        // Check if this data came from OCR
-                        const dataSource = window.isOcrData ? 'ocr' : 'manual';
-                        
+                        // Create new exam (always manual for this page)
                         response = await axios.post('/api/exam', {
                             user_id: currentUserId,
                             exam_date: examDate,
                             exam_type: examType,
                             measurements: measurements,
-                            data_source: dataSource
+                            data_source: 'manual'
                         });
-                        
-                        // Reset OCR flag after save
-                        window.isOcrData = false;
                     }
 
                     if (response.data.success) {
@@ -870,83 +834,6 @@ app.get('/exam', (c) => {
                 } catch (error) {
                     console.error('Error deleting exam:', error);
                     alert('削除中にエラーが発生しました');
-                }
-            }
-
-            // OCR functionality
-            let selectedImageFile = null;
-
-            function handleImageUpload(input) {
-                const file = input.files[0];
-                if (!file) return;
-
-                selectedImageFile = file;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('imagePreview').src = e.target.result;
-                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-
-            async function analyzeImage() {
-                if (!selectedImageFile) return;
-
-                const analyzeBtn = document.getElementById('analyzeBtn');
-                const progress = document.getElementById('analyzeProgress');
-                
-                analyzeBtn.disabled = true;
-                progress.classList.remove('hidden');
-
-                try {
-                    const formData = new FormData();
-                    formData.append('image', selectedImageFile);
-
-                    const response = await axios.post('/api/analyze-exam-image', formData, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    });
-
-                    if (response.data.success) {
-                        const result = response.data.result;
-                        
-                        // Fill form with extracted data
-                        if (result.exam_date) {
-                            document.getElementById('examDate').value = result.exam_date;
-                        }
-                        
-                        if (result.exam_type) {
-                            document.getElementById('examType').value = result.exam_type;
-                            document.getElementById('examType').dispatchEvent(new Event('change'));
-                        }
-
-                        // Fill measurements
-                        if (result.measurements && result.measurements.length > 0) {
-                            setTimeout(() => {
-                                result.measurements.forEach(m => {
-                                    const input = document.getElementById(m.key);
-                                    if (input) {
-                                        input.value = m.value;
-                                    }
-                                });
-                            }, 100);
-                        }
-
-                        // Mark this data as OCR-sourced
-                        window.isOcrData = true;
-                        
-                        alert('✅ 検査結果を読み取りました！内容を確認してください。');
-                        window.scrollTo({ top: 400, behavior: 'smooth' });
-                    } else {
-                        alert('❌ 解析に失敗しました: ' + (response.data.error || '不明なエラー'));
-                    }
-                } catch (error) {
-                    console.error('Error analyzing image:', error);
-                    alert('❌ 解析中にエラーが発生しました: ' + (error.response?.data?.error || error.message));
-                } finally {
-                    analyzeBtn.disabled = false;
-                    progress.classList.add('hidden');
                 }
             }
 
