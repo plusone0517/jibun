@@ -200,6 +200,7 @@ analysisRoutes.get('/', (c) => {
 
             let selectedExamIds = [];
             let allExamData = [];
+            let questionnaireData = [];
             let currentUser = null;
 
             async function loadExamData() {
@@ -224,6 +225,16 @@ analysisRoutes.get('/', (c) => {
                                 検査データがありません。<a href="/exam" class="text-blue-600 hover:underline">検査データを入力する</a>
                             </p>
                         \`;
+                    }
+
+                    // Load questionnaire data
+                    try {
+                        const questionnaireResponse = await axios.get(\`/questionnaire/api/\${currentUser.id}\`);
+                        if (questionnaireResponse.data.success) {
+                            questionnaireData = questionnaireResponse.data.responses || [];
+                        }
+                    } catch (qError) {
+                        console.log('No questionnaire data available');
                     }
                 } catch (error) {
                     console.error('Error loading exam data:', error);
@@ -434,8 +445,26 @@ analysisRoutes.get('/', (c) => {
                     }
                 });
                 
-                // Assume questionnaire is always complete if we reached analysis
-                totalScore += questionnaire_weight;
+                // Check questionnaire completeness
+                const expectedQuestions = 50;
+                const actualQuestions = questionnaireData.length;
+                const questionnaireRatio = Math.min(1, actualQuestions / expectedQuestions);
+                const questionnaireScore = questionnaire_weight * questionnaireRatio;
+                totalScore += questionnaireScore;
+                
+                // Add questionnaire details
+                details.push({
+                    name: '健康問診',
+                    count: actualQuestions > 0 ? 1 : 0,
+                    avgMeasurements: actualQuestions,
+                    score: Math.round(questionnaireRatio * 100),
+                    color: questionnaireRatio >= 0.8 ? 'green' : questionnaireRatio >= 0.5 ? 'yellow' : 'red',
+                    isQuestionnaire: true
+                });
+                
+                if (actualQuestions === 0) {
+                    missing.push('健康問診（50問）');
+                }
                 
                 return {
                     score: Math.round(totalScore),
@@ -488,12 +517,16 @@ analysisRoutes.get('/', (c) => {
                         'red': 'bg-red-100 border-red-500'
                     }[detail.color];
                     
+                    const detailText = detail.isQuestionnaire 
+                        ? \`(\${detail.avgMeasurements}/50問回答済み)\`
+                        : \`(\${detail.count}件、平均\${detail.avgMeasurements}項目)\`;
+                    
                     return \`
                         <div class="flex items-center justify-between p-3 border-l-4 \${colorClass} rounded">
                             <div>
                                 <span class="font-semibold">\${detail.name}</span>
                                 <span class="text-sm text-gray-600 ml-2">
-                                    (\${detail.count}件、平均\${detail.avgMeasurements}項目)
+                                    \${detailText}
                                 </span>
                             </div>
                             <span class="font-bold text-lg">\${detail.score}%</span>
@@ -925,8 +958,8 @@ ${questionnaireSummary}
     // Get recommended supplements from master catalog based on health analysis
     const supplements = await getRecommendedSupplements(db, healthAdvice, riskAssessment)
 
-    // Calculate data completeness score
-    const dataCompletenessScore = calculateDataCompletenessScore(examData.results)
+    // Calculate data completeness score including questionnaire
+    const dataCompletenessScore = calculateDataCompletenessScore(examData.results, questionnaireData.results)
     
     // Save analysis results to database
     const analysisResult = await db.prepare(
@@ -1114,34 +1147,43 @@ function getDefaultSupplements(): Array<{supplement_name: string, supplement_typ
   ]
 }
 
-function calculateDataCompletenessScore(exams: any[]): number {
-  if (!exams || exams.length === 0) return 0
-  
+function calculateDataCompletenessScore(exams: any[], questionnaireResponses: any[]): number {
   const requiredTypes = {
     'blood_pressure': { minMeasurements: 2, weight: 20 },
     'body_composition': { minMeasurements: 3, weight: 25 },
     'blood_test': { minMeasurements: 5, weight: 35 }
   }
   
-  const questionnaireWeight = 20
-  let totalScore = questionnaireWeight // Assume questionnaire is complete
+  let totalScore = 0
   
-  Object.keys(requiredTypes).forEach(type => {
-    const typeExams = exams.filter((e: any) => e.exam_type === type)
-    const config = requiredTypes[type as keyof typeof requiredTypes]
-    
-    if (typeExams.length > 0) {
-      // Count measurements from exam data
-      const totalMeasurements = typeExams.reduce((sum: number, exam: any) => {
-        const measurements = exam.measurements?.split(',').length || 0
-        return sum + measurements
-      }, 0)
+  // Calculate exam data score (up to 80 points)
+  if (exams && exams.length > 0) {
+    Object.keys(requiredTypes).forEach(type => {
+      const typeExams = exams.filter((e: any) => e.exam_type === type)
+      const config = requiredTypes[type as keyof typeof requiredTypes]
       
-      const avgMeasurements = totalMeasurements / typeExams.length
-      const completenessRatio = Math.min(1, avgMeasurements / config.minMeasurements)
-      totalScore += config.weight * completenessRatio
-    }
-  })
+      if (typeExams.length > 0) {
+        // Count measurements from exam data
+        const totalMeasurements = typeExams.reduce((sum: number, exam: any) => {
+          const measurements = exam.measurements?.split(',').length || 0
+          return sum + measurements
+        }, 0)
+        
+        const avgMeasurements = totalMeasurements / typeExams.length
+        const completenessRatio = Math.min(1, avgMeasurements / config.minMeasurements)
+        totalScore += config.weight * completenessRatio
+      }
+    })
+  }
+  
+  // Calculate questionnaire score (20 points if complete)
+  const questionnaireWeight = 20
+  if (questionnaireResponses && questionnaireResponses.length > 0) {
+    const expectedQuestions = 50
+    const actualQuestions = questionnaireResponses.length
+    const questionnaireRatio = Math.min(1, actualQuestions / expectedQuestions)
+    totalScore += questionnaireWeight * questionnaireRatio
+  }
   
   return Math.round(totalScore)
 }
