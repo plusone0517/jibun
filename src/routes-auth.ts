@@ -219,15 +219,6 @@ authRoutes.get('/login', (c) => {
                     </p>
                 </div>
 
-                <!-- Test Account Info -->
-                <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p class="text-sm font-bold text-yellow-800 mb-2">
-                        <i class="fas fa-info-circle mr-1"></i>テストアカウント
-                    </p>
-                    <p class="text-xs text-gray-700">メール: <code class="bg-white px-2 py-1 rounded">testuser@example.com</code></p>
-                    <p class="text-xs text-gray-700">パスワード: <code class="bg-white px-2 py-1 rounded">Test1234</code></p>
-                </div>
-
                 <div id="errorMessage" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
                     <strong class="font-bold">エラー！</strong>
                     <span class="block sm:inline" id="errorText"></span>
