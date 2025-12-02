@@ -1101,8 +1101,8 @@ ${questionnaireSummary}
         'INSERT INTO supplement_recommendations (analysis_result_id, supplement_name, supplement_type, dosage, frequency, reason, priority) VALUES (?, ?, ?, ?, ?, ?, ?)'
       ).bind(
         analysisId,
-        supplement.name,
-        supplement.type,
+        supplement.supplement_name,
+        supplement.supplement_type,
         supplement.dosage,
         supplement.frequency,
         supplement.reason,

@@ -219,6 +219,12 @@ authRoutes.get('/login', (c) => {
                     </p>
                 </div>
 
+                <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                    <a href="/admin/login" class="text-sm text-gray-600 hover:text-gray-800 flex items-center justify-center">
+                        <i class="fas fa-user-shield mr-2"></i>管理者の方はこちら
+                    </a>
+                </div>
+
                 <div id="errorMessage" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
                     <strong class="font-bold">エラー！</strong>
                     <span class="block sm:inline" id="errorText"></span>
