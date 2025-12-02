@@ -921,7 +921,9 @@ ${questionnaireSummary}
       labels: ['睡眠', '栄養', '運動', 'ストレス', '生活習慣', '検査値'],
       values: [70, 65, 60, 55, 75, 70] // Default values - in production, parse from AI response
     }
-    const supplements = parseSupplements(analysisText)
+    
+    // Get recommended supplements from master catalog based on health analysis
+    const supplements = await getRecommendedSupplements(db, healthAdvice, riskAssessment)
 
     // Calculate data completeness score
     const dataCompletenessScore = calculateDataCompletenessScore(examData.results)
@@ -997,32 +999,117 @@ function extractSection(text: string, sectionName: string): string {
   return '解析結果を取得できませんでした'
 }
 
-function parseSupplements(text: string): Array<{name: string, type: string, dosage: string, frequency: string, reason: string, priority: number}> {
-  // Default supplements if parsing fails
+async function getRecommendedSupplements(db: D1Database, healthAdvice: string, riskAssessment: string): Promise<Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}>> {
+  try {
+    // Get all supplements from master catalog
+    const supplements = await db.prepare(
+      'SELECT * FROM supplements_master WHERE is_active = 1 ORDER BY priority ASC, category'
+    ).all()
+
+    if (!supplements.results || supplements.results.length === 0) {
+      return getDefaultSupplements()
+    }
+
+    // Analyze health advice and risk assessment to select appropriate supplements
+    const selectedSupplements: any[] = []
+    const adviceText = (healthAdvice + ' ' + riskAssessment).toLowerCase()
+
+    // Priority 1: Always recommend these essential supplements
+    const essentialCategories = ['ビタミン', 'ミネラル', '脂質']
+    const essentials = supplements.results.filter((s: any) => 
+      essentialCategories.includes(s.category) && s.priority === 1
+    )
+    
+    // Select 2-3 essential supplements
+    essentials.slice(0, 3).forEach((supp: any) => {
+      selectedSupplements.push({
+        supplement_name: supp.product_name,
+        supplement_type: supp.category,
+        dosage: supp.content_amount,
+        frequency: '1日1回',
+        reason: supp.recommended_for || supp.description,
+        priority: 1
+      })
+    })
+
+    // Add condition-specific supplements based on health analysis
+    const conditionMap = {
+      '血圧': ['クリルオイル', '第三リン酸Mg'],
+      '血糖': ['菊芋イヌリン', 'イヌリン'],
+      '疲労': ['アミノ酸ブレンド', 'EAA原末', 'B群ミックス7種類'],
+      '免疫': ['リポソーム型ビタミンC', 'ビタミンD3+グルコン酸亜鉛+シクロデキストリン', 'スピルリナ'],
+      '腸': ['アカシアパウダー', 'イヌリン', '菊芋イヌリン'],
+      '抗酸化': ['ザクロペースト', 'スピルリナ', 'リポソーム型ビタミンC'],
+      '脳': ['マインドリバイブ', 'クリルオイル'],
+      '炎症': ['クリルオイル', 'リポソーム型βカリオフィレン']
+    }
+
+    Object.entries(conditionMap).forEach(([condition, productNames]) => {
+      if (adviceText.includes(condition) && selectedSupplements.length < 6) {
+        productNames.forEach(name => {
+          const supp = supplements.results.find((s: any) => s.product_name === name)
+          if (supp && !selectedSupplements.find((ss: any) => ss.supplement_name === supp.product_name)) {
+            selectedSupplements.push({
+              supplement_name: supp.product_name,
+              supplement_type: supp.category,
+              dosage: supp.content_amount,
+              frequency: '1日1〜2回',
+              reason: supp.recommended_for || supp.description,
+              priority: 2
+            })
+          }
+        })
+      }
+    })
+
+    // Ensure we have at least 3 supplements
+    if (selectedSupplements.length < 3) {
+      supplements.results.slice(0, 5 - selectedSupplements.length).forEach((supp: any) => {
+        if (!selectedSupplements.find((ss: any) => ss.supplement_name === supp.product_name)) {
+          selectedSupplements.push({
+            supplement_name: supp.product_name,
+            supplement_type: supp.category,
+            dosage: supp.content_amount,
+            frequency: '1日1回',
+            reason: supp.recommended_for || supp.description,
+            priority: supp.priority
+          })
+        }
+      })
+    }
+
+    return selectedSupplements.slice(0, 6) // Maximum 6 supplements
+  } catch (error) {
+    console.error('Error getting recommended supplements:', error)
+    return getDefaultSupplements()
+  }
+}
+
+function getDefaultSupplements(): Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}> {
   return [
     {
-      name: 'マルチビタミン',
-      type: 'ビタミン',
-      dosage: '1錠',
+      supplement_name: 'ビタミンミックス11種類',
+      supplement_type: 'ビタミン',
+      dosage: '360mg',
       frequency: '1日1回',
-      reason: '全般的な栄養バランスをサポート',
+      reason: '全般的な健康維持、エネルギー代謝',
       priority: 1
     },
     {
-      name: 'オメガ3（EPA/DHA）',
-      type: '脂肪酸',
-      dosage: '1000mg',
+      supplement_name: 'クリルオイル',
+      supplement_type: '脂質',
+      dosage: '250mg',
       frequency: '1日1回',
-      reason: '心血管健康と抗炎症作用',
+      reason: '心血管健康、脳機能、抗炎症',
       priority: 1
     },
     {
-      name: 'ビタミンD',
-      type: 'ビタミン',
-      dosage: '2000IU',
+      supplement_name: 'ビタミンD3+グルコン酸亜鉛+シクロデキストリン',
+      supplement_type: 'ビタミン',
+      dosage: '1カプセル',
       frequency: '1日1回',
-      reason: '骨の健康と免疫機能サポート',
-      priority: 2
+      reason: '骨の健康、免疫力向上',
+      priority: 1
     }
   ]
 }
