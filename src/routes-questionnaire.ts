@@ -89,7 +89,55 @@ questionnaireRoutes.get('/', (c) => {
         <script>
             const questions = ${questionsJSON};
             let currentQuestion = 0;
-            const answers = {};
+            let answers = {};
+
+            // Load saved answers from localStorage
+            function loadSavedAnswers() {
+                try {
+                    const saved = localStorage.getItem('questionnaire_answers');
+                    if (saved) {
+                        answers = JSON.parse(saved);
+                        console.log('Loaded saved answers:', Object.keys(answers).length, 'questions');
+                        
+                        // Show notification if there are saved answers
+                        if (Object.keys(answers).length > 0) {
+                            const notification = document.createElement('div');
+                            notification.className = 'bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4';
+                            notification.innerHTML = \`
+                                <div class="flex justify-between items-center">
+                                    <span><i class="fas fa-info-circle mr-2"></i>前回の回答（\${Object.keys(answers).length}問）を復元しました</span>
+                                    <button onclick="clearSavedAnswers()" class="text-blue-700 hover:text-blue-900 font-bold">
+                                        <i class="fas fa-trash mr-1"></i>クリア
+                                    </button>
+                                </div>
+                            \`;
+                            document.querySelector('main > div').insertBefore(notification, document.querySelector('main > div').firstChild);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading saved answers:', error);
+                }
+            }
+
+            // Save answers to localStorage
+            function saveAnswersToLocalStorage() {
+                try {
+                    localStorage.setItem('questionnaire_answers', JSON.stringify(answers));
+                } catch (error) {
+                    console.error('Error saving answers:', error);
+                }
+            }
+
+            // Clear saved answers
+            function clearSavedAnswers() {
+                if (confirm('保存された回答をすべてクリアしますか？')) {
+                    localStorage.removeItem('questionnaire_answers');
+                    answers = {};
+                    currentQuestion = 0;
+                    displayQuestion(0);
+                    location.reload();
+                }
+            }
 
             function displayQuestion(index) {
                 const question = questions[index];
@@ -143,6 +191,7 @@ questionnaireRoutes.get('/', (c) => {
             function selectAnswer(questionNumber, answer) {
                 answers[questionNumber] = answer;
                 updateProgress();
+                saveAnswersToLocalStorage(); // Auto-save on every answer
             }
 
             function updateProgress() {
@@ -213,6 +262,8 @@ questionnaireRoutes.get('/', (c) => {
                     });
 
                     if (response.data.success) {
+                        // Clear saved answers on successful submission
+                        localStorage.removeItem('questionnaire_answers');
                         showSuccess();
                         setTimeout(() => {
                             window.location.href = '/analysis';
@@ -239,6 +290,7 @@ questionnaireRoutes.get('/', (c) => {
             }
 
             // Initialize
+            loadSavedAnswers(); // Load saved answers first
             displayQuestion(0);
         </script>
     </body>

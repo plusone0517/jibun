@@ -160,21 +160,21 @@ dashboardRoutes.get('/', async (c) => {
                 const limitedAnalyses = analyses.slice(0, 5);
                 
                 container.innerHTML = limitedAnalyses.map(analysis => \`
-                    <div class="border-l-4 border-purple-500 pl-4 py-2">
+                    <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-purple-50 transition cursor-pointer" onclick="window.location.href='/analysis'">
                         <div class="flex justify-between items-center">
                             <div>
-                                <p class="font-bold">健康スコア: \${analysis.overall_score.toFixed(0)}</p>
+                                <p class="font-bold">健康スコア: \${analysis.overall_score.toFixed(0)}点</p>
                                 <p class="text-sm text-gray-600">\${new Date(analysis.analysis_date).toLocaleDateString('ja-JP')}</p>
                             </div>
-                            <a href="/analysis/view/\${analysis.id}" class="text-purple-600 hover:text-purple-700">
-                                <i class="fas fa-eye"></i>
-                            </a>
+                            <div class="text-purple-600">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
                         </div>
                     </div>
                 \`).join('');
 
                 if (analyses.length > 5) {
-                    container.innerHTML += '<p class="text-sm text-gray-500 text-center mt-3">他 ' + (analyses.length - 5) + ' 件</p>';
+                    container.innerHTML += '<div class="text-center mt-4"><a href="/analysis" class="text-blue-600 hover:text-blue-700 font-bold">すべての解析結果を見る（' + analyses.length + '件）</a></div>';
                 }
             }
 
