@@ -87,11 +87,24 @@ analysisRoutes.get('/', (c) => {
                 </div>
             </div>
 
-            <!-- Loading state -->
-            <div id="loadingState" class="bg-white rounded-lg shadow-lg p-8 text-center">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                <p class="text-gray-600">AI解析を実行中...</p>
-                <p class="text-sm text-gray-500 mt-2">数秒お待ちください</p>
+            <!-- Loading state (initially hidden) -->
+            <div id="loadingState" class="hidden bg-white rounded-lg shadow-lg p-8 text-center">
+                <div class="flex flex-col items-center">
+                    <!-- Pulsing brain animation instead of spinning -->
+                    <div class="relative mb-6">
+                        <div class="text-6xl animate-pulse">🧠</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin opacity-30"></div>
+                        </div>
+                    </div>
+                    <p class="text-xl font-bold text-gray-800 mb-2">AI解析を実行中...</p>
+                    <p class="text-sm text-gray-600">健康データを分析しています</p>
+                    <div class="mt-4 flex space-x-1">
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Results container (initially hidden) -->
