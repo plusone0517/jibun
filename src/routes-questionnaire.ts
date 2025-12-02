@@ -99,7 +99,7 @@ questionnaireRoutes.get('/', (c) => {
                     <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition \${answers[question.number] === option ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}">
                         <input type="radio" name="q\${question.number}" value="\${option}" class="mr-3 w-5 h-5" 
                             \${answers[question.number] === option ? 'checked' : ''}
-                            onchange="selectAnswer(\${question.number}, '\${option.replace(/'/g, "\\\\'")}')">
+                            onchange="selectAnswer(\${question.number}, this.value)">
                         <span class="text-lg">\${option}</span>
                     </label>
                 \`).join('');
@@ -192,6 +192,14 @@ questionnaireRoutes.get('/', (c) => {
                         return;
                     }
 
+                    // Get current user
+                    const userResponse = await axios.get('/api/auth/me');
+                    if (!userResponse.data.success) {
+                        showError('ログインが必要です');
+                        return;
+                    }
+                    const userId = userResponse.data.user.id;
+
                     const responses = questions.map(q => ({
                         question_number: q.number,
                         question_text: q.text,
@@ -200,7 +208,7 @@ questionnaireRoutes.get('/', (c) => {
                     }));
 
                     const response = await axios.post('/api/questionnaire', {
-                        user_id: 1,
+                        user_id: userId,
                         responses: responses
                     });
 

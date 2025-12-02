@@ -226,6 +226,41 @@ app.get('/exam', (c) => {
         <main class="max-w-4xl mx-auto px-4 pb-12">
             <h2 class="text-3xl font-bold text-gray-800 mb-8">検査データ入力</h2>
 
+            <!-- OCR Section -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 mb-6 border-2 border-purple-200">
+                <h3 class="text-xl font-bold text-purple-800 mb-4">
+                    <i class="fas fa-camera mr-2"></i>
+                    📸 検査結果を撮影して自動入力
+                </h3>
+                <p class="text-gray-700 mb-4">
+                    病院や健康診断の検査結果用紙を撮影すると、AIが自動で読み取って入力します
+                </p>
+                
+                <div class="flex flex-col gap-4">
+                    <div class="flex gap-2">
+                        <label class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition cursor-pointer text-center font-bold">
+                            <i class="fas fa-camera mr-2"></i>カメラで撮影
+                            <input type="file" id="examImageCamera" accept="image/*" capture="camera" class="hidden" onchange="handleImageUpload(this)">
+                        </label>
+                        <label class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition cursor-pointer text-center font-bold">
+                            <i class="fas fa-folder-open mr-2"></i>ファイルを選択
+                            <input type="file" id="examImageFile" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
+                        </label>
+                    </div>
+                    
+                    <div id="imagePreviewContainer" class="hidden">
+                        <img id="imagePreview" class="w-full max-h-96 object-contain rounded-lg border-2 border-gray-300 mb-3">
+                        <button onclick="analyzeImage()" id="analyzeBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-bold">
+                            <i class="fas fa-magic mr-2"></i>AIで解析する
+                        </button>
+                        <div id="analyzeProgress" class="hidden mt-3 text-center">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                            <p class="text-gray-600 mt-2">AI解析中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                 <div class="mb-6">
                     <label class="block text-sm font-bold text-gray-700 mb-2">検査日</label>
@@ -760,6 +795,80 @@ app.get('/exam', (c) => {
                 }
             }
 
+            // OCR functionality
+            let selectedImageFile = null;
+
+            function handleImageUpload(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                selectedImageFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            async function analyzeImage() {
+                if (!selectedImageFile) return;
+
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                const progress = document.getElementById('analyzeProgress');
+                
+                analyzeBtn.disabled = true;
+                progress.classList.remove('hidden');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', selectedImageFile);
+
+                    const response = await axios.post('/api/analyze-exam-image', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+
+                    if (response.data.success) {
+                        const result = response.data.result;
+                        
+                        // Fill form with extracted data
+                        if (result.exam_date) {
+                            document.getElementById('examDate').value = result.exam_date;
+                        }
+                        
+                        if (result.exam_type) {
+                            document.getElementById('examType').value = result.exam_type;
+                            document.getElementById('examType').dispatchEvent(new Event('change'));
+                        }
+
+                        // Fill measurements
+                        if (result.measurements && result.measurements.length > 0) {
+                            setTimeout(() => {
+                                result.measurements.forEach(m => {
+                                    const input = document.getElementById(m.key);
+                                    if (input) {
+                                        input.value = m.value;
+                                    }
+                                });
+                            }, 100);
+                        }
+
+                        alert('✅ 検査結果を読み取りました！内容を確認してください。');
+                        window.scrollTo({ top: 400, behavior: 'smooth' });
+                    } else {
+                        alert('❌ 解析に失敗しました: ' + (response.data.error || '不明なエラー'));
+                    }
+                } catch (error) {
+                    console.error('Error analyzing image:', error);
+                    alert('❌ 解析中にエラーが発生しました: ' + (error.response?.data?.error || error.message));
+                } finally {
+                    analyzeBtn.disabled = false;
+                    progress.classList.add('hidden');
+                }
+            }
+
             // Load history and custom item suggestions on page load
             loadExamHistory();
             loadCustomItemSuggestions().then(() => {
@@ -846,6 +955,104 @@ app.get('/api/custom-items/:userId', async (c) => {
     return c.json({ success: true, items: results })
   } catch (error) {
     console.error('Error fetching custom items:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Analyze exam image with OCR (OpenAI GPT-4o Vision)
+app.post('/api/analyze-exam-image', async (c) => {
+  try {
+    const openaiApiKey = c.env.OPENAI_API_KEY
+    if (!openaiApiKey) {
+      return c.json({ success: false, error: 'OpenAI APIキーが設定されていません' }, 500)
+    }
+
+    const formData = await c.req.formData()
+    const imageFile = formData.get('image') as File
+    
+    if (!imageFile) {
+      return c.json({ success: false, error: '画像ファイルが必要です' }, 400)
+    }
+
+    // Convert image to base64
+    const arrayBuffer = await imageFile.arrayBuffer()
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const mimeType = imageFile.type || 'image/jpeg'
+
+    // Call OpenAI GPT-4o Vision API
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `この画像は医療検査結果です。以下のJSON形式で抽出してください：
+{
+  "exam_date": "YYYY-MM-DD形式の検査日（不明な場合は今日の日付）",
+  "exam_type": "blood_pressure | body_composition | blood_test | custom（最も適切なタイプ）",
+  "measurements": [
+    {"key": "systolic_bp", "value": "135", "unit": "mmHg"},
+    {"key": "diastolic_bp", "value": "88", "unit": "mmHg"}
+  ]
+}
+
+血圧の場合: systolic_bp, diastolic_bp, pulse
+体組成の場合: weight, body_fat, muscle_mass, bmi
+血液検査の場合: blood_sugar, hba1c, total_cholesterol, ldl_cholesterol, hdl_cholesterol, triglycerides, ast, alt
+
+数値のみを抽出し、単位は分けてください。JSON形式のみを返してください。`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`
+              }
+            }
+          ]
+        }],
+        max_tokens: 1000,
+        temperature: 0.1
+      })
+    })
+
+    if (!aiResponse.ok) {
+      const errorData = await aiResponse.json()
+      console.error('OpenAI API error:', errorData)
+      return c.json({ 
+        success: false, 
+        error: `AI解析に失敗しました: ${errorData.error?.message || 'Unknown error'}`
+      }, 500)
+    }
+
+    const aiData = await aiResponse.json()
+    const resultText = aiData.choices[0].message.content
+    
+    // Parse JSON from response
+    let result
+    try {
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = resultText.match(/\`\`\`json\n([\s\S]*?)\n\`\`\`/) || 
+                       resultText.match(/\`\`\`\n([\s\S]*?)\n\`\`\`/) ||
+                       [null, resultText]
+      result = JSON.parse(jsonMatch[1] || resultText)
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Raw text:', resultText)
+      return c.json({ 
+        success: false, 
+        error: '解析結果の形式が不正です。画像を確認してください。'
+      }, 500)
+    }
+
+    return c.json({ success: true, result })
+  } catch (error) {
+    console.error('Error analyzing exam image:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
