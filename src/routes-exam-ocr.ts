@@ -82,6 +82,31 @@ examOcrRoutes.get('/', (c) => {
             </div>
 
             <!-- OCR Data Preview Form -->
+            <!-- OCR Results Display (text format) -->
+            <div id="ocrResults" class="hidden bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                    ✅ OCR読み取り結果
+                </h3>
+                <p class="text-green-600 mb-6">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    データを自動保存しました。AI解析ですぐに使用できます。
+                </p>
+                
+                <div id="ocrResultContent" class="bg-gray-50 rounded-lg p-6 space-y-4">
+                    <!-- Results will be populated here -->
+                </div>
+                
+                <div class="mt-6 flex gap-4">
+                    <a href="/analysis" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition text-center font-bold">
+                        <i class="fas fa-robot mr-2"></i>AI解析を実行
+                    </a>
+                    <button onclick="resetOCR()" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-bold">
+                        <i class="fas fa-redo mr-2"></i>別の画像を解析
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Keep old form hidden for compatibility -->
             <div id="ocrDataForm" class="hidden bg-white rounded-lg shadow-lg p-8 mb-6">
                 <h3 class="text-2xl font-bold text-gray-800 mb-4">
                     📋 読み取り結果を確認
@@ -288,29 +313,29 @@ examOcrRoutes.get('/', (c) => {
                     });
 
                     if (response.data.success) {
-                        // Fill form with OCR results
                         const data = response.data.result;
-                        document.getElementById('examDate').value = data.exam_date || new Date().toISOString().split('T')[0];
-                        document.getElementById('examType').value = data.exam_type || 'blood_pressure';
                         
-                        // Switch to correct form
-                        switchExamType();
-                        
-                        // Fill measurements
-                        if (data.measurements && data.measurements.length > 0) {
-                            data.measurements.forEach(m => {
-                                const field = document.getElementById(m.key);
-                                if (field) {
-                                    field.value = m.value;
-                                }
+                        // Automatically save to database
+                        try {
+                            const saveResponse = await axios.post('/api/exam', {
+                                user_id: currentUser.id,
+                                exam_date: data.exam_date || new Date().toISOString().split('T')[0],
+                                exam_type: data.exam_type || 'blood_test',
+                                measurements: data.measurements || [],
+                                data_source: 'ocr'
                             });
-                        }
 
-                        // Show form
-                        document.getElementById('ocrDataForm').classList.remove('hidden');
-                        document.getElementById('ocrDataForm').scrollIntoView({ behavior: 'smooth' });
-                        
-                        showSuccess('検査結果を読み取りました！内容を確認してください。');
+                            if (saveResponse.data.success) {
+                                // Display OCR results as text
+                                displayOCRResults(data);
+                                showSuccess('✅ OCRで検査結果を読み取り、自動保存しました！AI解析ですぐに使用できます。');
+                            } else {
+                                showError('データの保存に失敗しました: ' + saveResponse.data.error);
+                            }
+                        } catch (saveError) {
+                            console.error('Save error:', saveError);
+                            showError('データの保存中にエラーが発生しました');
+                        }
                     } else {
                         showError(response.data.error || 'OCR解析に失敗しました');
                     }
@@ -605,6 +630,83 @@ examOcrRoutes.get('/', (c) => {
                 document.getElementById('errorText').textContent = message;
                 el.classList.remove('hidden');
                 setTimeout(() => el.classList.add('hidden'), 5000);
+            }
+
+            // Display OCR results as text
+            function displayOCRResults(data) {
+                const container = document.getElementById('ocrResultContent');
+                const examTypeNames = {
+                    'blood_pressure': '血圧測定',
+                    'body_composition': '体組成測定',
+                    'blood_test': '血液検査',
+                    'custom': 'カスタム検査'
+                };
+                
+                const measurementNames = {
+                    'systolic_bp': '収縮期血圧',
+                    'diastolic_bp': '拡張期血圧',
+                    'pulse': '脈拍',
+                    'weight': '体重',
+                    'body_fat': '体脂肪率',
+                    'muscle_mass': '筋肉量',
+                    'bmi': 'BMI',
+                    'blood_sugar': '血糖値',
+                    'hba1c': 'HbA1c',
+                    'total_cholesterol': '総コレステロール',
+                    'ldl_cholesterol': 'LDLコレステロール',
+                    'hdl_cholesterol': 'HDLコレステロール',
+                    'triglycerides': '中性脂肪',
+                    'ast': 'AST',
+                    'alt': 'ALT'
+                };
+
+                let html = \`
+                    <div class="mb-4">
+                        <div class="text-sm text-gray-600 mb-1">検査日</div>
+                        <div class="text-lg font-bold text-gray-800">\${data.exam_date || '不明'}</div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-sm text-gray-600 mb-1">検査タイプ</div>
+                        <div class="text-lg font-bold text-blue-600">\${examTypeNames[data.exam_type] || data.exam_type}</div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <div class="text-sm text-gray-600 mb-3">測定値</div>
+                        <div class="grid md:grid-cols-2 gap-3">
+                \`;
+
+                if (data.measurements && data.measurements.length > 0) {
+                    data.measurements.forEach(m => {
+                        const name = measurementNames[m.key] || m.key;
+                        html += \`
+                            <div class="bg-white p-3 rounded border border-gray-200">
+                                <div class="text-xs text-gray-500">\${name}</div>
+                                <div class="text-xl font-bold text-gray-800">\${m.value} <span class="text-sm text-gray-500">\${m.unit || ''}</span></div>
+                            </div>
+                        \`;
+                    });
+                } else {
+                    html += '<div class="col-span-2 text-gray-500 text-center py-4">測定値が読み取れませんでした</div>';
+                }
+
+                html += \`
+                        </div>
+                    </div>
+                \`;
+
+                container.innerHTML = html;
+                document.getElementById('ocrResults').classList.remove('hidden');
+                document.getElementById('imagePreviewContainer').classList.add('hidden');
+                document.getElementById('ocrResults').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Reset OCR form
+            function resetOCR() {
+                document.getElementById('ocrResults').classList.add('hidden');
+                document.getElementById('imagePreviewContainer').classList.add('hidden');
+                selectedImage = null;
+                const fileInput = document.getElementById('imageUpload');
+                if (fileInput) fileInput.value = '';
+                loadOcrHistory();
             }
 
             // Initialize
