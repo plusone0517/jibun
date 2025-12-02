@@ -31,6 +31,7 @@ app.route('/exam/ocr', examOcrRoutes)
 
 // Mount API routes
 app.route('/api/auth', authRoutes)
+app.route('/api', analysisRoutes)
 
 // ======================
 // HTML Pages Routes
@@ -1086,9 +1087,16 @@ app.get('/api/questionnaire/:userId', async (c) => {
 })
 
 // Perform AI analysis
-app.post('/api/analysis', async (c) => {
+async function performAnalysis(c: any) {
   try {
-    const { user_id } = await c.req.json()
+    // Support both GET (query param) and POST (body) requests
+    let user_id
+    if (c.req.method === 'GET') {
+      user_id = c.req.query('user_id')
+    } else {
+      const body = await c.req.json()
+      user_id = body.user_id
+    }
 
     if (!user_id) {
       return c.json({ success: false, error: 'ユーザーIDが必要です' }, 400)
@@ -1238,7 +1246,10 @@ ${questionnaireSummary}
     console.error('Error performing analysis:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
-})
+}
+
+app.get('/api/analysis', performAnalysis)
+app.post('/api/analysis', performAnalysis)
 
 // Helper functions for parsing AI response
 function parseScore(text: string): number {
@@ -1263,10 +1274,10 @@ function extractSection(text: string, sectionName: string): string {
 }
 
 function parseSupplements(text: string): Array<{name: string, type: string, dosage: string, frequency: string, reason: string, priority: number}> {
-  // Default supplements if parsing fails
+  // Default supplements if parsing fails (use names from master data)
   return [
     {
-      name: 'マルチビタミン',
+      name: 'ビタミンミックス11種類',
       type: 'ビタミン',
       dosage: '1錠',
       frequency: '1日1回',
@@ -1274,19 +1285,19 @@ function parseSupplements(text: string): Array<{name: string, type: string, dosa
       priority: 1
     },
     {
-      name: 'オメガ3（EPA/DHA）',
+      name: 'クリルオイル',
       type: '脂肪酸',
-      dosage: '1000mg',
+      dosage: '250mg',
       frequency: '1日1回',
-      reason: '心血管健康と抗炎症作用',
+      reason: '心血管健康と抗炎症作用をサポート',
       priority: 1
     },
     {
-      name: 'ビタミンD',
+      name: 'ビタミンD3+グルコン酸亜鉛+シクロデキストリン',
       type: 'ビタミン',
-      dosage: '2000IU',
+      dosage: '1カプセル',
       frequency: '1日1回',
-      reason: '骨の健康と免疫機能サポート',
+      reason: '骨の健康と免疫機能をサポート',
       priority: 2
     }
   ]
