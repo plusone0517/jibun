@@ -516,8 +516,13 @@ analysisRoutes.get('/', (c) => {
                 }
 
                 // Display supplements
+                console.log('Received supplements:', data.supplements);
                 if (data.supplements && data.supplements.length > 0) {
                     displaySupplements(data.supplements);
+                } else {
+                    console.warn('No supplements received from API');
+                    const container = document.getElementById('supplementRecommendations');
+                    container.innerHTML = '<p class="text-gray-500">サプリメントの推奨情報がありません。</p>';
                 }
             }
 
@@ -1091,7 +1096,7 @@ analysisRoutes.post('/api', async (c) => {
         messages: [
           {
             role: 'system',
-            content: 'あなたは医療機関監修の健康アドバイザーです。検査データと問診結果を分析し、適切な健康アドバイス、栄養指導、リスク評価、サプリメント提案を行ってください。'
+            content: 'あなたは医療機関監修の健康アドバイザーです。検査データと問診結果を分析し、客観的で一貫性のある健康アドバイス、栄養指導、リスク評価を行ってください。スコアは検査値の範囲に基づいて客観的に判定してください。'
           },
           {
             role: 'user',
@@ -1104,15 +1109,22 @@ ${examSummary}
 ${questionnaireSummary}
 
 以下の形式で回答してください：
-1. 総合健康スコア（0-100の数値）
-2. 健康アドバイス（具体的で実践可能なアドバイス）
-3. 栄養指導（食事に関する具体的な推奨）
-4. 健康リスク評価（懸念される点と予防策）
-5. レーダーチャート用データ（睡眠、栄養、運動、ストレス、生活習慣、検査値の6項目を0-100で評価）
-6. 推奨サプリメント（3-5種類、具体的な用量と理由）`
+
+【スコア算出基準】
+- 検査値が正常範囲内: 80-100点
+- 軽度の異常: 60-79点
+- 中等度の異常: 40-59点
+- 重度の異常: 0-39点
+※同じデータには常に同じスコアを付けてください
+
+【回答形式】
+1. 総合健康スコア: XX点（0-100の数値のみ）
+2. 健康アドバイス: （具体的で実践可能なアドバイス）
+3. 栄養指導: （食事に関する具体的な推奨）
+4. 健康リスク評価: （懸念される点と予防策）`
           }
         ],
-        temperature: 0.7,
+        temperature: 0.3,  // Lower temperature for more consistent results
         max_tokens: 2000
       })
     })
@@ -1141,6 +1153,8 @@ ${questionnaireSummary}
     
     // Get recommended supplements from master catalog based on health analysis
     const supplements = await getRecommendedSupplements(db, healthAdvice, riskAssessment)
+    console.log('Recommended supplements count:', supplements.length)
+    console.log('Supplements:', supplements.map(s => s.supplement_name))
 
     // Calculate data completeness score including questionnaire
     const dataCompletenessScore = calculateDataCompletenessScore(examData.results, questionnaireData.results)
