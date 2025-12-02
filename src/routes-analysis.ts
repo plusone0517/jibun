@@ -228,7 +228,7 @@ analysisRoutes.get('/', (c) => {
                 try {
                     // Check authentication
                     const authResponse = await axios.get('/api/auth/me');
-                    if (!authResponse.data.user) {
+                    if (!authResponse.data.success || !authResponse.data.user) {
                         window.location.href = '/auth/login';
                         return;
                     }
@@ -263,7 +263,18 @@ analysisRoutes.get('/', (c) => {
                     }
                 } catch (error) {
                     console.error('Error loading exam data:', error);
+                    // If auth error, redirect to login
+                    if (error.response && error.response.status === 401) {
+                        window.location.href = '/auth/login';
+                        return;
+                    }
                     document.getElementById('examListContainer').innerHTML = \`
+                        <p class="text-red-500 text-center py-4">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            データの読み込みに失敗しました: \${error.message}
+                        </p>
+                    \`;
+                    document.getElementById('questionnaireContainer').innerHTML = \`
                         <p class="text-red-500 text-center py-4">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
                             データの読み込みに失敗しました
@@ -436,8 +447,6 @@ analysisRoutes.get('/', (c) => {
                         parts.push(\`問診: \${questionnaireData.length}問\`);
                     }
                     summary.textContent = '選択中: ' + parts.join(' + ');
-                } else {
-                    button.innerHTML = \`<i class="fas fa-brain mr-2"></i>AI解析を開始する (\${selectedExamIds.length}件)\`;
                 }
             }
 
