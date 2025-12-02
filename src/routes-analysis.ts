@@ -1220,7 +1220,7 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
   try {
     // Get all supplements from master catalog
     const supplements = await db.prepare(
-      'SELECT * FROM supplements_master WHERE is_active = 1 ORDER BY priority ASC, category'
+      'SELECT * FROM supplements_master WHERE is_active = 1 ORDER BY supplement_category ASC, category'
     ).all()
 
     if (!supplements.results || supplements.results.length === 0) {
@@ -1231,17 +1231,17 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
     const selectedSupplements: any[] = []
     const adviceText = (healthAdvice + ' ' + riskAssessment).toLowerCase()
 
-    // Priority 1: Select ALL priority=1 supplements first
-    const essentials = supplements.results.filter((s: any) => s.priority === 1)
+    // Priority 1: Select ALL "必須栄養素" supplements first
+    const essentials = supplements.results.filter((s: any) => s.supplement_category === '必須栄養素')
     
-    // Add all priority=1 supplements (typically 3-4 essential ones)
+    // Add all essential nutrients (typically 3-4 essential ones)
     essentials.forEach((supp: any) => {
       selectedSupplements.push({
         supplement_name: supp.product_name,
         supplement_type: supp.category,
         dosage: supp.content_amount,
         frequency: '1日1回',
-        reason: '基本サプリメント: ' + (supp.recommended_for || supp.description),
+        reason: '必須栄養素: ' + (supp.recommended_for || supp.description),
         priority: 1
       })
     })

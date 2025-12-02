@@ -642,11 +642,11 @@ adminRoutes.get('/supplements', (c) => {
                         <option value="その他">その他</option>
                     </select>
 
-                    <select id="priorityFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
-                        <option value="">すべての優先度</option>
-                        <option value="1">優先度1 (必須)</option>
-                        <option value="2">優先度2</option>
-                        <option value="3">優先度3</option>
+                    <select id="supplementCategoryFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
+                        <option value="">すべてのサプリカテゴリー</option>
+                        <option value="必須栄養素">🌟 必須栄養素</option>
+                        <option value="機能性食品">⚡ 機能性食品</option>
+                        <option value="健康サポート">💚 健康サポート</option>
                     </select>
 
                     <select id="activeFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
@@ -672,7 +672,7 @@ adminRoutes.get('/supplements', (c) => {
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">形状</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">内容量</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">価格</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">優先度</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">サプリカテゴリー</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状態</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">推奨理由</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
@@ -743,9 +743,13 @@ adminRoutes.get('/supplements', (c) => {
                         ? '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">有効</span>'
                         : '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">無効</span>';
                     
-                    const priorityBadge = supp.priority === 1
-                        ? '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">必須</span>'
-                        : '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">P' + supp.priority + '</span>';
+                    const categoryBadgeConfig = {
+                        '必須栄養素': { color: 'bg-red-100 text-red-800', icon: '🌟' },
+                        '機能性食品': { color: 'bg-blue-100 text-blue-800', icon: '⚡' },
+                        '健康サポート': { color: 'bg-green-100 text-green-800', icon: '💚' }
+                    };
+                    const badgeConfig = categoryBadgeConfig[supp.supplement_category] || { color: 'bg-gray-100 text-gray-800', icon: '📦' };
+                    const categoryBadge = \`<span class="px-2 py-1 \${badgeConfig.color} rounded-full text-xs font-bold">\${badgeConfig.icon} \${supp.supplement_category || '健康サポート'}</span>\`;
 
                     const priceDisplay = supp.price ? '¥' + supp.price.toLocaleString() : '¥0';
 
@@ -757,7 +761,7 @@ adminRoutes.get('/supplements', (c) => {
                             <td class="px-4 py-3 text-sm">\${supp.form || '-'}</td>
                             <td class="px-4 py-3 text-sm">\${supp.content_amount || '-'}</td>
                             <td class="px-4 py-3 text-sm font-bold text-green-600">\${priceDisplay}</td>
-                            <td class="px-4 py-3 text-sm">\${priorityBadge}</td>
+                            <td class="px-4 py-3 text-sm">\${categoryBadge}</td>
                             <td class="px-4 py-3 text-sm">\${statusBadge}</td>
                             <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="\${supp.recommended_for || '-'}">
                                 \${supp.recommended_for || '-'}
@@ -775,7 +779,7 @@ adminRoutes.get('/supplements', (c) => {
 
             function filterSupplements() {
                 const category = document.getElementById('categoryFilter').value;
-                const priority = document.getElementById('priorityFilter').value;
+                const supplementCategory = document.getElementById('supplementCategoryFilter').value;
                 const active = document.getElementById('activeFilter').value;
 
                 let filtered = allSupplements;
@@ -784,8 +788,8 @@ adminRoutes.get('/supplements', (c) => {
                     filtered = filtered.filter(s => s.category === category);
                 }
 
-                if (priority) {
-                    filtered = filtered.filter(s => s.priority === parseInt(priority));
+                if (supplementCategory) {
+                    filtered = filtered.filter(s => s.supplement_category === supplementCategory);
                 }
 
                 if (active !== '') {
@@ -898,11 +902,11 @@ adminRoutes.get('/supplements/:id/edit', (c) => {
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">優先度 *</label>
-                            <select id="priority" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
-                                <option value="1">1 (必須)</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">サプリカテゴリー *</label>
+                            <select id="supplement_category" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="必須栄養素">必須栄養素</option>
+                                <option value="機能性食品">機能性食品</option>
+                                <option value="健康サポート">健康サポート</option>
                             </select>
                         </div>
 
@@ -969,7 +973,7 @@ adminRoutes.get('/supplements/:id/edit', (c) => {
                         document.getElementById('form').value = supp.form || '';
                         document.getElementById('content_amount').value = supp.content_amount || '';
                         document.getElementById('price').value = supp.price || 0;
-                        document.getElementById('priority').value = supp.priority || 1;
+                        document.getElementById('supplement_category').value = supp.supplement_category || '健康サポート';
                         document.getElementById('is_active').value = supp.is_active || 1;
                         document.getElementById('ingredients').value = supp.ingredients || '';
                         document.getElementById('description').value = supp.description || '';
@@ -997,7 +1001,7 @@ adminRoutes.get('/supplements/:id/edit', (c) => {
                     form: document.getElementById('form').value,
                     content_amount: document.getElementById('content_amount').value,
                     price: parseInt(document.getElementById('price').value) || 0,
-                    priority: parseInt(document.getElementById('priority').value),
+                    supplement_category: document.getElementById('supplement_category').value,
                     is_active: parseInt(document.getElementById('is_active').value),
                     ingredients: document.getElementById('ingredients').value,
                     description: document.getElementById('description').value,
