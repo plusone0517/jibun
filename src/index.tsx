@@ -977,9 +977,18 @@ app.post('/api/analyze-exam-image', async (c) => {
       return c.json({ success: false, error: '画像ファイルが必要です' }, 400)
     }
 
-    // Convert image to base64
+    // Convert image to base64 (handle large images without stack overflow)
     const arrayBuffer = await imageFile.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const bytes = new Uint8Array(arrayBuffer)
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    let binary = ''
+    const chunkSize = 8192
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length))
+      binary += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    const base64Image = btoa(binary)
     const mimeType = imageFile.type || 'image/jpeg'
 
     // Call OpenAI GPT-4o Vision API
