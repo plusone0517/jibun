@@ -671,9 +671,11 @@ adminRoutes.get('/supplements', (c) => {
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">カテゴリ</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">形状</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">内容量</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">価格</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">優先度</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状態</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">推奨理由</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                             </tr>
                         </thead>
                         <tbody id="supplementsTableBody" class="bg-white divide-y divide-gray-200">
@@ -732,7 +734,7 @@ adminRoutes.get('/supplements', (c) => {
                 const tbody = document.getElementById('supplementsTableBody');
                 
                 if (supplements.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">サプリメントが登録されていません</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-gray-500">サプリメントが登録されていません</td></tr>';
                     return;
                 }
 
@@ -745,6 +747,8 @@ adminRoutes.get('/supplements', (c) => {
                         ? '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">必須</span>'
                         : '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">P' + supp.priority + '</span>';
 
+                    const priceDisplay = supp.price ? '¥' + supp.price.toLocaleString() : '¥0';
+
                     return \`
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm">\${supp.product_code}</td>
@@ -752,10 +756,17 @@ adminRoutes.get('/supplements', (c) => {
                             <td class="px-4 py-3 text-sm">\${supp.category}</td>
                             <td class="px-4 py-3 text-sm">\${supp.form || '-'}</td>
                             <td class="px-4 py-3 text-sm">\${supp.content_amount || '-'}</td>
+                            <td class="px-4 py-3 text-sm font-bold text-green-600">\${priceDisplay}</td>
                             <td class="px-4 py-3 text-sm">\${priorityBadge}</td>
                             <td class="px-4 py-3 text-sm">\${statusBadge}</td>
                             <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="\${supp.recommended_for || '-'}">
                                 \${supp.recommended_for || '-'}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <button onclick="window.location.href='/admin/supplements/\${supp.id}/edit'" 
+                                    class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-edit"></i> 編集
+                                </button>
                             </td>
                         </tr>
                     \`;
@@ -796,6 +807,226 @@ adminRoutes.get('/supplements', (c) => {
             // Initialize
             checkAuth();
             loadSupplements();
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// Supplement edit page
+adminRoutes.get('/supplements/:id/edit', (c) => {
+  const supplementId = c.req.param('id')
+  
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>サプリ編集 - じぶんサプリ育成</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    </head>
+    <body class="bg-gray-100 min-h-screen">
+        <nav class="bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-bold">
+                        <i class="fas fa-edit mr-2"></i>
+                        サプリ編集
+                    </h1>
+                    <a href="/admin/supplements" class="hover:text-purple-200">
+                        <i class="fas fa-arrow-left mr-1"></i>一覧に戻る
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-4xl mx-auto p-6">
+            <div id="loadingMessage" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
+                <i class="fas fa-spinner fa-spin mr-2"></i>データを読み込み中...
+            </div>
+
+            <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <i class="fas fa-exclamation-triangle mr-2"></i><span id="errorText"></span>
+            </div>
+
+            <div id="successMessage" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                <i class="fas fa-check-circle mr-2"></i><span id="successText"></span>
+            </div>
+
+            <div id="editForm" class="hidden bg-white rounded-lg shadow-lg p-6">
+                <form id="supplementForm">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">商品コード</label>
+                            <input type="text" id="product_code" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" readonly>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">商品名 *</label>
+                            <input type="text" id="product_name" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">カテゴリ *</label>
+                            <select id="category" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="">選択してください</option>
+                                <option value="ビタミン">ビタミン</option>
+                                <option value="ミネラル">ミネラル</option>
+                                <option value="アミノ酸">アミノ酸</option>
+                                <option value="脂質">脂質</option>
+                                <option value="糖質">糖質</option>
+                                <option value="その他">その他</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">形状</label>
+                            <input type="text" id="form" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="例: カプセル、パウダー">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">内容量</label>
+                            <input type="text" id="content_amount" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="例: 60カプセル">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">価格(円) *</label>
+                            <input type="number" id="price" required min="0" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="2980">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">優先度 *</label>
+                            <select id="priority" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="1">1 (必須)</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">状態 *</label>
+                            <select id="is_active" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="1">有効</option>
+                                <option value="0">無効</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">成分</label>
+                        <textarea id="ingredients" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="主要成分を入力"></textarea>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">説明</label>
+                        <textarea id="description" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="商品説明を入力"></textarea>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">推奨理由</label>
+                        <textarea id="recommended_for" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="推奨理由を入力"></textarea>
+                    </div>
+
+                    <div class="mt-8 flex gap-4">
+                        <button type="submit" class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-bold">
+                            <i class="fas fa-save mr-2"></i>保存
+                        </button>
+                        <button type="button" onclick="window.location.href='/admin/supplements'" class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-bold">
+                            <i class="fas fa-times mr-2"></i>キャンセル
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <script>
+            const supplementId = ${supplementId};
+
+            async function checkAuth() {
+                try {
+                    const response = await axios.get('/api/admin/me');
+                    if (!response.data.success || !response.data.admin) {
+                        window.location.href = '/admin/login';
+                    }
+                } catch (error) {
+                    window.location.href = '/admin/login';
+                }
+            }
+
+            async function loadSupplement() {
+                try {
+                    const response = await axios.get(\`/api/admin/supplements/\${supplementId}\`);
+                    
+                    if (response.data.success && response.data.supplement) {
+                        const supp = response.data.supplement;
+                        
+                        document.getElementById('product_code').value = supp.product_code || '';
+                        document.getElementById('product_name').value = supp.product_name || '';
+                        document.getElementById('category').value = supp.category || '';
+                        document.getElementById('form').value = supp.form || '';
+                        document.getElementById('content_amount').value = supp.content_amount || '';
+                        document.getElementById('price').value = supp.price || 0;
+                        document.getElementById('priority').value = supp.priority || 1;
+                        document.getElementById('is_active').value = supp.is_active || 1;
+                        document.getElementById('ingredients').value = supp.ingredients || '';
+                        document.getElementById('description').value = supp.description || '';
+                        document.getElementById('recommended_for').value = supp.recommended_for || '';
+                        
+                        document.getElementById('loadingMessage').classList.add('hidden');
+                        document.getElementById('editForm').classList.remove('hidden');
+                    } else {
+                        throw new Error('サプリメントが見つかりません');
+                    }
+                } catch (error) {
+                    console.error('Error loading supplement:', error);
+                    document.getElementById('loadingMessage').classList.add('hidden');
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                    document.getElementById('errorText').textContent = 'サプリメントデータの読み込みに失敗しました: ' + error.message;
+                }
+            }
+
+            document.getElementById('supplementForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const data = {
+                    product_name: document.getElementById('product_name').value,
+                    category: document.getElementById('category').value,
+                    form: document.getElementById('form').value,
+                    content_amount: document.getElementById('content_amount').value,
+                    price: parseInt(document.getElementById('price').value) || 0,
+                    priority: parseInt(document.getElementById('priority').value),
+                    is_active: parseInt(document.getElementById('is_active').value),
+                    ingredients: document.getElementById('ingredients').value,
+                    description: document.getElementById('description').value,
+                    recommended_for: document.getElementById('recommended_for').value
+                };
+
+                try {
+                    const response = await axios.put(\`/api/admin/supplements/\${supplementId}\`, data);
+                    
+                    if (response.data.success) {
+                        document.getElementById('successMessage').classList.remove('hidden');
+                        document.getElementById('successText').textContent = '保存しました!';
+                        
+                        setTimeout(() => {
+                            window.location.href = '/admin/supplements';
+                        }, 1500);
+                    } else {
+                        throw new Error(response.data.error || '保存に失敗しました');
+                    }
+                } catch (error) {
+                    console.error('Error saving supplement:', error);
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                    document.getElementById('errorText').textContent = '保存に失敗しました: ' + (error.response?.data?.error || error.message);
+                }
+            });
+
+            // Initialize
+            checkAuth();
+            loadSupplement();
         </script>
     </body>
     </html>

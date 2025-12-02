@@ -1887,6 +1887,70 @@ app.get('/api/admin/supplements', async (c) => {
   }
 })
 
+// Get specific supplement (admin only)
+app.get('/api/admin/supplements/:id', async (c) => {
+  try {
+    const supplementId = c.req.param('id')
+    const db = c.env.DB
+
+    const supplement = await db.prepare(
+      'SELECT * FROM supplements_master WHERE id = ?'
+    ).bind(supplementId).first()
+
+    if (!supplement) {
+      return c.json({ success: false, error: 'サプリメントが見つかりません' }, 404)
+    }
+
+    return c.json({ success: true, supplement })
+  } catch (error) {
+    console.error('Error fetching supplement:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Update supplement (admin only)
+app.put('/api/admin/supplements/:id', async (c) => {
+  try {
+    const supplementId = c.req.param('id')
+    const db = c.env.DB
+    const body = await c.req.json()
+
+    // Update supplement
+    await db.prepare(`
+      UPDATE supplements_master 
+      SET product_name = ?, 
+          category = ?, 
+          form = ?, 
+          content_amount = ?, 
+          price = ?,
+          priority = ?, 
+          is_active = ?, 
+          ingredients = ?, 
+          description = ?, 
+          recommended_for = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      body.product_name,
+      body.category,
+      body.form || null,
+      body.content_amount || null,
+      body.price || 0,
+      body.priority,
+      body.is_active,
+      body.ingredients || null,
+      body.description || null,
+      body.recommended_for || null,
+      supplementId
+    ).run()
+
+    return c.json({ success: true, message: '更新しました' })
+  } catch (error) {
+    console.error('Error updating supplement:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // ======================
 // Supplements Master API
 // ======================
