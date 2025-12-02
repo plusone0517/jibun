@@ -114,17 +114,6 @@ dashboardRoutes.get('/', async (c) => {
                 </a>
             </div>
 
-            <!-- Analysis History -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-xl font-bold mb-4 flex items-center">
-                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>
-                    解析結果履歴
-                </h3>
-                <div id="analysisHistory" class="space-y-3">
-                    <p class="text-gray-500 text-center py-4">データを読み込み中...</p>
-                </div>
-            </div>
-
             <!-- Profile Section -->
             <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
                 <h3 class="text-xl font-bold mb-4 flex items-center">
@@ -163,45 +152,14 @@ dashboardRoutes.get('/', async (c) => {
             }
 
             async function loadDashboardData() {
-                // Load analysis history
-                try {
-                    const analysisResponse = await axios.get(\`/api/analysis-history/\${currentUser.id}\`);
-                    if (analysisResponse.data.success && analysisResponse.data.analyses.length > 0) {
-                        displayAnalysisHistory(analysisResponse.data.analyses);
-                    } else {
-                        document.getElementById('analysisHistory').innerHTML = '<p class="text-gray-500 text-center py-4">まだ解析結果がありません</p>';
-                    }
-                } catch (error) {
-                    console.error('Error loading analysis history:', error);
-                }
-
                 // Display profile
                 displayProfile();
             }
 
-            function displayAnalysisHistory(analyses) {
-                const container = document.getElementById('analysisHistory');
-                const limitedAnalyses = analyses.slice(0, 5);
-                
-                container.innerHTML = limitedAnalyses.map(analysis => \`
-                    <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-purple-50 transition">
-                        <div class="flex justify-between items-center">
-                            <div class="flex-1 cursor-pointer" onclick="window.location.href='/analysis'">
-                                <p class="font-bold">健康スコア: \${analysis.overall_score.toFixed(0)}点</p>
-                                <p class="text-sm text-gray-600">\${new Date(analysis.analysis_date).toLocaleDateString('ja-JP')} \${new Date(analysis.analysis_date).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="event.stopPropagation(); deleteAnalysis(\${analysis.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-50 transition" title="削除">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <div class="text-purple-600 cursor-pointer" onclick="window.location.href='/analysis'">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                \`).join('');
-
+            // Analysis history display removed - use /analysis-history page instead
+            
+            function displayAnalysisHistoryPlaceholder(analyses) {
+                // Removed function - redirected to /analysis-history page
                 if (analyses.length > 5) {
                     container.innerHTML += '<div class="text-center mt-4"><a href="/analysis" class="text-blue-600 hover:text-blue-700 font-bold">すべての解析結果を見る（' + analyses.length + '件）</a></div>';
                 }

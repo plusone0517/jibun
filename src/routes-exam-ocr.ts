@@ -53,18 +53,11 @@ examOcrRoutes.get('/', (c) => {
                 </p>
                 
                 <div class="flex flex-col gap-4">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <label class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition cursor-pointer text-center font-bold shadow-lg">
-                            <i class="fas fa-camera mr-2 text-xl"></i>
-                            <span class="text-lg">カメラで撮影</span>
-                            <input type="file" id="examImageCamera" accept="image/*" capture="camera" class="hidden" onchange="handleImageUpload(this)">
-                        </label>
-                        <label class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer text-center font-bold shadow-lg">
-                            <i class="fas fa-folder-open mr-2 text-xl"></i>
-                            <span class="text-lg">ファイルを選択</span>
-                            <input type="file" id="examImageFile" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
-                        </label>
-                    </div>
+                    <label class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-6 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer text-center font-bold shadow-lg">
+                        <i class="fas fa-folder-open mr-2 text-2xl"></i>
+                        <span class="text-xl">ファイルを選択</span>
+                        <input type="file" id="imageUpload" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(this)">
+                    </label>
                     
                     <div id="imagePreviewContainer" class="hidden">
                         <div class="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
