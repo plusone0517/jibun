@@ -1343,20 +1343,27 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
     })
     
     // Step 3: Fill remaining slots with highly-rated supplements
+    console.log('Step 3: Current supplement count:', selectedSupplements.length)
+    
     if (selectedSupplements.length < 6) {
-      const functionalFoods = supplements.results.filter((s: any) => 
-        s.supplement_category === '機能性食品' &&
+      // Get all remaining supplements (not yet selected)
+      const remainingSupps = supplements.results.filter((s: any) => 
         !selectedSupplements.find((ss: any) => ss.supplement_name === s.product_name)
       )
       
-      const healthSupport = supplements.results.filter((s: any) => 
-        s.supplement_category === '健康サポート' &&
-        !selectedSupplements.find((ss: any) => ss.supplement_name === s.product_name)
-      )
+      console.log('Remaining supplements available:', remainingSupps.length)
       
-      // Add functional foods first, then health support
-      const remainingSupps = [...functionalFoods, ...healthSupport]
+      // Prioritize by category: 必須栄養素 > 機能性食品 > 健康サポート
+      remainingSupps.sort((a: any, b: any) => {
+        const categoryOrder: any = {
+          '必須栄養素': 1,
+          '機能性食品': 2,
+          '健康サポート': 3
+        }
+        return (categoryOrder[a.supplement_category] || 4) - (categoryOrder[b.supplement_category] || 4)
+      })
       
+      // Add supplements until we reach 6
       for (const supp of remainingSupps) {
         if (selectedSupplements.length >= 6) break
         
@@ -1365,12 +1372,15 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
           supplement_type: supp.category,
           dosage: supp.content_amount,
           frequency: '1日1回',
-          reason: '総合的な健康維持: ' + (supp.recommended_for || supp.description),
+          reason: '総合的な健康維持: ' + (supp.recommended_for || supp.description || '健康サポート'),
           priority: 3
         })
       }
     }
 
+    console.log('Final supplement count:', selectedSupplements.length)
+    console.log('Selected supplements:', selectedSupplements.map(s => s.supplement_name))
+    
     // Return exactly 6 supplements (or all available if less than 6)
     return selectedSupplements.slice(0, 6)
   } catch (error) {
@@ -1380,6 +1390,7 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
 }
 
 function getDefaultSupplements(): Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}> {
+  console.log('Using default supplements fallback')
   return [
     {
       supplement_name: 'ビタミンミックス11種類',
@@ -1387,6 +1398,14 @@ function getDefaultSupplements(): Array<{supplement_name: string, supplement_typ
       dosage: '360mg',
       frequency: '1日1回',
       reason: '全般的な健康維持、エネルギー代謝',
+      priority: 1
+    },
+    {
+      supplement_name: 'ミネラルミックス7種類',
+      supplement_type: 'ミネラル',
+      dosage: '1日分',
+      frequency: '1日1回',
+      reason: '基本的なミネラル補給',
       priority: 1
     },
     {
@@ -1404,6 +1423,22 @@ function getDefaultSupplements(): Array<{supplement_name: string, supplement_typ
       frequency: '1日1回',
       reason: '骨の健康、免疫力向上',
       priority: 1
+    },
+    {
+      supplement_name: 'リポソーム型ビタミンC',
+      supplement_type: 'ビタミン',
+      dosage: '1包',
+      frequency: '1日1回',
+      reason: '免疫力サポート、抗酸化',
+      priority: 2
+    },
+    {
+      supplement_name: 'アミノ酸ブレンド',
+      supplement_type: 'アミノ酸',
+      dosage: '5g',
+      frequency: '1日1回',
+      reason: '疲労回復、筋肉維持',
+      priority: 2
     }
   ]
 }
