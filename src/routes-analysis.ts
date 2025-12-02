@@ -615,20 +615,85 @@ analysisRoutes.get('/', (c) => {
                 });
             }
 
-            function displaySupplements(supplements) {
+            async function displaySupplements(supplements) {
                 const container = document.getElementById('supplementRecommendations');
-                container.innerHTML = supplements.map(supp => \`
-                    <div class="border-2 border-purple-200 rounded-lg p-4 hover:border-purple-400 transition">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-lg text-purple-700">\${supp.supplement_name}</h4>
-                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">\${getPriorityLabel(supp.priority)}</span>
+                
+                // Load master data for supplements
+                try {
+                    const masterResponse = await axios.get('/api/supplements/master');
+                    const masterData = masterResponse.data.supplements || [];
+                    
+                    // Create a map of master data by product name for quick lookup
+                    const masterMap = {};
+                    masterData.forEach(item => {
+                        masterMap[item.product_name] = item;
+                    });
+                    
+                    // Display supplements with enhanced information from master data
+                    container.innerHTML = supplements.map(supp => {
+                        const masterInfo = masterMap[supp.supplement_name] || {};
+                        const categoryColor = {
+                            '糖質': 'bg-amber-50 border-amber-300',
+                            '脂質': 'bg-blue-50 border-blue-300',
+                            'アミノ酸': 'bg-red-50 border-red-300',
+                            'ビタミン': 'bg-yellow-50 border-yellow-300',
+                            'ミネラル': 'bg-green-50 border-green-300',
+                            '食物繊維': 'bg-teal-50 border-teal-300',
+                            'フィトケミカル': 'bg-purple-50 border-purple-300',
+                            'プレバイオ': 'bg-pink-50 border-pink-300'
+                        }[masterInfo.category] || 'bg-gray-50 border-gray-300';
+                        
+                        return \`
+                            <div class="border-2 \${categoryColor} rounded-lg p-4 hover:shadow-md transition">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-lg text-gray-800">\${supp.supplement_name}</h4>
+                                        \${masterInfo.product_code ? \`<span class="text-xs text-gray-500">[\${masterInfo.product_code}]</span>\` : ''}
+                                    </div>
+                                    <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">
+                                        \${getPriorityLabel(supp.priority)}
+                                    </span>
+                                </div>
+                                
+                                \${masterInfo.category ? \`
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-xs bg-white px-2 py-1 rounded border font-semibold">
+                                            \${masterInfo.category}
+                                        </span>
+                                        <span class="text-xs text-gray-600">
+                                            \${masterInfo.form} | \${masterInfo.content_amount}
+                                        </span>
+                                    </div>
+                                \` : ''}
+                                
+                                \${masterInfo.description ? \`
+                                    <p class="text-sm text-gray-700 mb-2 italic">\${masterInfo.description}</p>
+                                \` : ''}
+                                
+                                <p class="text-sm mb-1"><strong>用量:</strong> \${supp.dosage || masterInfo.content_amount || '-'}</p>
+                                <p class="text-sm mb-2"><strong>頻度:</strong> \${supp.frequency || '-'}</p>
+                                <p class="text-sm text-gray-700 bg-white p-2 rounded">
+                                    <strong>推奨理由:</strong> \${supp.reason || masterInfo.recommended_for || '-'}
+                                </p>
+                            </div>
+                        \`;
+                    }).join('');
+                } catch (error) {
+                    console.error('Error loading supplement master data:', error);
+                    // Fallback to basic display
+                    container.innerHTML = supplements.map(supp => \`
+                        <div class="border-2 border-purple-200 rounded-lg p-4 hover:border-purple-400 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-lg text-purple-700">\${supp.supplement_name}</h4>
+                                <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">\${getPriorityLabel(supp.priority)}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">\${supp.supplement_type || ''}</p>
+                            <p class="text-sm mb-2"><strong>用量:</strong> \${supp.dosage || '-'}</p>
+                            <p class="text-sm mb-2"><strong>頻度:</strong> \${supp.frequency || '-'}</p>
+                            <p class="text-sm text-gray-700"><strong>推奨理由:</strong> \${supp.reason || '-'}</p>
                         </div>
-                        <p class="text-sm text-gray-600 mb-2">\${supp.supplement_type || ''}</p>
-                        <p class="text-sm mb-2"><strong>用量:</strong> \${supp.dosage || '-'}</p>
-                        <p class="text-sm mb-2"><strong>頻度:</strong> \${supp.frequency || '-'}</p>
-                        <p class="text-sm text-gray-700"><strong>推奨理由:</strong> \${supp.reason || '-'}</p>
-                    </div>
-                \`).join('');
+                    \`).join('');
+                }
             }
 
             function getPriorityLabel(priority) {

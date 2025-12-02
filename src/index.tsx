@@ -1957,4 +1957,80 @@ app.get('/api/admin/user/:userId', async (c) => {
   }
 })
 
+// ======================
+// Supplements Master API
+// ======================
+
+// Get all supplements from master catalog
+app.get('/api/supplements/master', async (c) => {
+  try {
+    const category = c.req.query('category')
+    const db = c.env.DB
+
+    let query = 'SELECT * FROM supplements_master WHERE is_active = 1'
+    let params: any[] = []
+
+    if (category) {
+      query += ' AND category = ?'
+      params.push(category)
+    }
+
+    query += ' ORDER BY priority ASC, category, product_code'
+
+    const result = await db.prepare(query).bind(...params).all()
+
+    return c.json({
+      success: true,
+      supplements: result.results || [],
+      count: result.results?.length || 0
+    })
+  } catch (error) {
+    console.error('Error fetching supplements master:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get supplement categories
+app.get('/api/supplements/categories', async (c) => {
+  try {
+    const db = c.env.DB
+
+    const result = await db.prepare(
+      'SELECT DISTINCT category FROM supplements_master WHERE is_active = 1 ORDER BY category'
+    ).all()
+
+    return c.json({
+      success: true,
+      categories: result.results || []
+    })
+  } catch (error) {
+    console.error('Error fetching supplement categories:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get supplement by product code
+app.get('/api/supplements/master/:code', async (c) => {
+  try {
+    const productCode = c.req.param('code')
+    const db = c.env.DB
+
+    const result = await db.prepare(
+      'SELECT * FROM supplements_master WHERE product_code = ? AND is_active = 1'
+    ).bind(productCode).first()
+
+    if (!result) {
+      return c.json({ success: false, error: 'サプリメントが見つかりません' }, 404)
+    }
+
+    return c.json({
+      success: true,
+      supplement: result
+    })
+  } catch (error) {
+    console.error('Error fetching supplement:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 export default app
