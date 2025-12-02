@@ -18,7 +18,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Enable CORS
 app.use('/api/*', cors())
 
-// Mount sub-routes
+// Mount sub-routes for pages
 app.route('/auth', authRoutes)
 app.route('/password-reset', passwordResetRoutes)
 app.route('/dashboard', dashboardRoutes)
@@ -26,6 +26,9 @@ app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
 app.route('/history', historyRoutes)
 app.route('/admin', adminRoutes)
+
+// Mount API routes
+app.route('/api/auth', authRoutes)
 
 // ======================
 // HTML Pages Routes
