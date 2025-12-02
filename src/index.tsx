@@ -582,12 +582,19 @@ app.get('/exam', (c) => {
                         document.querySelector('button[onclick="saveExamData()"]').innerHTML = '<i class="fas fa-save mr-2"></i>保存する';
                     } else {
                         // Create new exam
+                        // Check if this data came from OCR
+                        const dataSource = window.isOcrData ? 'ocr' : 'manual';
+                        
                         response = await axios.post('/api/exam', {
                             user_id: currentUserId,
                             exam_date: examDate,
                             exam_type: examType,
-                            measurements: measurements
+                            measurements: measurements,
+                            data_source: dataSource
                         });
+                        
+                        // Reset OCR flag after save
+                        window.isOcrData = false;
                     }
 
                     if (response.data.success) {
@@ -682,33 +689,101 @@ app.get('/exam', (c) => {
                     return;
                 }
 
-                container.innerHTML = filteredExams.slice(0, 10).map(exam => \`
-                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <span class="font-bold text-lg text-gray-800">\${exam.exam_date}</span>
-                                </div>
-                                <div class="text-sm text-gray-600 space-y-1">
-                                    \${exam.measurements.map(m => \`
-                                        <div class="flex justify-between">
-                                            <span>\${formatMeasurementKey(m.measurement_key)}:</span>
-                                            <span class="font-semibold">\${m.measurement_value} \${m.measurement_unit}</span>
+                // Separate OCR and manual data
+                const ocrExams = filteredExams.filter(exam => exam.data_source === 'ocr');
+                const manualExams = filteredExams.filter(exam => exam.data_source !== 'ocr');
+
+                let html = '';
+
+                // Display OCR data section
+                if (ocrExams.length > 0) {
+                    html += \`
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-purple-700 mb-3 flex items-center">
+                                <i class="fas fa-camera mr-2"></i>
+                                📸 OCRで読み取ったデータ (\${ocrExams.length}件)
+                            </h3>
+                            <div class="space-y-3">
+                                \${ocrExams.slice(0, 10).map(exam => \`
+                                    <div class="border-2 border-purple-200 rounded-lg p-4 hover:bg-purple-50 transition bg-gradient-to-r from-purple-50 to-pink-50">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-3 mb-2">
+                                                    <span class="font-bold text-lg text-gray-800">\${exam.exam_date}</span>
+                                                    <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">
+                                                        <i class="fas fa-magic mr-1"></i>AI解析
+                                                    </span>
+                                                </div>
+                                                <div class="text-sm text-gray-600 space-y-1">
+                                                    \${exam.measurements.map(m => \`
+                                                        <div class="flex justify-between">
+                                                            <span>\${formatMeasurementKey(m.measurement_key)}:</span>
+                                                            <span class="font-semibold">\${m.measurement_value} \${m.measurement_unit}</span>
+                                                        </div>
+                                                    \`).join('')}
+                                                </div>
+                                            </div>
+                                            <div class="flex space-x-2 ml-4">
+                                                <button onclick="editExam(\${exam.id})" class="text-purple-600 hover:text-purple-800 px-3 py-1 rounded border border-purple-600 hover:bg-purple-100">
+                                                    <i class="fas fa-edit mr-1"></i>編集
+                                                </button>
+                                                <button onclick="deleteExam(\${exam.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded border border-red-600 hover:bg-red-50">
+                                                    <i class="fas fa-trash mr-1"></i>削除
+                                                </button>
+                                            </div>
                                         </div>
-                                    \`).join('')}
-                                </div>
-                            </div>
-                            <div class="flex space-x-2 ml-4">
-                                <button onclick="editExam(\${exam.id})" class="text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-600 hover:bg-blue-50">
-                                    <i class="fas fa-edit mr-1"></i>編集
-                                </button>
-                                <button onclick="deleteExam(\${exam.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded border border-red-600 hover:bg-red-50">
-                                    <i class="fas fa-trash mr-1"></i>削除
-                                </button>
+                                    </div>
+                                \`).join('')}
                             </div>
                         </div>
-                    </div>
-                \`).join('');
+                    \`;
+                }
+
+                // Display manual data section
+                if (manualExams.length > 0) {
+                    html += \`
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-blue-700 mb-3 flex items-center">
+                                <i class="fas fa-keyboard mr-2"></i>
+                                ✍️ 手入力データ (\${manualExams.length}件)
+                            </h3>
+                            <div class="space-y-3">
+                                \${manualExams.slice(0, 10).map(exam => \`
+                                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-3 mb-2">
+                                                    <span class="font-bold text-lg text-gray-800">\${exam.exam_date}</span>
+                                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold">
+                                                        <i class="fas fa-pen mr-1"></i>手入力
+                                                    </span>
+                                                </div>
+                                                <div class="text-sm text-gray-600 space-y-1">
+                                                    \${exam.measurements.map(m => \`
+                                                        <div class="flex justify-between">
+                                                            <span>\${formatMeasurementKey(m.measurement_key)}:</span>
+                                                            <span class="font-semibold">\${m.measurement_value} \${m.measurement_unit}</span>
+                                                        </div>
+                                                    \`).join('')}
+                                                </div>
+                                            </div>
+                                            <div class="flex space-x-2 ml-4">
+                                                <button onclick="editExam(\${exam.id})" class="text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-600 hover:bg-blue-50">
+                                                    <i class="fas fa-edit mr-1"></i>編集
+                                                </button>
+                                                <button onclick="deleteExam(\${exam.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded border border-red-600 hover:bg-red-50">
+                                                    <i class="fas fa-trash mr-1"></i>削除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                \`).join('')}
+                            </div>
+                        </div>
+                    \`;
+                }
+
+                container.innerHTML = html;
 
                 if (filteredExams.length > 10) {
                     container.innerHTML += \`
@@ -858,6 +933,9 @@ app.get('/exam', (c) => {
                             }, 100);
                         }
 
+                        // Mark this data as OCR-sourced
+                        window.isOcrData = true;
+                        
                         alert('✅ 検査結果を読み取りました！内容を確認してください。');
                         window.scrollTo({ top: 400, behavior: 'smooth' });
                     } else {
@@ -891,18 +969,21 @@ app.get('/exam', (c) => {
 // Save exam data
 app.post('/api/exam', async (c) => {
   try {
-    const { user_id, exam_date, exam_type, measurements } = await c.req.json()
+    const { user_id, exam_date, exam_type, measurements, data_source } = await c.req.json()
 
     if (!user_id || !exam_date || !exam_type || !measurements || measurements.length === 0) {
       return c.json({ success: false, error: '必須項目が不足しています' }, 400)
     }
 
     const db = c.env.DB
+    
+    // Set data_source to 'manual' if not provided
+    const source = data_source || 'manual'
 
-    // Insert exam_data record
+    // Insert exam_data record with data_source
     const examResult = await db.prepare(
-      'INSERT INTO exam_data (user_id, exam_date, exam_type) VALUES (?, ?, ?)'
-    ).bind(user_id, exam_date, exam_type).run()
+      'INSERT INTO exam_data (user_id, exam_date, exam_type, data_source) VALUES (?, ?, ?, ?)'
+    ).bind(user_id, exam_date, exam_type, source).run()
 
     const examDataId = examResult.meta.last_row_id
 
