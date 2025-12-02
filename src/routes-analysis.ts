@@ -42,8 +42,27 @@ analysisRoutes.get('/', (c) => {
 
         <main class="max-w-7xl mx-auto px-4 pb-12">
             <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">AI健康解析結果</h2>
-                <p class="text-gray-600">あなたの検査データと問診結果を総合的に分析しました</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">AI健康解析</h2>
+                <p class="text-gray-600">解析に使用する検査データを選択してください</p>
+            </div>
+
+            <!-- Exam Data Selection -->
+            <div id="examSelectionSection" class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-check-square text-blue-600 mr-3"></i>
+                    検査データを選択
+                </h3>
+                <div id="examListContainer" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        検査データを読み込み中...
+                    </p>
+                </div>
+                <div class="mt-6 flex justify-center">
+                    <button onclick="startAnalysis()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-brain mr-2"></i>AI解析を開始する
+                    </button>
+                </div>
             </div>
 
             <!-- Loading state -->
@@ -142,11 +161,149 @@ analysisRoutes.get('/', (c) => {
             let analysisData = null;
             let radarChartInstance = null;
 
-            async function loadAnalysis() {
+            let selectedExamIds = [];
+            let allExamData = [];
+            let currentUser = null;
+
+            async function loadExamData() {
                 try {
-                    // Request AI analysis
+                    // Check authentication
+                    const authResponse = await axios.get('/api/auth/me');
+                    if (!authResponse.data.user) {
+                        window.location.href = '/auth/login';
+                        return;
+                    }
+                    currentUser = authResponse.data.user;
+
+                    // Load exam data
+                    const examResponse = await axios.get(\`/api/history/\${currentUser.id}\`);
+                    if (examResponse.data.success) {
+                        allExamData = examResponse.data.exams || [];
+                        displayExamList(allExamData);
+                    } else {
+                        document.getElementById('examListContainer').innerHTML = \`
+                            <p class="text-gray-500 text-center py-4">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                検査データがありません。<a href="/exam" class="text-blue-600 hover:underline">検査データを入力する</a>
+                            </p>
+                        \`;
+                    }
+                } catch (error) {
+                    console.error('Error loading exam data:', error);
+                    document.getElementById('examListContainer').innerHTML = \`
+                        <p class="text-red-500 text-center py-4">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            データの読み込みに失敗しました
+                        </p>
+                    \`;
+                }
+            }
+
+            function displayExamList(exams) {
+                const container = document.getElementById('examListContainer');
+                
+                if (!exams || exams.length === 0) {
+                    container.innerHTML = \`
+                        <p class="text-gray-500 text-center py-4">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            検査データがありません。<a href="/exam" class="text-blue-600 hover:underline">検査データを入力する</a>
+                        </p>
+                    \`;
+                    return;
+                }
+
+                const examTypeNames = {
+                    'blood_pressure': '血圧測定',
+                    'body_composition': '体組成測定',
+                    'blood_test': '血液検査',
+                    'custom': 'カスタム検査'
+                };
+
+                container.innerHTML = exams.map(exam => \`
+                    <div class="border rounded-lg p-4 hover:bg-gray-50 transition">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" 
+                                   class="exam-checkbox mt-1 mr-3 w-5 h-5 text-blue-600"
+                                   data-exam-id="\${exam.id}"
+                                   onchange="toggleExamSelection(\${exam.id})"
+                                   checked>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="font-bold text-gray-800">\${exam.exam_date}</span>
+                                    <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                        \${examTypeNames[exam.exam_type] || exam.exam_type}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    \${exam.measurements.map(m => \`
+                                        <div class="flex justify-between">
+                                            <span>\${formatMeasurementKey(m.measurement_key)}:</span>
+                                            <span class="font-semibold">\${m.measurement_value} \${m.measurement_unit}</span>
+                                        </div>
+                                    \`).join('')}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                \`).join('');
+
+                // Initially select all exams
+                selectedExamIds = exams.map(e => e.id);
+                updateAnalysisButton();
+            }
+
+            function formatMeasurementKey(key) {
+                const keyMap = {
+                    'systolic_bp': '収縮期血圧',
+                    'diastolic_bp': '拡張期血圧',
+                    'pulse': '脈拍',
+                    'weight': '体重',
+                    'body_fat': '体脂肪率',
+                    'muscle_mass': '筋肉量',
+                    'bmi': 'BMI',
+                    'blood_sugar': '血糖値',
+                    'hba1c': 'HbA1c',
+                    'total_cholesterol': '総コレステロール',
+                    'ldl_cholesterol': 'LDLコレステロール',
+                    'hdl_cholesterol': 'HDLコレステロール',
+                    'triglycerides': '中性脂肪',
+                    'ast': 'AST',
+                    'alt': 'ALT'
+                };
+                return keyMap[key] || key;
+            }
+
+            function toggleExamSelection(examId) {
+                const index = selectedExamIds.indexOf(examId);
+                if (index > -1) {
+                    selectedExamIds.splice(index, 1);
+                } else {
+                    selectedExamIds.push(examId);
+                }
+                updateAnalysisButton();
+            }
+
+            function updateAnalysisButton() {
+                const button = document.querySelector('button[onclick="startAnalysis()"]');
+                button.disabled = selectedExamIds.length === 0;
+                
+                if (selectedExamIds.length === 0) {
+                    button.innerHTML = '<i class="fas fa-brain mr-2"></i>検査データを選択してください';
+                } else {
+                    button.innerHTML = \`<i class="fas fa-brain mr-2"></i>AI解析を開始する (\${selectedExamIds.length}件)\`;
+                }
+            }
+
+            async function startAnalysis() {
+                // Hide selection section
+                document.getElementById('examSelectionSection').style.display = 'none';
+                document.getElementById('loadingState').classList.remove('hidden');
+
+                try {
+                    // Perform AI analysis with selected exam data
                     const response = await axios.post('/api/analysis', {
-                        user_id: 1
+                        user_id: currentUser.id,
+                        selected_exam_ids: selectedExamIds
                     });
 
                     if (response.data.success) {
@@ -400,8 +557,8 @@ analysisRoutes.get('/', (c) => {
                 document.getElementById('errorMessage').classList.remove('hidden');
             }
 
-            // Load analysis on page load
-            window.addEventListener('load', loadAnalysis);
+            // Load exam data on page load
+            window.addEventListener('load', loadExamData);
         </script>
     </body>
     </html>
@@ -411,7 +568,7 @@ analysisRoutes.get('/', (c) => {
 // Perform AI analysis
 analysisRoutes.post('/api', async (c) => {
   try {
-    const { user_id } = await c.req.json()
+    const { user_id, selected_exam_ids } = await c.req.json()
 
     if (!user_id) {
       return c.json({ success: false, error: 'ユーザーIDが必要です' }, 400)
@@ -424,15 +581,30 @@ analysisRoutes.post('/api', async (c) => {
       return c.json({ success: false, error: 'OpenAI APIキーが設定されていません。.dev.varsファイルを確認してください。' }, 500)
     }
 
-    // Fetch exam data
-    const examData = await db.prepare(
-      `SELECT ed.*, GROUP_CONCAT(em.measurement_key || ':' || em.measurement_value || em.measurement_unit) as measurements
-       FROM exam_data ed
-       LEFT JOIN exam_measurements em ON ed.id = em.exam_data_id
-       WHERE ed.user_id = ?
-       GROUP BY ed.id
-       ORDER BY ed.exam_date DESC`
-    ).bind(user_id).all()
+    // Fetch exam data - either selected exams or all exams
+    let examData;
+    if (selected_exam_ids && selected_exam_ids.length > 0) {
+      // Use selected exams only
+      const placeholders = selected_exam_ids.map(() => '?').join(',')
+      examData = await db.prepare(
+        `SELECT ed.*, GROUP_CONCAT(em.measurement_key || ':' || em.measurement_value || em.measurement_unit) as measurements
+         FROM exam_data ed
+         LEFT JOIN exam_measurements em ON ed.id = em.exam_data_id
+         WHERE ed.user_id = ? AND ed.id IN (${placeholders})
+         GROUP BY ed.id
+         ORDER BY ed.exam_date DESC`
+      ).bind(user_id, ...selected_exam_ids).all()
+    } else {
+      // Use all exams if no selection
+      examData = await db.prepare(
+        `SELECT ed.*, GROUP_CONCAT(em.measurement_key || ':' || em.measurement_value || em.measurement_unit) as measurements
+         FROM exam_data ed
+         LEFT JOIN exam_measurements em ON ed.id = em.exam_data_id
+         WHERE ed.user_id = ?
+         GROUP BY ed.id
+         ORDER BY ed.exam_date DESC`
+      ).bind(user_id).all()
+    }
 
     // Fetch questionnaire responses
     const questionnaireData = await db.prepare(
