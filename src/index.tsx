@@ -6,6 +6,7 @@ import { authRoutes } from './routes-auth'
 import { dashboardRoutes } from './routes-dashboard'
 import { passwordResetRoutes } from './routes-password-reset'
 import { historyRoutes } from './routes-history'
+import { analysisHistoryRoutes } from './routes-analysis-history'
 import { adminRoutes } from './routes-admin'
 import { examOcrRoutes } from './routes-exam-ocr'
 
@@ -25,6 +26,7 @@ app.route('/password-reset', passwordResetRoutes)
 app.route('/dashboard', dashboardRoutes)
 app.route('/questionnaire', questionnaireRoutes)
 app.route('/analysis', analysisRoutes)
+app.route('/analysis-history', analysisHistoryRoutes)
 app.route('/history', historyRoutes)
 app.route('/admin', adminRoutes)
 app.route('/exam/ocr', examOcrRoutes)

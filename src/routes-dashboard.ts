@@ -102,11 +102,15 @@ dashboardRoutes.get('/', async (c) => {
                 </div>
             </div>
 
-            <!-- History Chart Button -->
-            <div class="mb-8">
-                <a href="/history" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg text-lg font-bold">
+            <!-- History Buttons -->
+            <div class="mb-8 grid md:grid-cols-2 gap-4">
+                <a href="/history" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg text-lg font-bold text-center">
                     <i class="fas fa-chart-line mr-2"></i>
-                    3年間の検査履歴グラフを表示
+                    検査履歴グラフ
+                </a>
+                <a href="/analysis-history" class="inline-block bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-8 py-4 rounded-lg hover:from-indigo-700 hover:to-pink-700 transition shadow-lg text-lg font-bold text-center">
+                    <i class="fas fa-history mr-2"></i>
+                    AI解析履歴
                 </a>
             </div>
 
