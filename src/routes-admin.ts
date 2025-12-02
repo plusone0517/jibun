@@ -194,6 +194,24 @@ adminRoutes.get('/dashboard', (c) => {
                 </div>
             </div>
 
+            <!-- Management Links -->
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <a href="/admin/supplements" class="block">
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-6 hover:shadow-xl transition text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">
+                                    <i class="fas fa-pills mr-2"></i>
+                                    サプリマスター管理
+                                </h3>
+                                <p class="text-sm opacity-90">登録サプリの確認・編集・追加</p>
+                            </div>
+                            <i class="fas fa-chevron-right text-3xl"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
             <!-- Users Table -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-2xl font-bold mb-4">
@@ -523,6 +541,261 @@ adminRoutes.get('/user/:userId', (c) => {
             }
 
             loadUserDetail();
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// Supplement master management page
+adminRoutes.get('/supplements', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>サプリマスター管理 - じぶんサプリ育成</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    </head>
+    <body class="bg-gray-100 min-h-screen">
+        <nav class="bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-bold">
+                        <i class="fas fa-pills mr-2"></i>
+                        サプリマスター管理
+                    </h1>
+                    <div class="space-x-4">
+                        <a href="/admin/dashboard" class="hover:text-purple-200">
+                            <i class="fas fa-arrow-left mr-1"></i>ダッシュボードに戻る
+                        </a>
+                        <button onclick="logout()" class="hover:text-purple-200">
+                            <i class="fas fa-sign-out-alt mr-1"></i>ログアウト
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto p-6">
+            <!-- Loading Message -->
+            <div id="loadingMessage" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-6">
+                <i class="fas fa-spinner fa-spin mr-2"></i>データを読み込み中...
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <i class="fas fa-exclamation-triangle mr-2"></i><span id="errorText"></span>
+            </div>
+
+            <!-- Statistics -->
+            <div class="grid md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">総サプリ数</p>
+                            <p id="totalSupplements" class="text-3xl font-bold text-purple-600">0</p>
+                        </div>
+                        <i class="fas fa-pills text-4xl text-purple-600"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">有効サプリ</p>
+                            <p id="activeSupplements" class="text-3xl font-bold text-green-600">0</p>
+                        </div>
+                        <i class="fas fa-check-circle text-4xl text-green-600"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">無効サプリ</p>
+                            <p id="inactiveSupplements" class="text-3xl font-bold text-gray-600">0</p>
+                        </div>
+                        <i class="fas fa-times-circle text-4xl text-gray-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter and Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">
+                        <i class="fas fa-filter mr-2"></i>フィルター
+                    </h2>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <select id="categoryFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
+                        <option value="">すべてのカテゴリ</option>
+                        <option value="ビタミン">ビタミン</option>
+                        <option value="ミネラル">ミネラル</option>
+                        <option value="アミノ酸">アミノ酸</option>
+                        <option value="脂質">脂質</option>
+                        <option value="糖質">糖質</option>
+                        <option value="その他">その他</option>
+                    </select>
+
+                    <select id="priorityFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
+                        <option value="">すべての優先度</option>
+                        <option value="1">優先度1 (必須)</option>
+                        <option value="2">優先度2</option>
+                        <option value="3">優先度3</option>
+                    </select>
+
+                    <select id="activeFilter" class="border rounded-lg px-4 py-2" onchange="filterSupplements()">
+                        <option value="">すべて</option>
+                        <option value="1">有効のみ</option>
+                        <option value="0">無効のみ</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Supplements Table -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-4">
+                    <i class="fas fa-list mr-2"></i>サプリメント一覧
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品コード</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品名</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">カテゴリ</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">形状</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">内容量</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">優先度</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状態</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">推奨理由</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supplementsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            let allSupplements = [];
+
+            async function checkAuth() {
+                try {
+                    const response = await axios.get('/api/admin/me');
+                    if (!response.data.success || !response.data.admin) {
+                        window.location.href = '/admin/login';
+                    }
+                } catch (error) {
+                    window.location.href = '/admin/login';
+                }
+            }
+
+            async function loadSupplements() {
+                try {
+                    const response = await axios.get('/api/admin/supplements');
+                    
+                    if (response.data.success) {
+                        allSupplements = response.data.supplements || [];
+                        updateStatistics();
+                        displaySupplements(allSupplements);
+                        document.getElementById('loadingMessage').classList.add('hidden');
+                    } else {
+                        throw new Error('サプリメントデータの取得に失敗しました');
+                    }
+                } catch (error) {
+                    console.error('Error loading supplements:', error);
+                    document.getElementById('loadingMessage').classList.add('hidden');
+                    document.getElementById('errorMessage').classList.remove('hidden');
+                    document.getElementById('errorText').textContent = 'サプリメントデータの読み込みに失敗しました: ' + error.message;
+                }
+            }
+
+            function updateStatistics() {
+                const total = allSupplements.length;
+                const active = allSupplements.filter(s => s.is_active === 1).length;
+                const inactive = total - active;
+
+                document.getElementById('totalSupplements').textContent = total;
+                document.getElementById('activeSupplements').textContent = active;
+                document.getElementById('inactiveSupplements').textContent = inactive;
+            }
+
+            function displaySupplements(supplements) {
+                const tbody = document.getElementById('supplementsTableBody');
+                
+                if (supplements.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">サプリメントが登録されていません</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = supplements.map(supp => {
+                    const statusBadge = supp.is_active === 1
+                        ? '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">有効</span>'
+                        : '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">無効</span>';
+                    
+                    const priorityBadge = supp.priority === 1
+                        ? '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">必須</span>'
+                        : '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">P' + supp.priority + '</span>';
+
+                    return \`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm">\${supp.product_code}</td>
+                            <td class="px-4 py-3 text-sm font-medium">\${supp.product_name}</td>
+                            <td class="px-4 py-3 text-sm">\${supp.category}</td>
+                            <td class="px-4 py-3 text-sm">\${supp.form || '-'}</td>
+                            <td class="px-4 py-3 text-sm">\${supp.content_amount || '-'}</td>
+                            <td class="px-4 py-3 text-sm">\${priorityBadge}</td>
+                            <td class="px-4 py-3 text-sm">\${statusBadge}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title="\${supp.recommended_for || '-'}">
+                                \${supp.recommended_for || '-'}
+                            </td>
+                        </tr>
+                    \`;
+                }).join('');
+            }
+
+            function filterSupplements() {
+                const category = document.getElementById('categoryFilter').value;
+                const priority = document.getElementById('priorityFilter').value;
+                const active = document.getElementById('activeFilter').value;
+
+                let filtered = allSupplements;
+
+                if (category) {
+                    filtered = filtered.filter(s => s.category === category);
+                }
+
+                if (priority) {
+                    filtered = filtered.filter(s => s.priority === parseInt(priority));
+                }
+
+                if (active !== '') {
+                    filtered = filtered.filter(s => s.is_active === parseInt(active));
+                }
+
+                displaySupplements(filtered);
+            }
+
+            async function logout() {
+                try {
+                    await axios.post('/api/admin/logout');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                window.location.href = '/admin/login';
+            }
+
+            // Initialize
+            checkAuth();
+            loadSupplements();
         </script>
     </body>
     </html>

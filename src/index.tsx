@@ -1867,6 +1867,26 @@ app.get('/api/admin/user/:userId', async (c) => {
   }
 })
 
+// Get all supplements (admin only - includes inactive)
+app.get('/api/admin/supplements', async (c) => {
+  try {
+    const db = c.env.DB
+
+    // Get all supplements including inactive ones
+    const result = await db.prepare(
+      'SELECT * FROM supplements_master ORDER BY priority ASC, category, product_code'
+    ).all()
+
+    return c.json({
+      success: true,
+      supplements: result.results || []
+    })
+  } catch (error) {
+    console.error('Error fetching supplements:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // ======================
 // Supplements Master API
 // ======================
