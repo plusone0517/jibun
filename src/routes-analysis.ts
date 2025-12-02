@@ -19,7 +19,6 @@ analysisRoutes.get('/', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     </head>
@@ -153,14 +152,6 @@ analysisRoutes.get('/', (c) => {
                     </div>
                 </div>
 
-                <!-- Radar Chart -->
-                <div class="bg-white rounded-lg shadow-lg p-8 mb-6" id="radarChartSection">
-                    <h3 class="text-2xl font-bold mb-6 text-center">健康バランス レーダーチャート</h3>
-                    <div class="max-w-2xl mx-auto">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-
                 <!-- Health Advice -->
                 <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                     <h3 class="text-2xl font-bold mb-4 flex items-center">
@@ -231,7 +222,6 @@ analysisRoutes.get('/', (c) => {
 
         <script>
             let analysisData = null;
-            let radarChartInstance = null;
 
             let selectedExamIds = [];
             let allExamData = [];
@@ -510,11 +500,6 @@ analysisRoutes.get('/', (c) => {
                 document.getElementById('nutritionGuidance').textContent = data.nutrition_guidance;
                 document.getElementById('riskAssessment').textContent = data.risk_assessment;
 
-                // Display radar chart
-                if (data.radar_chart_data) {
-                    displayRadarChart(data.radar_chart_data);
-                }
-
                 // Display supplements
                 console.log('Full analysis data:', data);
                 console.log('Received supplements:', data.supplements);
@@ -740,56 +725,6 @@ analysisRoutes.get('/', (c) => {
                 }
             }
 
-            function displayRadarChart(radarData) {
-                const ctx = document.getElementById('radarChart').getContext('2d');
-                
-                if (radarChartInstance) {
-                    radarChartInstance.destroy();
-                }
-
-                radarChartInstance = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: radarData.labels,
-                        datasets: [{
-                            label: '健康スコア',
-                            data: radarData.values,
-                            fill: true,
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            borderColor: 'rgb(59, 130, 246)',
-                            pointBackgroundColor: 'rgb(59, 130, 246)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgb(59, 130, 246)'
-                        }]
-                    },
-                    options: {
-                        elements: {
-                            line: {
-                                borderWidth: 3
-                            }
-                        },
-                        scales: {
-                            r: {
-                                angleLines: {
-                                    display: true
-                                },
-                                suggestedMin: 0,
-                                suggestedMax: 100,
-                                ticks: {
-                                    stepSize: 20
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-
             let selectedSupplements = [];
 
             async function displaySupplements(supplements) {
@@ -808,7 +743,10 @@ analysisRoutes.get('/', (c) => {
                     
                     // Display supplements with enhanced information from master data
                     container.innerHTML = supplements.map((supp, index) => {
-                        const masterInfo = masterMap[supp.supplement_name] || {};
+                        // CRITICAL FIX: Handle both 'name' and 'supplement_name' for compatibility
+                        const suppName = supp.supplement_name || supp.name
+                        const suppType = supp.supplement_type || supp.type
+                        const masterInfo = masterMap[suppName] || {};
                         const price = masterInfo.price || 0;
                         const categoryColor = {
                             '糖質': 'bg-amber-50 border-amber-300',
@@ -827,7 +765,7 @@ analysisRoutes.get('/', (c) => {
                                     <div class="flex items-center pt-1">
                                         <input type="checkbox" 
                                             id="supp_\${index}" 
-                                            data-name="\${supp.supplement_name}"
+                                            data-name="\${suppName}"
                                             data-price="\${price}"
                                             onchange="toggleSupplement(this)"
                                             class="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
@@ -835,7 +773,7 @@ analysisRoutes.get('/', (c) => {
                                     <label for="supp_\${index}" class="flex-1 cursor-pointer">
                                         <div class="flex justify-between items-start mb-2">
                                             <div class="flex-1">
-                                                <h4 class="font-bold text-lg text-gray-800">\${supp.supplement_name}</h4>
+                                                <h4 class="font-bold text-lg text-gray-800">\${suppName}</h4>
                                                 \${masterInfo.product_code ? \`<span class="text-xs text-gray-500">[\${masterInfo.product_code}]</span>\` : ''}
                                             </div>
                                             <div class="flex flex-col items-end gap-1 ml-3">
@@ -1115,7 +1053,7 @@ analysisRoutes.post('/api', async (c) => {
         messages: [
           {
             role: 'system',
-            content: 'あなたは医療機関監修の健康アドバイザーです。検査データと問診結果を分析し、客観的で一貫性のある健康アドバイス、栄養指導、リスク評価を行ってください。スコアは検査値の範囲に基づいて客観的に判定してください。'
+            content: 'あなたは医療機関監修の健康アドバイザーです。検査データと問診結果を分析し、客観的で一貫性のある健康アドバイス、栄養指導、リスク評価を行い、必ず6個のサプリメントを推奨してください。必ず有効なJSON形式で回答してください。スコアは検査値の範囲に基づいて客観的に判定してください。'
           },
           {
             role: 'user',
@@ -1130,8 +1068,6 @@ ${questionnaireSummary}
 【利用可能なサプリメント一覧】
 ${supplementsList}
 
-以下の形式で回答してください：
-
 【スコア算出基準】
 - 検査値が正常範囲内: 80-100点
 - 軽度の異常: 60-79点
@@ -1139,35 +1075,39 @@ ${supplementsList}
 - 重度の異常: 0-39点
 ※同じデータには常に同じスコアを付けてください
 
-【回答形式】
-1. 総合健康スコア: XX点（0-100の数値のみ）
-2. 健康アドバイス: （具体的で実践可能なアドバイス）
-3. 栄養指導: （食事に関する具体的な推奨）
-4. 健康リスク評価: （懸念される点と予防策）
-5. 推奨サプリメント: （以下の形式で正確に6個選択してください）
-
 【サプリメント選択基準】
-- 必須栄養素カテゴリーから2-3個
-- 検査データや問診結果から判明した健康課題に対応するサプリメント
+- 必須栄養素カテゴリーから2-3個選択
+- 検査データや問診結果から判明した健康課題に対応するサプリメントを選択
 - 合計で必ず6個選択してください
-- 各サプリメントは以下の形式で記載:
+- 必ず[商品コード]を使用してください
 
-[商品コード] 商品名
-用量: （サプリマスター一覧の内容量を記載）
-頻度: （1日1回、1日1〜2回など）
-推奨理由: （このユーザーに推奨する具体的な理由を50文字程度で記載）
+**重要: 必ずJSON形式で回答してください。supplementsは必ず6個含めること:**
 
----（区切り線）
+{
+  "overall_score": 70,
+  "health_advice": "検査データと問診結果から見た総合的な健康状態について、具体的な数値や傾向を示しながら詳細に記載してください（500文字以上）。現在の生活習慣の良い点、改善が必要な点を明確に指摘し、今後取り組むべき具体的なアクションプランを提示してください。",
+  "nutrition_guidance": "食事や栄養に関する具体的なアドバイスを詳しく記載してください（400文字以上）。不足している栄養素、摂取を控えるべき成分、推奨される食材や調理法などを具体的に提案してください。",
+  "risk_assessment": "検査値や問診結果から判明した健康リスクについて詳細に記載してください（400文字以上）。将来的に発症する可能性のある疾患、その予防方法、定期的にチェックすべき項目などを具体的に提示してください。",
+  "supplements": [
+    {"product_code": "S001", "name": "サプリメント1", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"},
+    {"product_code": "S002", "name": "サプリメント2", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"},
+    {"product_code": "S003", "name": "サプリメント3", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"},
+    {"product_code": "S004", "name": "サプリメント4", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"},
+    {"product_code": "S005", "name": "サプリメント5", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"},
+    {"product_code": "S006", "name": "サプリメント6", "dosage": "用量", "frequency": "1日1回", "reason": "このサプリメントを推奨する詳細な理由を記載してください。検査データのどの項目に対応しているか、どのような健康効果が期待できるか、なぜこの時期に必要なのかを150文字以上で具体的に説明してください。"}
+  ]
+}
 
-例:
-[S004] クリルオイル
-用量: 250mg
-頻度: 1日1回
-推奨理由: コレステロール値が軽度高めのため、オメガ3脂肪酸による心血管サポートが有効です。`
+**必須要件:**
+1. supplements配列には必ず6個のサプリメントを含めてください
+2. 各サプリメントの推奨理由(reason)は必ず150文字以上の詳細な説明を記載してください
+3. 健康アドバイスは500文字以上、栄養指導とリスク評価は各400文字以上で記載してください
+4. 上記の【利用可能なサプリメント一覧】から適切なサプリメントを選択してください`
           }
         ],
-        temperature: 0.3,  // Lower temperature for more consistent results
-        max_tokens: 3000  // Increased for supplement recommendations
+        temperature: 0.3,
+        max_tokens: 4096,  // Increased for detailed responses
+        response_format: { type: "json_object" }
       })
     })
 
@@ -1181,24 +1121,58 @@ ${supplementsList}
     }
 
     const aiData = await aiResponse.json()
-    const analysisText = aiData.choices[0].message.content
+    const aiContent = aiData.choices[0].message.content
 
-    // Parse AI response
-    console.log('=== AI RESPONSE RECEIVED ===')
-    console.log('Response length:', analysisText.length)
-    
-    const overallScore = parseScore(analysisText)
-    const healthAdvice = extractSection(analysisText, '健康アドバイス')
-    const nutritionGuidance = extractSection(analysisText, '栄養指導')
-    const riskAssessment = extractSection(analysisText, 'リスク評価')
-    const radarChartData = {
-      labels: ['睡眠', '栄養', '運動', 'ストレス', '生活習慣', '検査値'],
-      values: [70, 65, 60, 55, 75, 70] // Default values - in production, parse from AI response
+    // Parse JSON response
+    let aiResult
+    try {
+      aiResult = JSON.parse(aiContent)
+      
+      // DEBUG: Log AI response structure - ALWAYS return this for debugging
+      const aiDebug = {
+        hasSupplements: !!aiResult.supplements,
+        supplementsLength: aiResult.supplements?.length || 0,
+        supplements: aiResult.supplements || [],
+        masterSupplementsCount: supplementsMaster.results?.length || 0
+      }
+      
+      // Temporarily bypass error and include debug info in response
+      if (!aiResult.supplements || aiResult.supplements.length === 0) {
+        // Don't return error, use defaults but log the issue
+        aiResult.supplements = []
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, return error with AI response for debugging
+      return c.json({ 
+        success: false, 
+        error: 'AI応答のJSON解析に失敗しました',
+        debug: {
+          parseError: parseError.message,
+          aiContent: aiContent.substring(0, 1000)
+        }
+      }, 500)
     }
+
+    // Extract data from JSON
+    const overallScore = aiResult.overall_score || 70
+    const healthAdvice = aiResult.health_advice || '健康アドバイスを取得できませんでした'
+    const nutritionGuidance = aiResult.nutrition_guidance || '栄養指導を取得できませんでした'
+    const riskAssessment = aiResult.risk_assessment || 'リスク評価を取得できませんでした'
     
-    // Parse recommended supplements from AI response
-    console.log('=== PARSING SUPPLEMENTS FROM AI ===')
-    const supplements = await parseSupplementsFromAI(analysisText, supplementsMaster.results, db)
+    // Parse supplements from AI JSON response
+    const supplements = parseSupplementsFromJSON(aiResult.supplements || [], supplementsMaster.results)
+    
+    // DEBUG: Include AI supplements info in health advice to verify what AI returned
+    const aiSupplementsDebug = JSON.stringify(aiResult.supplements || [])
+    const debugInfo = `\n\n[🐛 DEBUG INFO]\n` +
+      `AI返却サプリ数: ${aiResult.supplements?.length || 0}\n` +
+      `AI返却サプリ内容:\n${aiSupplementsDebug.substring(0, 800)}\n` +
+      `利用可能なマスタ数: ${supplementsMaster.results?.length || 0}\n` +
+      `パース後サプリ数: ${supplements.length}\n` +
+      `パース後サプリ名: ${supplements.map(s => s.supplement_name).join(', ')}`
+    
+    // Add debug info to health advice for both DB and API response
+    const healthAdviceWithDebug = healthAdvice + debugInfo
     
     console.log('=== SUPPLEMENT RECOMMENDATION DEBUG ===')
     console.log('Recommended supplements count:', supplements.length)
@@ -1216,10 +1190,10 @@ ${supplementsList}
     ).bind(
       user_id,
       overallScore,
-      healthAdvice,
+      healthAdviceWithDebug,
       nutritionGuidance,
       riskAssessment,
-      JSON.stringify(radarChartData),
+      null,  // radar_chart_data removed
       JSON.stringify(selected_exam_ids || []),
       dataCompletenessScore
     ).run()
@@ -1241,15 +1215,35 @@ ${supplementsList}
       ).run()
     }
 
+    // Map supplements to ensure correct field names for frontend
+    // CRITICAL: Use explicit field names to prevent minification issues
+    const supplementsFormatted = supplements.map(s => {
+      return {
+        'supplement_name': s.supplement_name,
+        'supplement_type': s.supplement_type,
+        'dosage': s.dosage,
+        'frequency': s.frequency,
+        'reason': s.reason,
+        'priority': s.priority
+      }
+    })
+
     return c.json({
       success: true,
       analysis: {
         overall_score: overallScore,
-        health_advice: healthAdvice,
+        health_advice: healthAdviceWithDebug,  // Include debug info in API response
         nutrition_guidance: nutritionGuidance,
         risk_assessment: riskAssessment,
-        radar_chart_data: radarChartData,
-        supplements: supplements
+        // radar_chart_data removed - no longer needed
+        supplements: supplementsFormatted
+      },
+      debug: {
+        ai_supplements_count: aiResult.supplements?.length || 0,
+        ai_supplements: aiResult.supplements || [],
+        parsed_supplements_count: supplements.length,
+        parsed_supplements_names: supplements.map(s => s.supplement_name),
+        master_supplements_count: supplementsMaster.results?.length || 0
       }
     })
   } catch (error) {
@@ -1280,9 +1274,69 @@ function extractSection(text: string, sectionName: string): string {
   return '解析結果を取得できませんでした'
 }
 
+// New JSON-based supplement parser
+function parseSupplementsFromJSON(aiSupplements: any[], masterSupplements: any[]): Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}> {
+  try {
+    console.log('Parsing supplements from AI JSON response...')
+    console.log('AI provided supplements:', aiSupplements.length)
+    
+    if (!aiSupplements || aiSupplements.length === 0) {
+      console.log('No supplements in AI response, using defaults')
+      return getDefaultSupplements()
+    }
+    
+    const supplements: any[] = []
+    
+    for (const aiSupp of aiSupplements) {
+      if (!aiSupp.product_code) {
+        console.log('Missing product_code in AI supplement, skipping')
+        continue
+      }
+      
+      // Find supplement in master data
+      const masterSupp = masterSupplements.find((s: any) => s.product_code === aiSupp.product_code)
+      
+      if (!masterSupp) {
+        console.log(`Supplement not found in master: ${aiSupp.product_code}`)
+        continue
+      }
+      
+      console.log(`✅ Matched supplement: [${aiSupp.product_code}] ${masterSupp.product_name}`)
+      
+      supplements.push({
+        supplement_name: masterSupp.product_name,
+        supplement_type: masterSupp.category,
+        dosage: aiSupp.dosage || masterSupp.content_amount,
+        frequency: aiSupp.frequency || '1日1回',
+        reason: aiSupp.reason || masterSupp.recommended_for || masterSupp.description,
+        priority: masterSupp.supplement_category === '必須栄養素' ? 1 : 2
+      })
+    }
+    
+    console.log(`Parsed ${supplements.length} valid supplements from AI`)
+    
+    // If we got less than 6, fill with defaults
+    if (supplements.length < 6) {
+      console.log(`Only ${supplements.length} supplements found, filling with defaults`)
+      const defaultSupps = getDefaultSupplements()
+      while (supplements.length < 6 && defaultSupps.length > 0) {
+        supplements.push(defaultSupps.shift()!)
+      }
+    }
+    
+    // Return exactly 6 supplements
+    return supplements.slice(0, 6)
+    
+  } catch (error) {
+    console.error('Error parsing supplements from AI JSON:', error)
+    return getDefaultSupplements()
+  }
+}
+
+// Legacy text-based parser (kept for backward compatibility)
 async function parseSupplementsFromAI(aiText: string, masterSupplements: any[], db: D1Database): Promise<Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}>> {
   try {
-    console.log('Parsing supplements from AI response...')
+    console.log('[LEGACY] Parsing supplements from AI text response...')
     
     // Extract supplement section from AI response
     const supplementSection = extractSection(aiText, '推奨サプリメント')
@@ -1337,7 +1391,7 @@ async function parseSupplementsFromAI(aiText: string, masterSupplements: any[], 
       console.log('Less than 6 supplements found, filling with defaults')
       const defaultSupps = getDefaultSupplements()
       while (supplements.length < 6 && defaultSupps.length > 0) {
-        supplements.push(defaultSupps.shift())
+        supplements.push(defaultSupps.shift()!)
       }
     }
     
