@@ -1231,11 +1231,31 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
     const selectedSupplements: any[] = []
     const adviceText = (healthAdvice + ' ' + riskAssessment).toLowerCase()
 
-    // Priority 1: Select ALL "必須栄養素" supplements first
+    // Step 1: Select 2-3 essential nutrients based on user's specific needs
     const essentials = supplements.results.filter((s: any) => s.supplement_category === '必須栄養素')
     
-    // Add all essential nutrients (typically 3-4 essential ones)
-    essentials.forEach((supp: any) => {
+    // Prioritize essentials based on health needs
+    const essentialPriority = []
+    for (const supp of essentials) {
+      let score = 10 // Base score for all essentials
+      const suppName = supp.product_name.toLowerCase()
+      const suppDesc = (supp.recommended_for || supp.description || '').toLowerCase()
+      
+      // Increase score if matches health concerns
+      if (adviceText.includes('ビタミン') && suppName.includes('ビタミン')) score += 5
+      if (adviceText.includes('ミネラル') && suppName.includes('ミネラル')) score += 5
+      if (adviceText.includes('オメガ') || adviceText.includes('脂質')) {
+        if (suppName.includes('オイル') || suppName.includes('クリル')) score += 5
+      }
+      
+      essentialPriority.push({ supp, score })
+    }
+    
+    // Sort by score and take top 2-3
+    essentialPriority.sort((a, b) => b.score - a.score)
+    const topEssentials = essentialPriority.slice(0, 3)
+    
+    topEssentials.forEach(({ supp }) => {
       selectedSupplements.push({
         supplement_name: supp.product_name,
         supplement_type: supp.category,
@@ -1267,48 +1287,78 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
       '肌': ['ザクロペースト', 'リポソーム型ビタミンC', 'スピルリナ']
     }
 
-    // Check each condition and add first matching supplement (limit 2 per condition)
-    let conditionSuppsAdded = 0;
+    // Step 2: Find condition-specific supplements based on AI analysis
+    const conditionMatches: Array<{supp: any, condition: string, score: number}> = []
+    
     Object.entries(conditionMap).forEach(([condition, productNames]) => {
-      if (adviceText.includes(condition) && selectedSupplements.length < 6 && conditionSuppsAdded < 3) {
-        // Add first available product from the list
-        for (const name of productNames.slice(0, 2)) {
-          if (selectedSupplements.length >= 6) break;
-          
+      if (adviceText.includes(condition)) {
+        productNames.forEach((name) => {
           const supp = supplements.results.find((s: any) => s.product_name === name)
           if (supp && !selectedSupplements.find((ss: any) => ss.supplement_name === supp.product_name)) {
-            selectedSupplements.push({
-              supplement_name: supp.product_name,
-              supplement_type: supp.category,
-              dosage: supp.content_amount,
-              frequency: '1日1〜2回',
-              reason: condition + '対策: ' + (supp.recommended_for || supp.description),
-              priority: 2
-            })
-            conditionSuppsAdded++;
-            break; // Only add one per condition initially
+            // Calculate relevance score
+            let score = 5 // Base score for condition match
+            
+            // Boost score if supplement is in 機能性食品 category
+            if (supp.supplement_category === '機能性食品') score += 3
+            
+            // Boost if supplement description mentions the condition
+            const suppDesc = (supp.recommended_for || supp.description || '').toLowerCase()
+            if (suppDesc.includes(condition)) score += 2
+            
+            conditionMatches.push({ supp, condition, score })
           }
-        }
+        })
       }
     })
-
-    // Ensure we have at least 3 supplements
-    if (selectedSupplements.length < 3) {
-      supplements.results.slice(0, 5 - selectedSupplements.length).forEach((supp: any) => {
-        if (!selectedSupplements.find((ss: any) => ss.supplement_name === supp.product_name)) {
-          selectedSupplements.push({
-            supplement_name: supp.product_name,
-            supplement_type: supp.category,
-            dosage: supp.content_amount,
-            frequency: '1日1回',
-            reason: supp.recommended_for || supp.description,
-            priority: supp.priority
-          })
-        }
-      })
+    
+    // Sort by score and add top 3 condition-specific supplements
+    conditionMatches.sort((a, b) => b.score - a.score)
+    const topConditionSupps = conditionMatches.slice(0, 3)
+    
+    topConditionSupps.forEach(({ supp, condition }) => {
+      if (selectedSupplements.length < 6) {
+        selectedSupplements.push({
+          supplement_name: supp.product_name,
+          supplement_type: supp.category,
+          dosage: supp.content_amount,
+          frequency: '1日1〜2回',
+          reason: condition + '対策: ' + (supp.recommended_for || supp.description),
+          priority: 2
+        })
+      }
+    })
+    
+    // Step 3: Fill remaining slots with highly-rated supplements
+    if (selectedSupplements.length < 6) {
+      const functionalFoods = supplements.results.filter((s: any) => 
+        s.supplement_category === '機能性食品' &&
+        !selectedSupplements.find((ss: any) => ss.supplement_name === s.product_name)
+      )
+      
+      const healthSupport = supplements.results.filter((s: any) => 
+        s.supplement_category === '健康サポート' &&
+        !selectedSupplements.find((ss: any) => ss.supplement_name === s.product_name)
+      )
+      
+      // Add functional foods first, then health support
+      const remainingSupps = [...functionalFoods, ...healthSupport]
+      
+      for (const supp of remainingSupps) {
+        if (selectedSupplements.length >= 6) break
+        
+        selectedSupplements.push({
+          supplement_name: supp.product_name,
+          supplement_type: supp.category,
+          dosage: supp.content_amount,
+          frequency: '1日1回',
+          reason: '総合的な健康維持: ' + (supp.recommended_for || supp.description),
+          priority: 3
+        })
+      }
     }
 
-    return selectedSupplements.slice(0, 6) // Maximum 6 supplements
+    // Return exactly 6 supplements (or all available if less than 6)
+    return selectedSupplements.slice(0, 6)
   } catch (error) {
     console.error('Error getting recommended supplements:', error)
     return getDefaultSupplements()
