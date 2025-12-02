@@ -52,7 +52,7 @@ analysisRoutes.get('/', (c) => {
             <!-- Exam Data Selection -->
             <div id="examSelectionSection" class="bg-white rounded-lg shadow-lg p-8 mb-6">
                 <h3 class="text-xl font-bold mb-4 flex items-center">
-                    <i class="fas fa-check-square text-blue-600 mr-3"></i>
+                    <i class="fas fa-vial text-blue-600 mr-3"></i>
                     検査データを選択
                 </h3>
                 <div id="examListContainer" class="space-y-3">
@@ -61,10 +61,30 @@ analysisRoutes.get('/', (c) => {
                         検査データを読み込み中...
                     </p>
                 </div>
-                <div class="mt-6 flex justify-center">
-                    <button onclick="startAnalysis()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <i class="fas fa-brain mr-2"></i>AI解析を開始する
+            </div>
+
+            <!-- Questionnaire Selection -->
+            <div id="questionnaireSelectionSection" class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-clipboard-list text-green-600 mr-3"></i>
+                    問診結果を選択
+                </h3>
+                <div id="questionnaireContainer">
+                    <p class="text-gray-500 text-center py-4">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        問診データを読み込み中...
+                    </p>
+                </div>
+            </div>
+
+            <!-- Analysis Button -->
+            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-8 mb-6">
+                <div class="text-center">
+                    <p class="text-gray-700 mb-4">選択したデータを使用してAI解析を実行します</p>
+                    <button onclick="startAnalysis()" id="analyzeButton" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-12 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-robot mr-2"></i>🤖 AI解析を実行する
                     </button>
+                    <p id="selectionSummary" class="text-sm text-gray-600 mt-3"></p>
                 </div>
             </div>
 
@@ -201,6 +221,7 @@ analysisRoutes.get('/', (c) => {
             let selectedExamIds = [];
             let allExamData = [];
             let questionnaireData = [];
+            let useQuestionnaire = false;
             let currentUser = null;
 
             async function loadExamData() {
@@ -232,9 +253,13 @@ analysisRoutes.get('/', (c) => {
                         const questionnaireResponse = await axios.get(\`/questionnaire/api/\${currentUser.id}\`);
                         if (questionnaireResponse.data.success) {
                             questionnaireData = questionnaireResponse.data.responses || [];
+                            displayQuestionnaireOption(questionnaireData);
+                        } else {
+                            displayQuestionnaireOption([]);
                         }
                     } catch (qError) {
                         console.log('No questionnaire data available');
+                        displayQuestionnaireOption([]);
                     }
                 } catch (error) {
                     console.error('Error loading exam data:', error);
@@ -337,28 +362,100 @@ analysisRoutes.get('/', (c) => {
                 updateAnalysisButton();
             }
 
-            function updateAnalysisButton() {
-                const button = document.querySelector('button[onclick="startAnalysis()"]');
-                button.disabled = selectedExamIds.length === 0;
+            function displayQuestionnaireOption(responses) {
+                const container = document.getElementById('questionnaireContainer');
                 
-                if (selectedExamIds.length === 0) {
-                    button.innerHTML = '<i class="fas fa-brain mr-2"></i>検査データを選択してください';
+                if (!responses || responses.length === 0) {
+                    container.innerHTML = \`
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <i class="fas fa-clipboard-list text-gray-400 text-3xl mb-3"></i>
+                            <p class="text-gray-500 mb-3">まだ問診を完了していません</p>
+                            <a href="/questionnaire" class="text-blue-600 hover:underline">
+                                <i class="fas fa-arrow-right mr-1"></i>問診を始める
+                            </a>
+                        </div>
+                    \`;
+                    return;
+                }
+
+                const questionCount = responses.length;
+                const completionRate = Math.round((questionCount / 50) * 100);
+                
+                container.innerHTML = \`
+                    <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" 
+                                   id="questionnaireCheckbox"
+                                   class="mt-1 mr-3 w-5 h-5 text-green-600"
+                                   onchange="toggleQuestionnaireSelection()"
+                                   checked>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="font-bold text-gray-800">健康問診（50問）</span>
+                                    <span class="text-sm bg-green-600 text-white px-3 py-1 rounded-full font-bold">
+                                        \${completionRate}% 完了
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p><i class="fas fa-check-circle text-green-600 mr-1"></i>\${questionCount}問 / 50問 回答済み</p>
+                                    <p class="text-xs text-gray-500 mt-1">最終更新: \${new Date(responses[0].created_at).toLocaleString('ja-JP')}</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                \`;
+                
+                // Initially selected
+                useQuestionnaire = true;
+                updateAnalysisButton();
+            }
+
+            function toggleQuestionnaireSelection() {
+                useQuestionnaire = document.getElementById('questionnaireCheckbox').checked;
+                updateAnalysisButton();
+            }
+
+            function updateAnalysisButton() {
+                const button = document.getElementById('analyzeButton');
+                const summary = document.getElementById('selectionSummary');
+                
+                const hasData = selectedExamIds.length > 0 || useQuestionnaire;
+                button.disabled = !hasData;
+                
+                if (!hasData) {
+                    button.innerHTML = '<i class="fas fa-robot mr-2"></i>🤖 データを選択してください';
+                    summary.textContent = '';
+                } else {
+                    button.innerHTML = '<i class="fas fa-robot mr-2"></i>🤖 AI解析を実行する';
+                    
+                    const parts = [];
+                    if (selectedExamIds.length > 0) {
+                        parts.push(\`検査データ: \${selectedExamIds.length}件\`);
+                    }
+                    if (useQuestionnaire) {
+                        parts.push(\`問診: \${questionnaireData.length}問\`);
+                    }
+                    summary.textContent = '選択中: ' + parts.join(' + ');
                 } else {
                     button.innerHTML = \`<i class="fas fa-brain mr-2"></i>AI解析を開始する (\${selectedExamIds.length}件)\`;
                 }
             }
 
             async function startAnalysis() {
-                // Hide selection section
+                // Hide selection sections
                 document.getElementById('examSelectionSection').style.display = 'none';
+                document.getElementById('questionnaireSelectionSection').style.display = 'none';
                 document.getElementById('loadingState').classList.remove('hidden');
 
                 try {
-                    // Perform AI analysis with selected exam data
-                    const response = await axios.post('/api/analysis', {
+                    // Perform AI analysis with selected data
+                    const requestData = {
                         user_id: currentUser.id,
-                        selected_exam_ids: selectedExamIds
-                    });
+                        selected_exam_ids: selectedExamIds,
+                        use_questionnaire: useQuestionnaire
+                    };
+                    
+                    const response = await axios.post('/api/analysis', requestData);
 
                     if (response.data.success) {
                         analysisData = response.data.analysis;
@@ -842,7 +939,7 @@ analysisRoutes.get('/', (c) => {
 // Perform AI analysis
 analysisRoutes.post('/api', async (c) => {
   try {
-    const { user_id, selected_exam_ids } = await c.req.json()
+    const { user_id, selected_exam_ids, use_questionnaire } = await c.req.json()
 
     if (!user_id) {
       return c.json({ success: false, error: 'ユーザーIDが必要です' }, 400)
@@ -880,10 +977,13 @@ analysisRoutes.post('/api', async (c) => {
       ).bind(user_id).all()
     }
 
-    // Fetch questionnaire responses
-    const questionnaireData = await db.prepare(
-      'SELECT * FROM questionnaire_responses WHERE user_id = ? ORDER BY question_number'
-    ).bind(user_id).all()
+    // Fetch questionnaire responses if requested
+    let questionnaireData = { results: [] };
+    if (use_questionnaire !== false) {
+      questionnaireData = await db.prepare(
+        'SELECT * FROM questionnaire_responses WHERE user_id = ? ORDER BY question_number'
+      ).bind(user_id).all()
+    }
 
     if ((!examData.results || examData.results.length === 0) && (!questionnaireData.results || questionnaireData.results.length === 0)) {
       return c.json({ 
@@ -897,9 +997,11 @@ analysisRoutes.post('/api', async (c) => {
       `${exam.exam_type}: ${exam.measurements}`
     ).join('\n') || 'なし'
 
-    const questionnaireSummary = questionnaireData.results?.map(q => 
-      `Q${q.question_number}. ${q.question_text} → ${q.answer_value}`
-    ).join('\n') || 'なし'
+    const questionnaireSummary = (use_questionnaire && questionnaireData.results && questionnaireData.results.length > 0)
+      ? questionnaireData.results.map(q => 
+          `Q${q.question_number}. ${q.question_text} → ${q.answer_value}`
+        ).join('\n')
+      : 'なし'
 
     // Call OpenAI API
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1080,12 +1182,26 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
       '腸': ['アカシアパウダー', 'イヌリン', '菊芋イヌリン'],
       '抗酸化': ['ザクロペースト', 'スピルリナ', 'リポソーム型ビタミンC'],
       '脳': ['マインドリバイブ', 'クリルオイル'],
-      '炎症': ['クリルオイル', 'リポソーム型βカリオフィレン']
+      '炎症': ['クリルオイル', 'リポソーム型βカリオフィレン'],
+      'コレステロール': ['クリルオイル', '第三リン酸Mg'],
+      '中性脂肪': ['クリルオイル', '菊芋イヌリン'],
+      'ストレス': ['マインドリバイブ', 'B群ミックス7種類', 'リポソーム型ビタミンC'],
+      '睡眠': ['マインドリバイブ', '第三リン酸Mg'],
+      '肝臓': ['リポソーム型βカリオフィレン', 'ザクロペースト'],
+      '骨': ['第三リン酸Mg', 'ビタミンD3+グルコン酸亜鉛+シクロデキストリン'],
+      '筋肉': ['アミノ酸ブレンド', 'EAA原末', 'クリルオイル'],
+      '貧血': ['ミネラルミックス7種類', 'スピルリナ'],
+      '肌': ['ザクロペースト', 'リポソーム型ビタミンC', 'スピルリナ']
     }
 
+    // Check each condition and add first matching supplement (limit 2 per condition)
+    let conditionSuppsAdded = 0;
     Object.entries(conditionMap).forEach(([condition, productNames]) => {
-      if (adviceText.includes(condition) && selectedSupplements.length < 6) {
-        productNames.forEach(name => {
+      if (adviceText.includes(condition) && selectedSupplements.length < 6 && conditionSuppsAdded < 3) {
+        // Add first available product from the list
+        for (const name of productNames.slice(0, 2)) {
+          if (selectedSupplements.length >= 6) break;
+          
           const supp = supplements.results.find((s: any) => s.product_name === name)
           if (supp && !selectedSupplements.find((ss: any) => ss.supplement_name === supp.product_name)) {
             selectedSupplements.push({
@@ -1093,11 +1209,13 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
               supplement_type: supp.category,
               dosage: supp.content_amount,
               frequency: '1日1〜2回',
-              reason: supp.recommended_for || supp.description,
+              reason: condition + '対策: ' + (supp.recommended_for || supp.description),
               priority: 2
             })
+            conditionSuppsAdded++;
+            break; // Only add one per condition initially
           }
-        })
+        }
       }
     })
 
