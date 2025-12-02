@@ -516,13 +516,23 @@ analysisRoutes.get('/', (c) => {
                 }
 
                 // Display supplements
+                console.log('Full analysis data:', data);
                 console.log('Received supplements:', data.supplements);
+                console.log('Supplements type:', typeof data.supplements);
+                console.log('Is array?:', Array.isArray(data.supplements));
+                
                 if (data.supplements && data.supplements.length > 0) {
+                    console.log('Displaying', data.supplements.length, 'supplements');
                     displaySupplements(data.supplements);
                 } else {
                     console.warn('No supplements received from API');
+                    console.warn('Data structure:', JSON.stringify(data, null, 2));
                     const container = document.getElementById('supplementRecommendations');
-                    container.innerHTML = '<p class="text-gray-500">サプリメントの推奨情報がありません。</p>';
+                    const debugInfo = JSON.stringify(data.supplements);
+                    container.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded p-4">' +
+                        '<p class="text-yellow-800 font-semibold">⚠️ サプリメント情報が取得できませんでした</p>' +
+                        '<p class="text-sm text-yellow-700 mt-2">デバッグ情報: supplements=' + debugInfo + '</p>' +
+                        '</div>';
                 }
             }
 
@@ -1153,8 +1163,11 @@ ${questionnaireSummary}
     
     // Get recommended supplements from master catalog based on health analysis
     const supplements = await getRecommendedSupplements(db, healthAdvice, riskAssessment)
+    console.log('=== SUPPLEMENT RECOMMENDATION DEBUG ===')
     console.log('Recommended supplements count:', supplements.length)
     console.log('Supplements:', supplements.map(s => s.supplement_name))
+    console.log('Full supplement data:', JSON.stringify(supplements, null, 2))
+    console.log('=========================================')
 
     // Calculate data completeness score including questionnaire
     const dataCompletenessScore = calculateDataCompletenessScore(examData.results, questionnaireData.results)
@@ -1232,12 +1245,19 @@ function extractSection(text: string, sectionName: string): string {
 
 async function getRecommendedSupplements(db: D1Database, healthAdvice: string, riskAssessment: string): Promise<Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}>> {
   try {
+    console.log('=== getRecommendedSupplements START ===')
+    console.log('healthAdvice length:', healthAdvice?.length || 0)
+    console.log('riskAssessment length:', riskAssessment?.length || 0)
+    
     // Get all supplements from master catalog
     const supplements = await db.prepare(
       'SELECT * FROM supplements_master WHERE is_active = 1 ORDER BY supplement_category ASC, category'
     ).all()
 
+    console.log('Query result:', supplements.results?.length || 0, 'supplements found')
+    
     if (!supplements.results || supplements.results.length === 0) {
+      console.log('No supplements in master, using defaults')
       return getDefaultSupplements()
     }
 
@@ -1384,7 +1404,11 @@ async function getRecommendedSupplements(db: D1Database, healthAdvice: string, r
     // Return exactly 6 supplements (or all available if less than 6)
     return selectedSupplements.slice(0, 6)
   } catch (error) {
-    console.error('Error getting recommended supplements:', error)
+    console.error('!!! ERROR in getRecommendedSupplements !!!')
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
+    console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    console.log('Falling back to default supplements')
     return getDefaultSupplements()
   }
 }
