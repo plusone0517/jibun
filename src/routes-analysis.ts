@@ -42,7 +42,10 @@ analysisRoutes.get('/', (c) => {
 
         <main class="max-w-7xl mx-auto px-4 pb-12">
             <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">AI健康解析</h2>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-robot text-indigo-600 mr-3"></i>
+                    AI健康解析
+                </h2>
                 <p class="text-gray-600">解析に使用する検査データを選択してください</p>
             </div>
 
@@ -94,6 +97,40 @@ analysisRoutes.get('/', (c) => {
                         </div>
                     </div>
                     <div id="scoreAssessment" class="text-center mt-4 text-lg font-medium text-gray-700"></div>
+                </div>
+
+                <!-- Data Completeness Score -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-6" id="dataCompletenessSection">
+                    <h3 class="text-2xl font-bold mb-6 text-center flex items-center justify-center">
+                        <i class="fas fa-clipboard-check text-blue-600 mr-3"></i>
+                        データ完全性スコア
+                    </h3>
+                    <div class="max-w-3xl mx-auto">
+                        <div class="flex justify-center mb-6">
+                            <div class="relative w-48 h-48">
+                                <svg class="transform -rotate-90 w-full h-full">
+                                    <circle cx="96" cy="96" r="80" stroke="#e5e7eb" stroke-width="16" fill="transparent"/>
+                                    <circle id="completenessCircle" cx="96" cy="96" r="80" stroke="#10b981" stroke-width="16" 
+                                            fill="transparent" stroke-dasharray="502.4" stroke-dashoffset="502.4"
+                                            class="transition-all duration-1000 ease-out"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div id="completenessValue" class="text-4xl font-bold text-green-600">--</div>
+                                        <div class="text-gray-500 text-xs">/ 100</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="completenessDetails" class="space-y-3"></div>
+                        <div id="missingDataSuggestions" class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 hidden">
+                            <h4 class="font-bold text-yellow-800 mb-2">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                推奨される追加検査
+                            </h4>
+                            <ul id="suggestionsList" class="list-disc list-inside text-sm text-yellow-700"></ul>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Radar Chart -->
@@ -322,8 +359,12 @@ analysisRoutes.get('/', (c) => {
                 document.getElementById('loadingState').classList.add('hidden');
                 document.getElementById('resultsContainer').classList.remove('hidden');
 
-                // Display overall score
-                const score = Math.round(data.overall_score);
+                // Calculate and display data completeness
+                const completeness = calculateDataCompleteness();
+                displayDataCompleteness(completeness);
+
+                // Display overall score (clamp to 0-100 range)
+                const score = Math.min(100, Math.max(0, Math.round(data.overall_score)));
                 displayScore(score);
 
                 // Display health advice
@@ -339,6 +380,135 @@ analysisRoutes.get('/', (c) => {
                 // Display supplements
                 if (data.supplements && data.supplements.length > 0) {
                     displaySupplements(data.supplements);
+                }
+            }
+
+            function calculateDataCompleteness() {
+                // Get selected exams
+                const selectedExams = allExamData.filter(exam => selectedExamIds.includes(exam.id));
+                
+                // Define required exam types and their measurement counts
+                const requiredTypes = {
+                    'blood_pressure': { name: '血圧測定', minMeasurements: 2, weight: 20 },
+                    'body_composition': { name: '体組成測定', minMeasurements: 3, weight: 25 },
+                    'blood_test': { name: '血液検査', minMeasurements: 5, weight: 35 }
+                };
+                
+                const questionnaire_weight = 20; // 20% for questionnaire
+                
+                let totalScore = 0;
+                let details = [];
+                let missing = [];
+                
+                // Check each required exam type
+                Object.keys(requiredTypes).forEach(type => {
+                    const typeExams = selectedExams.filter(e => e.exam_type === type);
+                    const config = requiredTypes[type];
+                    
+                    if (typeExams.length > 0) {
+                        // Calculate average measurement count
+                        const avgMeasurements = typeExams.reduce((sum, exam) => 
+                            sum + exam.measurements.length, 0) / typeExams.length;
+                        
+                        // Score based on measurement completeness
+                        const completenessRatio = Math.min(1, avgMeasurements / config.minMeasurements);
+                        const typeScore = config.weight * completenessRatio;
+                        totalScore += typeScore;
+                        
+                        details.push({
+                            name: config.name,
+                            count: typeExams.length,
+                            avgMeasurements: Math.round(avgMeasurements),
+                            score: Math.round(completenessRatio * 100),
+                            color: completenessRatio >= 0.8 ? 'green' : completenessRatio >= 0.5 ? 'yellow' : 'red'
+                        });
+                    } else {
+                        missing.push(config.name);
+                        details.push({
+                            name: config.name,
+                            count: 0,
+                            avgMeasurements: 0,
+                            score: 0,
+                            color: 'red'
+                        });
+                    }
+                });
+                
+                // Assume questionnaire is always complete if we reached analysis
+                totalScore += questionnaire_weight;
+                
+                return {
+                    score: Math.round(totalScore),
+                    details: details,
+                    missing: missing
+                };
+            }
+
+            function displayDataCompleteness(completeness) {
+                const circle = document.getElementById('completenessCircle');
+                const valueEl = document.getElementById('completenessValue');
+                const detailsEl = document.getElementById('completenessDetails');
+                const suggestionsEl = document.getElementById('missingDataSuggestions');
+                const suggestionsListEl = document.getElementById('suggestionsList');
+                
+                // Animate completeness score
+                const score = completeness.score;
+                let current = 0;
+                const duration = 1000;
+                const steps = 50;
+                const increment = score / steps;
+                const stepDuration = duration / steps;
+                
+                const animate = setInterval(() => {
+                    current += increment;
+                    if (current >= score) {
+                        current = score;
+                        clearInterval(animate);
+                    }
+                    valueEl.textContent = Math.round(current);
+                    
+                    const circumference = 502.4;
+                    const offset = circumference - (current / 100 * circumference);
+                    circle.style.strokeDashoffset = offset;
+                    
+                    if (current >= 80) {
+                        circle.style.stroke = '#10b981'; // green
+                    } else if (current >= 50) {
+                        circle.style.stroke = '#f59e0b'; // orange
+                    } else {
+                        circle.style.stroke = '#ef4444'; // red
+                    }
+                }, stepDuration);
+                
+                // Display details
+                detailsEl.innerHTML = completeness.details.map(detail => {
+                    const colorClass = {
+                        'green': 'bg-green-100 border-green-500',
+                        'yellow': 'bg-yellow-100 border-yellow-500',
+                        'red': 'bg-red-100 border-red-500'
+                    }[detail.color];
+                    
+                    return \`
+                        <div class="flex items-center justify-between p-3 border-l-4 \${colorClass} rounded">
+                            <div>
+                                <span class="font-semibold">\${detail.name}</span>
+                                <span class="text-sm text-gray-600 ml-2">
+                                    (\${detail.count}件、平均\${detail.avgMeasurements}項目)
+                                </span>
+                            </div>
+                            <span class="font-bold text-lg">\${detail.score}%</span>
+                        </div>
+                    \`;
+                }).join('');
+                
+                // Display missing data suggestions
+                if (completeness.missing.length > 0) {
+                    suggestionsEl.classList.remove('hidden');
+                    suggestionsListEl.innerHTML = completeness.missing.map(item => 
+                        \`<li>\${item}のデータを追加することで、より精度の高い解析が可能になります</li>\`
+                    ).join('');
+                } else {
+                    suggestionsEl.classList.add('hidden');
                 }
             }
 
@@ -688,17 +858,22 @@ ${questionnaireSummary}
     }
     const supplements = parseSupplements(analysisText)
 
+    // Calculate data completeness score
+    const dataCompletenessScore = calculateDataCompletenessScore(examData.results)
+    
     // Save analysis results to database
     const analysisResult = await db.prepare(
-      `INSERT INTO analysis_results (user_id, overall_score, health_advice, nutrition_guidance, risk_assessment, radar_chart_data)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO analysis_results (user_id, overall_score, health_advice, nutrition_guidance, risk_assessment, radar_chart_data, selected_exam_ids, data_completeness_score)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       user_id,
       overallScore,
       healthAdvice,
       nutritionGuidance,
       riskAssessment,
-      JSON.stringify(radarChartData)
+      JSON.stringify(radarChartData),
+      JSON.stringify(selected_exam_ids || []),
+      dataCompletenessScore
     ).run()
 
     const analysisId = analysisResult.meta.last_row_id
@@ -785,4 +960,36 @@ function parseSupplements(text: string): Array<{name: string, type: string, dosa
       priority: 2
     }
   ]
+}
+
+function calculateDataCompletenessScore(exams: any[]): number {
+  if (!exams || exams.length === 0) return 0
+  
+  const requiredTypes = {
+    'blood_pressure': { minMeasurements: 2, weight: 20 },
+    'body_composition': { minMeasurements: 3, weight: 25 },
+    'blood_test': { minMeasurements: 5, weight: 35 }
+  }
+  
+  const questionnaireWeight = 20
+  let totalScore = questionnaireWeight // Assume questionnaire is complete
+  
+  Object.keys(requiredTypes).forEach(type => {
+    const typeExams = exams.filter((e: any) => e.exam_type === type)
+    const config = requiredTypes[type as keyof typeof requiredTypes]
+    
+    if (typeExams.length > 0) {
+      // Count measurements from exam data
+      const totalMeasurements = typeExams.reduce((sum: number, exam: any) => {
+        const measurements = exam.measurements?.split(',').length || 0
+        return sum + measurements
+      }, 0)
+      
+      const avgMeasurements = totalMeasurements / typeExams.length
+      const completenessRatio = Math.min(1, avgMeasurements / config.minMeasurements)
+      totalScore += config.weight * completenessRatio
+    }
+  })
+  
+  return Math.round(totalScore)
 }

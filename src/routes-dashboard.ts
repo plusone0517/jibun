@@ -47,36 +47,51 @@ dashboardRoutes.get('/', async (c) => {
             </div>
 
             <!-- Action Cards -->
-            <div class="grid md:grid-cols-3 gap-6 mb-12">
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="text-center">
-                        <div class="text-5xl mb-4">🩺</div>
-                        <h3 class="text-xl font-bold mb-3">検査データ入力</h3>
-                        <p class="text-gray-600 mb-4">血圧、体組成、血液検査など</p>
-                        <a href="/exam" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                            データ入力
-                        </a>
-                    </div>
-                </div>
-
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <!-- 1. 健康問診 -->
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
                     <div class="text-center">
                         <div class="text-5xl mb-4">📋</div>
                         <h3 class="text-xl font-bold mb-3">健康問診</h3>
-                        <p class="text-gray-600 mb-4">50問の詳細な問診</p>
+                        <p class="text-gray-600 mb-4 text-sm">50問の詳細な問診</p>
                         <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
                             問診開始
                         </a>
                     </div>
                 </div>
 
+                <!-- 2. OCR画像読み取り -->
+                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition bg-gradient-to-br from-purple-50 to-pink-50">
+                    <div class="text-center">
+                        <div class="text-5xl mb-4">📸</div>
+                        <h3 class="text-xl font-bold mb-3 text-purple-700">画像読み取り</h3>
+                        <p class="text-gray-600 mb-4 text-sm">OCRで検査結果を読取</p>
+                        <a href="/exam#ocr" class="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                            OCR入力
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 3. 手動入力 -->
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
                     <div class="text-center">
-                        <div class="text-5xl mb-4">🎯</div>
-                        <h3 class="text-xl font-bold mb-3">AI解析結果</h3>
-                        <p class="text-gray-600 mb-4">健康アドバイスとサプリ提案</p>
-                        <a href="/analysis" class="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
-                            結果を見る
+                        <div class="text-5xl mb-4">✍️</div>
+                        <h3 class="text-xl font-bold mb-3">手動入力</h3>
+                        <p class="text-gray-600 mb-4 text-sm">血圧、体組成、血液検査</p>
+                        <a href="/exam" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                            データ入力
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 4. AI解析 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition bg-gradient-to-br from-indigo-50 to-purple-50">
+                    <div class="text-center">
+                        <div class="text-5xl mb-4">🤖</div>
+                        <h3 class="text-xl font-bold mb-3 text-indigo-700">AI解析</h3>
+                        <p class="text-gray-600 mb-4 text-sm">健康アドバイスとサプリ</p>
+                        <a href="/analysis" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition">
+                            AI解析実行
                         </a>
                     </div>
                 </div>
