@@ -289,7 +289,7 @@ examOcrRoutes.get('/', (c) => {
 
                     if (response.data.success) {
                         // Fill form with OCR results
-                        const data = response.data.data;
+                        const data = response.data.result;
                         document.getElementById('examDate').value = data.exam_date || new Date().toISOString().split('T')[0];
                         document.getElementById('examType').value = data.exam_type || 'blood_pressure';
                         
