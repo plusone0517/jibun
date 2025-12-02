@@ -1094,6 +1094,15 @@ analysisRoutes.post('/api', async (c) => {
         ).join('\n')
       : 'なし'
 
+    // Get all supplements from master catalog for AI to select
+    const supplementsMaster = await db.prepare(
+      'SELECT product_code, product_name, category, supplement_category, content_amount, recommended_for, description, price FROM supplements_master WHERE is_active = 1 ORDER BY supplement_category, product_name'
+    ).all()
+
+    const supplementsList = supplementsMaster.results?.map((s: any) => 
+      `[${s.product_code}] ${s.product_name} (${s.supplement_category}/${s.category}) - ${s.content_amount} - ¥${s.price}\n推奨用途: ${s.recommended_for || s.description}`
+    ).join('\n\n') || '利用可能なサプリメントがありません'
+
     // Call OpenAI API
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -1110,13 +1119,16 @@ analysisRoutes.post('/api', async (c) => {
           },
           {
             role: 'user',
-            content: `以下のデータを分析して、総合的な健康アドバイスを提供してください。
+            content: `以下のデータを分析して、総合的な健康アドバイスとサプリメント推奨を提供してください。
 
 【検査データ】
 ${examSummary}
 
 【問診結果（50問）】
 ${questionnaireSummary}
+
+【利用可能なサプリメント一覧】
+${supplementsList}
 
 以下の形式で回答してください：
 
@@ -1131,11 +1143,31 @@ ${questionnaireSummary}
 1. 総合健康スコア: XX点（0-100の数値のみ）
 2. 健康アドバイス: （具体的で実践可能なアドバイス）
 3. 栄養指導: （食事に関する具体的な推奨）
-4. 健康リスク評価: （懸念される点と予防策）`
+4. 健康リスク評価: （懸念される点と予防策）
+5. 推奨サプリメント: （以下の形式で正確に6個選択してください）
+
+【サプリメント選択基準】
+- 必須栄養素カテゴリーから2-3個
+- 検査データや問診結果から判明した健康課題に対応するサプリメント
+- 合計で必ず6個選択してください
+- 各サプリメントは以下の形式で記載:
+
+[商品コード] 商品名
+用量: （サプリマスター一覧の内容量を記載）
+頻度: （1日1回、1日1〜2回など）
+推奨理由: （このユーザーに推奨する具体的な理由を50文字程度で記載）
+
+---（区切り線）
+
+例:
+[S004] クリルオイル
+用量: 250mg
+頻度: 1日1回
+推奨理由: コレステロール値が軽度高めのため、オメガ3脂肪酸による心血管サポートが有効です。`
           }
         ],
         temperature: 0.3,  // Lower temperature for more consistent results
-        max_tokens: 2000
+        max_tokens: 3000  // Increased for supplement recommendations
       })
     })
 
@@ -1151,7 +1183,10 @@ ${questionnaireSummary}
     const aiData = await aiResponse.json()
     const analysisText = aiData.choices[0].message.content
 
-    // Parse AI response (simple parsing - in production, use structured output)
+    // Parse AI response
+    console.log('=== AI RESPONSE RECEIVED ===')
+    console.log('Response length:', analysisText.length)
+    
     const overallScore = parseScore(analysisText)
     const healthAdvice = extractSection(analysisText, '健康アドバイス')
     const nutritionGuidance = extractSection(analysisText, '栄養指導')
@@ -1161,8 +1196,10 @@ ${questionnaireSummary}
       values: [70, 65, 60, 55, 75, 70] // Default values - in production, parse from AI response
     }
     
-    // Get recommended supplements from master catalog based on health analysis
-    const supplements = await getRecommendedSupplements(db, healthAdvice, riskAssessment)
+    // Parse recommended supplements from AI response
+    console.log('=== PARSING SUPPLEMENTS FROM AI ===')
+    const supplements = await parseSupplementsFromAI(analysisText, supplementsMaster.results, db)
+    
     console.log('=== SUPPLEMENT RECOMMENDATION DEBUG ===')
     console.log('Recommended supplements count:', supplements.length)
     console.log('Supplements:', supplements.map(s => s.supplement_name))
@@ -1241,6 +1278,76 @@ function extractSection(text: string, sectionName: string): string {
   }
   
   return '解析結果を取得できませんでした'
+}
+
+async function parseSupplementsFromAI(aiText: string, masterSupplements: any[], db: D1Database): Promise<Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}>> {
+  try {
+    console.log('Parsing supplements from AI response...')
+    
+    // Extract supplement section from AI response
+    const supplementSection = extractSection(aiText, '推奨サプリメント')
+    
+    if (!supplementSection || supplementSection === '解析結果を取得できませんでした') {
+      console.log('No supplement section found, using fallback')
+      return getDefaultSupplements()
+    }
+    
+    console.log('Supplement section found, length:', supplementSection.length)
+    
+    // Parse each supplement entry (format: [CODE] Name\n用量: ...\n頻度: ...\n推奨理由: ...)
+    const supplements: any[] = []
+    const supplementBlocks = supplementSection.split('---').filter(block => block.trim().length > 0)
+    
+    console.log('Found supplement blocks:', supplementBlocks.length)
+    
+    for (const block of supplementBlocks) {
+      // Extract product code [SXXX]
+      const codeMatch = block.match(/\[([A-Z0-9]+)\]/)
+      if (!codeMatch) continue
+      
+      const productCode = codeMatch[1]
+      console.log('Parsing supplement with code:', productCode)
+      
+      // Find supplement in master data
+      const masterSupp = masterSupplements.find((s: any) => s.product_code === productCode)
+      if (!masterSupp) {
+        console.log('Supplement not found in master:', productCode)
+        continue
+      }
+      
+      // Extract dosage, frequency, and reason
+      const dosageMatch = block.match(/用量[：:]\s*(.+)/i)
+      const frequencyMatch = block.match(/頻度[：:]\s*(.+)/i)
+      const reasonMatch = block.match(/推奨理由[：:]\s*(.+)/i)
+      
+      supplements.push({
+        supplement_name: masterSupp.product_name,
+        supplement_type: masterSupp.category,
+        dosage: dosageMatch ? dosageMatch[1].trim() : masterSupp.content_amount,
+        frequency: frequencyMatch ? frequencyMatch[1].trim() : '1日1回',
+        reason: reasonMatch ? reasonMatch[1].trim() : masterSupp.recommended_for || masterSupp.description,
+        priority: masterSupp.supplement_category === '必須栄養素' ? 1 : 2
+      })
+    }
+    
+    console.log('Parsed supplements count:', supplements.length)
+    
+    // If we got less than 6, fill with defaults
+    if (supplements.length < 6) {
+      console.log('Less than 6 supplements found, filling with defaults')
+      const defaultSupps = getDefaultSupplements()
+      while (supplements.length < 6 && defaultSupps.length > 0) {
+        supplements.push(defaultSupps.shift())
+      }
+    }
+    
+    // Return exactly 6 supplements
+    return supplements.slice(0, 6)
+    
+  } catch (error) {
+    console.error('Error parsing supplements from AI:', error)
+    return getDefaultSupplements()
+  }
 }
 
 async function getRecommendedSupplements(db: D1Database, healthAdvice: string, riskAssessment: string): Promise<Array<{supplement_name: string, supplement_type: string, dosage: string, frequency: string, reason: string, priority: number}>> {
