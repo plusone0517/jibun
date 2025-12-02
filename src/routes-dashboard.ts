@@ -180,14 +180,19 @@ dashboardRoutes.get('/', async (c) => {
                 const limitedAnalyses = analyses.slice(0, 5);
                 
                 container.innerHTML = limitedAnalyses.map(analysis => \`
-                    <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-purple-50 transition cursor-pointer" onclick="window.location.href='/analysis'">
+                    <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-purple-50 transition">
                         <div class="flex justify-between items-center">
-                            <div>
+                            <div class="flex-1 cursor-pointer" onclick="window.location.href='/analysis'">
                                 <p class="font-bold">健康スコア: \${analysis.overall_score.toFixed(0)}点</p>
-                                <p class="text-sm text-gray-600">\${new Date(analysis.analysis_date).toLocaleDateString('ja-JP')}</p>
+                                <p class="text-sm text-gray-600">\${new Date(analysis.analysis_date).toLocaleDateString('ja-JP')} \${new Date(analysis.analysis_date).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}</p>
                             </div>
-                            <div class="text-purple-600">
-                                <i class="fas fa-chevron-right"></i>
+                            <div class="flex items-center gap-2">
+                                <button onclick="event.stopPropagation(); deleteAnalysis(\${analysis.id})" class="text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-50 transition" title="削除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <div class="text-purple-600 cursor-pointer" onclick="window.location.href='/analysis'">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -195,6 +200,25 @@ dashboardRoutes.get('/', async (c) => {
 
                 if (analyses.length > 5) {
                     container.innerHTML += '<div class="text-center mt-4"><a href="/analysis" class="text-blue-600 hover:text-blue-700 font-bold">すべての解析結果を見る（' + analyses.length + '件）</a></div>';
+                }
+            }
+
+            async function deleteAnalysis(analysisId) {
+                if (!confirm('この解析結果を削除しますか？')) {
+                    return;
+                }
+
+                try {
+                    const response = await axios.delete(\`/api/analysis/\${analysisId}\`);
+                    if (response.data.success) {
+                        alert('解析結果を削除しました');
+                        loadDashboardData(); // Reload dashboard data
+                    } else {
+                        alert('削除に失敗しました: ' + (response.data.error || '不明なエラー'));
+                    }
+                } catch (error) {
+                    console.error('Error deleting analysis:', error);
+                    alert('削除中にエラーが発生しました: ' + (error.response?.data?.error || error.message));
                 }
             }
 

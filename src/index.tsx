@@ -1309,6 +1309,29 @@ app.get('/api/analysis-history/:userId', async (c) => {
   }
 })
 
+// Delete analysis result
+app.delete('/api/analysis/:analysisId', async (c) => {
+  try {
+    const analysisId = c.req.param('analysisId')
+    const db = c.env.DB
+
+    // Delete supplement recommendations first (foreign key constraint)
+    await db.prepare(
+      'DELETE FROM supplement_recommendations WHERE analysis_result_id = ?'
+    ).bind(analysisId).run()
+
+    // Delete the analysis result
+    await db.prepare(
+      'DELETE FROM analysis_results WHERE id = ?'
+    ).bind(analysisId).run()
+
+    return c.json({ success: true, message: '解析結果を削除しました' })
+  } catch (error) {
+    console.error('Error deleting analysis:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // Get exam history with measurements (for history charts)
 app.get('/api/history/:userId', async (c) => {
   try {
