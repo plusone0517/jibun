@@ -55,8 +55,9 @@ authRoutes.get('/register', (c) => {
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス *</label>
-                        <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">生年月日 *</label>
+                        <input type="date" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" max="2024-12-31">
+                        <p class="text-xs text-gray-500 mt-1">※ ログイン時に必要となります</p>
                     </div>
 
                     <div>
@@ -69,21 +70,20 @@ authRoutes.get('/register', (c) => {
                         <input type="password" id="passwordConfirm" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="パスワードを再入力">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">年齢</label>
-                            <input type="number" id="age" min="1" max="120" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="35">
-                        </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">性別</label>
+                        <select id="gender" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">選択してください</option>
+                            <option value="男性">男性</option>
+                            <option value="女性">女性</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">性別</label>
-                            <select id="gender" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="">選択してください</option>
-                                <option value="男性">男性</option>
-                                <option value="女性">女性</option>
-                                <option value="その他">その他</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス（任意）</label>
+                        <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
+                        <p class="text-xs text-gray-500 mt-1">※ パスワードリセット用（任意）</p>
                     </div>
 
                     <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
@@ -115,24 +115,39 @@ authRoutes.get('/register', (c) => {
                 e.preventDefault();
 
                 const name = document.getElementById('name').value;
-                const email = document.getElementById('email').value;
+                const birthdate = document.getElementById('birthdate').value;
                 const password = document.getElementById('password').value;
                 const passwordConfirm = document.getElementById('passwordConfirm').value;
-                const age = document.getElementById('age').value;
                 const gender = document.getElementById('gender').value;
+                const email = document.getElementById('email').value;
 
                 if (password !== passwordConfirm) {
                     showError('パスワードが一致しません');
                     return;
                 }
 
+                if (!birthdate) {
+                    showError('生年月日を入力してください');
+                    return;
+                }
+
+                // Calculate age from birthdate
+                const birthDate = new Date(birthdate);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+
                 try {
                     const response = await axios.post('/api/auth/register', {
                         name,
-                        email,
+                        birthdate,
                         password,
-                        age: age ? parseInt(age) : null,
-                        gender: gender || null
+                        age,
+                        gender: gender || null,
+                        email: email || null
                     });
 
                     if (response.data.success) {
@@ -192,8 +207,8 @@ authRoutes.get('/login', (c) => {
 
                 <form id="loginForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス</label>
-                        <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">生年月日</label>
+                        <input type="date" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" max="2024-12-31">
                     </div>
 
                     <div>
@@ -236,12 +251,12 @@ authRoutes.get('/login', (c) => {
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const email = document.getElementById('email').value;
+                const birthdate = document.getElementById('birthdate').value;
                 const password = document.getElementById('password').value;
 
                 try {
                     const response = await axios.post('/api/auth/login', {
-                        email,
+                        birthdate,
                         password
                     });
 
@@ -272,18 +287,18 @@ authRoutes.get('/login', (c) => {
 // Register API
 authRoutes.post('/register', async (c) => {
   try {
-    const { name, email, password, age, gender } = await c.req.json()
+    const { name, birthdate, password, age, gender, email } = await c.req.json()
 
-    if (!name || !email || !password) {
+    if (!name || !birthdate || !password) {
       return c.json({ success: false, error: '必須項目が不足しています' }, 400)
     }
 
     const db = c.env.DB
 
-    // Check if email already exists
-    const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
+    // Check if birthdate already exists
+    const existingUser = await db.prepare('SELECT id FROM users WHERE birthdate = ?').bind(birthdate).first()
     if (existingUser) {
-      return c.json({ success: false, error: 'このメールアドレスは既に登録されています' }, 400)
+      return c.json({ success: false, error: 'この生年月日は既に登録されています' }, 400)
     }
 
     // Hash password
@@ -291,8 +306,8 @@ authRoutes.post('/register', async (c) => {
 
     // Insert user
     const result = await db.prepare(
-      'INSERT INTO users (name, email, password_hash, age, gender) VALUES (?, ?, ?, ?, ?)'
-    ).bind(name, email, passwordHash, age, gender).run()
+      'INSERT INTO users (name, birthdate, email, password_hash, age, gender) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(name, birthdate, email, passwordHash, age, gender).run()
 
     return c.json({
       success: true,
@@ -308,24 +323,24 @@ authRoutes.post('/register', async (c) => {
 // Login API
 authRoutes.post('/login', async (c) => {
   try {
-    const { email, password } = await c.req.json()
+    const { birthdate, password } = await c.req.json()
 
-    if (!email || !password) {
-      return c.json({ success: false, error: 'メールアドレスとパスワードを入力してください' }, 400)
+    if (!birthdate || !password) {
+      return c.json({ success: false, error: '生年月日とパスワードを入力してください' }, 400)
     }
 
     const db = c.env.DB
 
     // Find user
-    const user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first()
+    const user = await db.prepare('SELECT * FROM users WHERE birthdate = ?').bind(birthdate).first()
     if (!user) {
-      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
+      return c.json({ success: false, error: '生年月日またはパスワードが正しくありません' }, 401)
     }
 
     // Verify password
     const passwordHash = await hashPassword(password)
     if (passwordHash !== user.password_hash) {
-      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
+      return c.json({ success: false, error: '生年月日またはパスワードが正しくありません' }, 401)
     }
 
     // Create session
@@ -353,7 +368,9 @@ authRoutes.post('/login', async (c) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        birthdate: user.birthdate,
+        age: user.age
       }
     })
   } catch (error) {
@@ -402,7 +419,7 @@ authRoutes.get('/me', async (c) => {
     }
 
     // Get user
-    const user = await db.prepare('SELECT id, name, email, age, gender FROM users WHERE id = ?')
+    const user = await db.prepare('SELECT id, name, email, birthdate, age, gender FROM users WHERE id = ?')
       .bind(session.user_id).first()
 
     if (!user) {
