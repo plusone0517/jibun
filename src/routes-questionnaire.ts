@@ -266,6 +266,7 @@ questionnaireRoutes.get('/', (c) => {
                 const nextBtn = document.getElementById('nextBtn');
                 const submitBtn = document.getElementById('submitBtn');
 
+                // Always enable prev button (except on first question)
                 prevBtn.disabled = currentQuestion === 0;
 
                 // Check if current question is answered
