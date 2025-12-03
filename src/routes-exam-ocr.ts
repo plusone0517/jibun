@@ -166,39 +166,113 @@ examOcrRoutes.get('/', (c) => {
 
                 <!-- Blood Test Form -->
                 <div id="bloodTestForm" class="exam-form hidden">
-                    <h4 class="text-xl font-bold mb-4 text-red-600">血液検査データ</h4>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">血糖値 (mg/dL)</label>
-                            <input type="number" id="blood_sugar" class="w-full px-4 py-2 border rounded-lg" placeholder="100">
+                    <h4 class="text-xl font-bold mb-4 text-red-600">血液検査データ（52項目）</h4>
+                    
+                    <!-- CBC: 血球系 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-red-700 border-b-2 border-red-200 pb-2">① 血球系（CBC：血算）</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">赤血球数 (×10⁴/µL)</label><input type="number" step="0.01" id="rbc" class="w-full px-4 py-2 border rounded-lg" placeholder="450"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">白血球数 (/µL)</label><input type="number" id="wbc" class="w-full px-4 py-2 border rounded-lg" placeholder="6000"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">血小板数 (×10⁴/µL)</label><input type="number" step="0.1" id="plt" class="w-full px-4 py-2 border rounded-lg" placeholder="25"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ヘモグロビン (g/dL)</label><input type="number" step="0.1" id="hb" class="w-full px-4 py-2 border rounded-lg" placeholder="14.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ヘマトクリット (%)</label><input type="number" step="0.1" id="hct" class="w-full px-4 py-2 border rounded-lg" placeholder="42"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">MCV (fL)</label><input type="number" step="0.1" id="mcv" class="w-full px-4 py-2 border rounded-lg" placeholder="90"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">MCH (pg)</label><input type="number" step="0.1" id="mch" class="w-full px-4 py-2 border rounded-lg" placeholder="30"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">MCHC (%)</label><input type="number" step="0.1" id="mchc" class="w-full px-4 py-2 border rounded-lg" placeholder="33"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">網赤血球 (%)</label><input type="number" step="0.1" id="ret" class="w-full px-4 py-2 border rounded-lg" placeholder="1.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">好中球 (%)</label><input type="number" step="0.1" id="neutrophil" class="w-full px-4 py-2 border rounded-lg" placeholder="55"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">リンパ球 (%)</label><input type="number" step="0.1" id="lymphocyte" class="w-full px-4 py-2 border rounded-lg" placeholder="35"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">単球 (%)</label><input type="number" step="0.1" id="monocyte" class="w-full px-4 py-2 border rounded-lg" placeholder="5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">好酸球 (%)</label><input type="number" step="0.1" id="eosinophil" class="w-full px-4 py-2 border rounded-lg" placeholder="2"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">好塩基球 (%)</label><input type="number" step="0.1" id="basophil" class="w-full px-4 py-2 border rounded-lg" placeholder="0.5"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">HbA1c (%)</label>
-                            <input type="number" step="0.1" id="hba1c" class="w-full px-4 py-2 border rounded-lg" placeholder="5.5">
+                    </div>
+
+                    <!-- 肝機能 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-orange-700 border-b-2 border-orange-200 pb-2">② 肝機能</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">AST (U/L)</label><input type="number" id="ast" class="w-full px-4 py-2 border rounded-lg" placeholder="25"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ALT (U/L)</label><input type="number" id="alt" class="w-full px-4 py-2 border rounded-lg" placeholder="25"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">γ-GTP (U/L)</label><input type="number" id="ggt" class="w-full px-4 py-2 border rounded-lg" placeholder="30"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ALP (U/L)</label><input type="number" id="alp" class="w-full px-4 py-2 border rounded-lg" placeholder="200"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">LDH (U/L)</label><input type="number" id="ldh" class="w-full px-4 py-2 border rounded-lg" placeholder="180"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">総ビリルビン (mg/dL)</label><input type="number" step="0.1" id="total_bilirubin" class="w-full px-4 py-2 border rounded-lg" placeholder="0.8"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">直接ビリルビン (mg/dL)</label><input type="number" step="0.1" id="direct_bilirubin" class="w-full px-4 py-2 border rounded-lg" placeholder="0.2"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">総蛋白 (g/dL)</label><input type="number" step="0.1" id="tp" class="w-full px-4 py-2 border rounded-lg" placeholder="7.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">アルブミン (g/dL)</label><input type="number" step="0.1" id="alb" class="w-full px-4 py-2 border rounded-lg" placeholder="4.5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">A/G比</label><input type="number" step="0.1" id="ag_ratio" class="w-full px-4 py-2 border rounded-lg" placeholder="1.5"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">総コレステロール (mg/dL)</label>
-                            <input type="number" id="total_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="200">
+                    </div>
+
+                    <!-- 腎機能 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-blue-700 border-b-2 border-blue-200 pb-2">③ 腎機能</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">BUN (mg/dL)</label><input type="number" step="0.1" id="bun" class="w-full px-4 py-2 border rounded-lg" placeholder="15"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">クレアチニン (mg/dL)</label><input type="number" step="0.01" id="creatinine" class="w-full px-4 py-2 border rounded-lg" placeholder="0.9"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">eGFR (mL/min/1.73㎡)</label><input type="number" step="0.1" id="egfr" class="w-full px-4 py-2 border rounded-lg" placeholder="90"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">尿酸 (mg/dL)</label><input type="number" step="0.1" id="uric_acid" class="w-full px-4 py-2 border rounded-lg" placeholder="5.5"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">LDLコレステロール (mg/dL)</label>
-                            <input type="number" id="ldl_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="120">
+                    </div>
+
+                    <!-- 電解質・ミネラル -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-green-700 border-b-2 border-green-200 pb-2">④ 電解質・ミネラル</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ナトリウム (mEq/L)</label><input type="number" step="0.1" id="sodium" class="w-full px-4 py-2 border rounded-lg" placeholder="140"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">カリウム (mEq/L)</label><input type="number" step="0.1" id="potassium" class="w-full px-4 py-2 border rounded-lg" placeholder="4.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">クロール (mEq/L)</label><input type="number" step="0.1" id="chloride" class="w-full px-4 py-2 border rounded-lg" placeholder="103"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">カルシウム (mg/dL)</label><input type="number" step="0.1" id="calcium" class="w-full px-4 py-2 border rounded-lg" placeholder="9.5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">無機リン (mg/dL)</label><input type="number" step="0.1" id="phosphorus" class="w-full px-4 py-2 border rounded-lg" placeholder="3.5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">マグネシウム (mg/dL)</label><input type="number" step="0.1" id="magnesium" class="w-full px-4 py-2 border rounded-lg" placeholder="2.2"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">HDLコレステロール (mg/dL)</label>
-                            <input type="number" id="hdl_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="50">
+                    </div>
+
+                    <!-- 脂質 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-purple-700 border-b-2 border-purple-200 pb-2">⑤ 脂質（Lipid Profile）</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">総コレステロール (mg/dL)</label><input type="number" id="total_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="180"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">LDLコレステロール (mg/dL)</label><input type="number" id="ldl_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="100"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">HDLコレステロール (mg/dL)</label><input type="number" id="hdl_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="60"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">中性脂肪 (mg/dL)</label><input type="number" id="triglycerides" class="w-full px-4 py-2 border rounded-lg" placeholder="100"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Non-HDLコレステロール (mg/dL)</label><input type="number" id="non_hdl_cholesterol" class="w-full px-4 py-2 border rounded-lg" placeholder="120"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">中性脂肪 (mg/dL)</label>
-                            <input type="number" id="triglycerides" class="w-full px-4 py-2 border rounded-lg" placeholder="150">
+                    </div>
+
+                    <!-- 糖代謝 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-pink-700 border-b-2 border-pink-200 pb-2">⑥ 糖代謝</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">空腹時血糖 (mg/dL)</label><input type="number" id="blood_sugar" class="w-full px-4 py-2 border rounded-lg" placeholder="90"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">HbA1c (%)</label><input type="number" step="0.1" id="hba1c" class="w-full px-4 py-2 border rounded-lg" placeholder="5.5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">インスリン (µU/mL)</label><input type="number" step="0.1" id="insulin" class="w-full px-4 py-2 border rounded-lg" placeholder="8"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">HOMA-IR</label><input type="number" step="0.1" id="homa_ir" class="w-full px-4 py-2 border rounded-lg" placeholder="1.5"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">AST (U/L)</label>
-                            <input type="number" id="ast" class="w-full px-4 py-2 border rounded-lg" placeholder="25">
+                    </div>
+
+                    <!-- 炎症・免疫 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-indigo-700 border-b-2 border-indigo-200 pb-2">⑦ 炎症・免疫</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">CRP (mg/dL)</label><input type="number" step="0.01" id="crp" class="w-full px-4 py-2 border rounded-lg" placeholder="0.1"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">ESR (mm/hr)</label><input type="number" id="esr" class="w-full px-4 py-2 border rounded-lg" placeholder="5"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">フェリチン (ng/mL)</label><input type="number" step="0.1" id="ferritin" class="w-full px-4 py-2 border rounded-lg" placeholder="100"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">IgG (mg/dL)</label><input type="number" id="igg" class="w-full px-4 py-2 border rounded-lg" placeholder="1200"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">IgA (mg/dL)</label><input type="number" id="iga" class="w-full px-4 py-2 border rounded-lg" placeholder="250"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">IgM (mg/dL)</label><input type="number" id="igm" class="w-full px-4 py-2 border rounded-lg" placeholder="100"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">ALT (U/L)</label>
-                            <input type="number" id="alt" class="w-full px-4 py-2 border rounded-lg" placeholder="25">
+                    </div>
+
+                    <!-- 甲状腺 -->
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold mb-3 text-teal-700 border-b-2 border-teal-200 pb-2">⑧ 甲状腺</h5>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">TSH (µIU/mL)</label><input type="number" step="0.01" id="tsh" class="w-full px-4 py-2 border rounded-lg" placeholder="2.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">FT3 (pg/mL)</label><input type="number" step="0.1" id="ft3" class="w-full px-4 py-2 border rounded-lg" placeholder="3.0"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">FT4 (ng/dL)</label><input type="number" step="0.1" id="ft4" class="w-full px-4 py-2 border rounded-lg" placeholder="1.2"></div>
                         </div>
                     </div>
                 </div>
@@ -414,11 +488,34 @@ examOcrRoutes.get('/', (c) => {
                         if (value) measurements.push({ key: field, value: value, unit: units[field] });
                     });
                 } else if (examType === 'blood_test') {
-                    const fields = ['blood_sugar', 'hba1c', 'total_cholesterol', 'ldl_cholesterol', 'hdl_cholesterol', 'triglycerides', 'ast', 'alt'];
-                    const units = { blood_sugar: 'mg/dL', hba1c: '%', total_cholesterol: 'mg/dL', ldl_cholesterol: 'mg/dL', hdl_cholesterol: 'mg/dL', triglycerides: 'mg/dL', ast: 'U/L', alt: 'U/L' };
-                    fields.forEach(field => {
-                        const value = document.getElementById(field).value;
-                        if (value) measurements.push({ key: field, value: value, unit: units[field] });
+                    // 52項目の血液検査データを収集
+                    const bloodTestFields = {
+                        // CBC: 血球系
+                        'rbc': '×10⁴/µL', 'wbc': '/µL', 'plt': '×10⁴/µL', 'hb': 'g/dL', 'hct': '%',
+                        'mcv': 'fL', 'mch': 'pg', 'mchc': '%', 'ret': '%',
+                        'neutrophil': '%', 'lymphocyte': '%', 'monocyte': '%', 'eosinophil': '%', 'basophil': '%',
+                        // 肝機能
+                        'ast': 'U/L', 'alt': 'U/L', 'ggt': 'U/L', 'alp': 'U/L', 'ldh': 'U/L',
+                        'total_bilirubin': 'mg/dL', 'direct_bilirubin': 'mg/dL', 'tp': 'g/dL', 'alb': 'g/dL', 'ag_ratio': '',
+                        // 腎機能
+                        'bun': 'mg/dL', 'creatinine': 'mg/dL', 'egfr': 'mL/min/1.73㎡', 'uric_acid': 'mg/dL',
+                        // 電解質・ミネラル
+                        'sodium': 'mEq/L', 'potassium': 'mEq/L', 'chloride': 'mEq/L', 'calcium': 'mg/dL', 'phosphorus': 'mg/dL', 'magnesium': 'mg/dL',
+                        // 脂質
+                        'total_cholesterol': 'mg/dL', 'ldl_cholesterol': 'mg/dL', 'hdl_cholesterol': 'mg/dL', 'triglycerides': 'mg/dL', 'non_hdl_cholesterol': 'mg/dL',
+                        // 糖代謝
+                        'blood_sugar': 'mg/dL', 'hba1c': '%', 'insulin': 'µU/mL', 'homa_ir': '',
+                        // 炎症・免疫
+                        'crp': 'mg/dL', 'esr': 'mm/hr', 'ferritin': 'ng/mL', 'igg': 'mg/dL', 'iga': 'mg/dL', 'igm': 'mg/dL',
+                        // 甲状腺
+                        'tsh': 'µIU/mL', 'ft3': 'pg/mL', 'ft4': 'ng/dL'
+                    };
+                    
+                    Object.entries(bloodTestFields).forEach(([field, unit]) => {
+                        const value = document.getElementById(field)?.value;
+                        if (value) {
+                            measurements.push({ key: field, value: value, unit: unit });
+                        }
                     });
                 } else if (examType === 'custom') {
                     const keys = document.querySelectorAll('.custom-item-key');
@@ -571,24 +668,32 @@ examOcrRoutes.get('/', (c) => {
                 container.innerHTML = html;
             }
 
-            // Format measurement key
+            // Format measurement key (52項目対応)
             function formatMeasurementKey(key) {
                 const keyMap = {
-                    'systolic_bp': '収縮期血圧',
-                    'diastolic_bp': '拡張期血圧',
-                    'pulse': '脈拍',
-                    'weight': '体重',
-                    'body_fat': '体脂肪率',
-                    'muscle_mass': '筋肉量',
-                    'bmi': 'BMI',
-                    'blood_sugar': '血糖値',
-                    'hba1c': 'HbA1c',
-                    'total_cholesterol': '総コレステロール',
-                    'ldl_cholesterol': 'LDL',
-                    'hdl_cholesterol': 'HDL',
-                    'triglycerides': '中性脂肪',
-                    'ast': 'AST',
-                    'alt': 'ALT'
+                    // 血圧
+                    'systolic_bp': '収縮期血圧', 'diastolic_bp': '拡張期血圧', 'pulse': '脈拍',
+                    // 体組成
+                    'weight': '体重', 'body_fat': '体脂肪率', 'muscle_mass': '筋肉量', 'bmi': 'BMI',
+                    // CBC: 血球系
+                    'rbc': '赤血球数', 'wbc': '白血球数', 'plt': '血小板数', 'hb': 'ヘモグロビン', 'hct': 'ヘマトクリット',
+                    'mcv': 'MCV', 'mch': 'MCH', 'mchc': 'MCHC', 'ret': '網赤血球',
+                    'neutrophil': '好中球', 'lymphocyte': 'リンパ球', 'monocyte': '単球', 'eosinophil': '好酸球', 'basophil': '好塩基球',
+                    // 肝機能
+                    'ast': 'AST', 'alt': 'ALT', 'ggt': 'γ-GTP', 'alp': 'ALP', 'ldh': 'LDH',
+                    'total_bilirubin': '総ビリルビン', 'direct_bilirubin': '直接ビリルビン', 'tp': '総蛋白', 'alb': 'アルブミン', 'ag_ratio': 'A/G比',
+                    // 腎機能
+                    'bun': 'BUN', 'creatinine': 'クレアチニン', 'egfr': 'eGFR', 'uric_acid': '尿酸',
+                    // 電解質・ミネラル
+                    'sodium': 'ナトリウム', 'potassium': 'カリウム', 'chloride': 'クロール', 'calcium': 'カルシウム', 'phosphorus': '無機リン', 'magnesium': 'マグネシウム',
+                    // 脂質
+                    'total_cholesterol': '総コレステロール', 'ldl_cholesterol': 'LDL', 'hdl_cholesterol': 'HDL', 'triglycerides': '中性脂肪', 'non_hdl_cholesterol': 'Non-HDL',
+                    // 糖代謝
+                    'blood_sugar': '空腹時血糖', 'hba1c': 'HbA1c', 'insulin': 'インスリン', 'homa_ir': 'HOMA-IR',
+                    // 炎症・免疫
+                    'crp': 'CRP', 'esr': 'ESR', 'ferritin': 'フェリチン', 'igg': 'IgG', 'iga': 'IgA', 'igm': 'IgM',
+                    // 甲状腺
+                    'tsh': 'TSH', 'ft3': 'FT3', 'ft4': 'FT4'
                 };
                 return keyMap[key] || key;
             }
