@@ -275,8 +275,8 @@ questionnaireRoutes.get('/', (c) => {
                 if (currentQuestion === questions.length - 1) {
                     nextBtn.classList.add('hidden');
                     submitBtn.classList.remove('hidden');
-                    // Disable submit button if not all questions are answered
-                    submitBtn.disabled = Object.keys(answers).length < questions.length;
+                    // Enable submit button if at least one question is answered
+                    submitBtn.disabled = Object.keys(answers).length === 0;
                 } else {
                     nextBtn.classList.remove('hidden');
                     submitBtn.classList.add('hidden');
@@ -310,12 +310,6 @@ questionnaireRoutes.get('/', (c) => {
 
             async function submitQuestionnaire() {
                 try {
-                    const answeredCount = Object.keys(answers).length;
-                    if (answeredCount < questions.length) {
-                        showError(\`全ての質問に回答してください（現在 \${answeredCount}/50）\`);
-                        return;
-                    }
-
                     // Get current user
                     const userResponse = await axios.get('/api/auth/me');
                     if (!userResponse.data.success) {
@@ -324,13 +318,21 @@ questionnaireRoutes.get('/', (c) => {
                     }
                     const userId = userResponse.data.user.id;
 
-                    const responses = questions.map(q => ({
-                        question_number: q.number,
-                        question_text: q.text,
-                        answer_value: answers[q.number],
-                        category: q.category,
-                        is_descriptive: q.isDescriptive ? 1 : 0
-                    }));
+                    // Create responses array with only answered questions
+                    const responses = questions
+                        .filter(q => answers[q.number] !== undefined && answers[q.number] !== '')
+                        .map(q => ({
+                            question_number: q.number,
+                            question_text: q.text,
+                            answer_value: answers[q.number],
+                            category: q.category,
+                            is_descriptive: q.isDescriptive ? 1 : 0
+                        }));
+
+                    if (responses.length === 0) {
+                        showError('少なくとも1つの質問に回答してください');
+                        return;
+                    }
 
                     const response = await axios.post('/api/questionnaire', {
                         user_id: userId,
