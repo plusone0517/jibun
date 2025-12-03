@@ -509,17 +509,35 @@ bloodTestRoutes.get('/', (c) => {
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script>
+            let currentUser = null;
+
             // Check authentication
-            const token = localStorage.getItem('token')
-            if (!token) {
-                window.location.href = '/auth/login'
+            async function checkAuth() {
+                try {
+                    const response = await axios.get('/api/auth/me');
+                    if (response.data.success) {
+                        currentUser = response.data.user;
+                        console.log('Authenticated user:', currentUser);
+                    } else {
+                        window.location.href = '/auth/login';
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    window.location.href = '/auth/login';
+                }
             }
 
+            // Call checkAuth on page load
+            window.addEventListener('load', checkAuth);
+
             // Logout handler
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                localStorage.removeItem('token')
-                localStorage.removeItem('user')
-                window.location.href = '/auth/login'
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                try {
+                    await axios.post('/api/auth/logout');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                window.location.href = '/auth/login';
             })
 
             // Form submission
@@ -551,15 +569,18 @@ bloodTestRoutes.get('/', (c) => {
                 }
 
                 try {
-                    const user = JSON.parse(localStorage.getItem('user') || '{}')
+                    if (!currentUser || !currentUser.id) {
+                        alert('ユーザー情報が取得できませんでした。再度ログインしてください。');
+                        window.location.href = '/auth/login';
+                        return;
+                    }
+
                     const response = await axios.post('/api/exam', {
-                        user_id: user.id,
+                        user_id: currentUser.id,
                         exam_date: examDate,
                         exam_type: 'blood_test',
                         data_source: 'manual_input',
                         measurements: measurements
-                    }, {
-                        headers: { 'Authorization': \`Bearer \${token}\` }
                     })
 
                     if (response.data.success) {
