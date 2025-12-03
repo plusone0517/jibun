@@ -67,15 +67,21 @@ questionnaireRoutes.get('/', (c) => {
                 </div>
 
                 <!-- Navigation buttons -->
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                     <button id="prevBtn" onclick="prevQuestion()" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-bold disabled:opacity-50" disabled>
                         <i class="fas fa-arrow-left mr-2"></i>前へ
                     </button>
+                    
+                    <!-- Submit Anytime Button (always visible) -->
+                    <button id="submitAnytimeBtn" onclick="submitQuestionnaire()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
+                        <i class="fas fa-paper-plane mr-2"></i>途中送信してAI解析へ
+                    </button>
+                    
                     <button id="nextBtn" onclick="nextQuestion()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
                         次へ<i class="fas fa-arrow-right ml-2"></i>
                     </button>
                     <button id="submitBtn" onclick="submitQuestionnaire()" class="hidden bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
-                        <i class="fas fa-check mr-2"></i>送信する
+                        <i class="fas fa-check mr-2"></i>完了して送信
                     </button>
                 </div>
             </div>
@@ -265,6 +271,7 @@ questionnaireRoutes.get('/', (c) => {
                 const prevBtn = document.getElementById('prevBtn');
                 const nextBtn = document.getElementById('nextBtn');
                 const submitBtn = document.getElementById('submitBtn');
+                const submitAnytimeBtn = document.getElementById('submitAnytimeBtn');
 
                 // Always enable prev button (except on first question)
                 prevBtn.disabled = currentQuestion === 0;
@@ -273,13 +280,21 @@ questionnaireRoutes.get('/', (c) => {
                 const currentQuestionNumber = questions[currentQuestion].number;
                 const isAnswered = !!answers[currentQuestionNumber];
 
+                // Enable "Submit Anytime" button if at least one question is answered
+                const answeredCount = Object.keys(answers).length;
+                submitAnytimeBtn.disabled = answeredCount === 0;
+
                 if (currentQuestion === questions.length - 1) {
+                    // Last question: hide "next" and "submit anytime", show final "submit"
                     nextBtn.classList.add('hidden');
+                    submitAnytimeBtn.classList.add('hidden');
                     submitBtn.classList.remove('hidden');
                     // Enable submit button if at least one question is answered
-                    submitBtn.disabled = Object.keys(answers).length === 0;
+                    submitBtn.disabled = answeredCount === 0;
                 } else {
+                    // Not last question: show "next" and "submit anytime", hide final "submit"
                     nextBtn.classList.remove('hidden');
+                    submitAnytimeBtn.classList.remove('hidden');
                     submitBtn.classList.add('hidden');
                     // Disable next button if current question is not answered
                     nextBtn.disabled = !isAnswered;
