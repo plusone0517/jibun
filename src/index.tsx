@@ -860,7 +860,7 @@ app.get('/exam', (c) => {
 // Save exam data
 app.post('/api/exam', async (c) => {
   try {
-    const { user_id, exam_date, exam_type, measurements, data_source } = await c.req.json()
+    const { user_id, exam_date, exam_type, measurements, data_source, ocr_raw_text } = await c.req.json()
 
     if (!user_id || !exam_date || !exam_type || !measurements || measurements.length === 0) {
       return c.json({ success: false, error: '必須項目が不足しています' }, 400)
@@ -871,10 +871,10 @@ app.post('/api/exam', async (c) => {
     // Set data_source to 'manual' if not provided
     const source = data_source || 'manual'
 
-    // Insert exam_data record with data_source
+    // Insert exam_data record with data_source and ocr_raw_text
     const examResult = await db.prepare(
-      'INSERT INTO exam_data (user_id, exam_date, exam_type, data_source) VALUES (?, ?, ?, ?)'
-    ).bind(user_id, exam_date, exam_type, source).run()
+      'INSERT INTO exam_data (user_id, exam_date, exam_type, data_source, ocr_raw_text) VALUES (?, ?, ?, ?, ?)'
+    ).bind(user_id, exam_date, exam_type, source, ocr_raw_text || null).run()
 
     const examDataId = examResult.meta.last_row_id
 
@@ -1040,6 +1040,9 @@ app.post('/api/analyze-exam-image', async (c) => {
       }, 500)
     }
 
+    // Add raw OCR text to result for storage
+    result.ocr_raw_text = resultText
+    
     return c.json({ success: true, result })
   } catch (error) {
     console.error('Error analyzing exam image:', error)
@@ -1145,6 +1148,12 @@ async function performAnalysis(c: any) {
       `${exam.exam_type}: ${exam.measurements}`
     ).join('\n') || 'なし'
 
+    // Collect OCR raw texts for additional context
+    const ocrTexts = examData.results
+      ?.filter(exam => exam.ocr_raw_text)
+      .map(exam => `【${exam.exam_date} ${exam.exam_type}のOCR読取データ】\n${exam.ocr_raw_text}`)
+      .join('\n\n') || ''
+
     const questionnaireSummary = questionnaireData.results?.map(q => 
       `Q${q.question_number}. ${q.question_text} → ${q.answer_value}`
     ).join('\n') || 'なし'
@@ -1167,9 +1176,14 @@ async function performAnalysis(c: any) {
             role: 'user',
             content: `以下のデータを分析して、総合的な健康アドバイスを提供してください。
 
-【検査データ】
+【検査データ（構造化）】
 ${examSummary}
 
+${ocrTexts ? `【OCRで読み取った検査結果の詳細テキスト】
+${ocrTexts}
+
+※上記のOCRテキストには、構造化データに含まれない追加の検査項目や詳細情報が含まれている場合があります。これらも解析に活用してください。
+` : ''}
 【問診結果（50問）】
 ${questionnaireSummary}
 

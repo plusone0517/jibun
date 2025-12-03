@@ -316,7 +316,8 @@ examOcrRoutes.get('/', (c) => {
                                 exam_date: data.exam_date || new Date().toISOString().split('T')[0],
                                 exam_type: data.exam_type || 'blood_test',
                                 measurements: data.measurements || [],
-                                data_source: 'ocr'
+                                data_source: 'ocr',
+                                ocr_raw_text: data.ocr_raw_text || null
                             });
 
                             if (saveResponse.data.success) {
