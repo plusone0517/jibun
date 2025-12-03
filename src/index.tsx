@@ -1077,8 +1077,8 @@ app.post('/api/questionnaire', async (c) => {
     // Insert new responses
     for (const response of responses) {
       await db.prepare(
-        'INSERT INTO questionnaire_responses (user_id, question_number, question_text, answer_value, category) VALUES (?, ?, ?, ?, ?)'
-      ).bind(user_id, response.question_number, response.question_text, response.answer_value, response.category).run()
+        'INSERT INTO questionnaire_responses (user_id, question_number, question_text, answer_value, category, is_descriptive) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(user_id, response.question_number, response.question_text, response.answer_value, response.category, response.is_descriptive || 0).run()
     }
 
     return c.json({ 

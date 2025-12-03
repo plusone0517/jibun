@@ -41,15 +41,20 @@ questionnaireRoutes.get('/', (c) => {
         </nav>
 
         <main class="max-w-4xl mx-auto px-4 pb-12">
+            <!-- Category Progress Cards -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="categoryCards">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">健康問診（50問）</h2>
-                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。より正確なアドバイスのため、正直にお答えください。</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">健康問診（45問）</h2>
+                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。カテゴリごとに保存できます。</p>
                 
                 <!-- Progress bar -->
                 <div class="mb-8">
                     <div class="flex justify-between mb-2">
-                        <span class="text-sm font-medium text-gray-700">進捗状況</span>
-                        <span class="text-sm font-medium text-gray-700"><span id="progressText">0</span>/50</span>
+                        <span class="text-sm font-medium text-gray-700">総合進捗</span>
+                        <span class="text-sm font-medium text-gray-700"><span id="progressText">0</span>/45</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
                         <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -90,6 +95,53 @@ questionnaireRoutes.get('/', (c) => {
             const questions = ${questionsJSON};
             let currentQuestion = 0;
             let answers = {};
+            
+            // Category information
+            const categories = [
+                { name: '食事・栄養習慣', count: 7, icon: '🍎', color: 'green' },
+                { name: 'ストレス・メンタル・睡眠', count: 8, icon: '😴', color: 'blue' },
+                { name: '腸内環境・消化', count: 6, icon: '🦠', color: 'purple' },
+                { name: 'ホルモン・代謝・慢性症状', count: 10, icon: '⚖️', color: 'orange' },
+                { name: '検査経験・希望・意識', count: 8, icon: '🔬', color: 'indigo' },
+                { name: '記述式追加', count: 6, icon: '✍️', color: 'pink' }
+            ];
+
+            // Display category progress cards
+            function displayCategoryCards() {
+                const container = document.getElementById('categoryCards');
+                container.innerHTML = '';
+                
+                categories.forEach(cat => {
+                    const categoryQuestions = questions.filter(q => q.category === cat.name);
+                    const answeredCount = categoryQuestions.filter(q => answers[q.number] !== undefined).length;
+                    const progress = categoryQuestions.length > 0 ? Math.round((answeredCount / categoryQuestions.length) * 100) : 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = \`bg-white rounded-lg shadow p-4 hover:shadow-lg transition cursor-pointer border-l-4 border-\${cat.color}-500\`;
+                    card.onclick = () => {
+                        // Jump to first question of this category
+                        const firstQ = questions.findIndex(q => q.category === cat.name);
+                        if (firstQ >= 0) {
+                            currentQuestion = firstQ;
+                            displayQuestion(currentQuestion);
+                        }
+                    };
+                    
+                    card.innerHTML = \`
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-2xl">\${cat.icon}</span>
+                            <span class="text-sm font-bold text-\${cat.color}-600">\${answeredCount}/\${cat.count}</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-gray-800 mb-2">\${cat.name}</h3>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-\${cat.color}-500 h-2 rounded-full transition-all duration-300" style="width: \${progress}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">\${progress}% 完了</p>
+                    \`;
+                    
+                    container.appendChild(card);
+                });
+            }
 
             // Load saved answers from localStorage
             function loadSavedAnswers() {
@@ -143,49 +195,54 @@ questionnaireRoutes.get('/', (c) => {
                 const question = questions[index];
                 const container = document.getElementById('questionContainer');
                 
-                const optionsHTML = question.options.map((option, i) => \`
-                    <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition \${answers[question.number] === option ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}">
-                        <input type="radio" name="q\${question.number}" value="\${option}" class="mr-3 w-5 h-5" 
-                            \${answers[question.number] === option ? 'checked' : ''}
-                            onchange="selectAnswer(\${question.number}, this.value)">
-                        <span class="text-lg">\${option}</span>
-                    </label>
-                \`).join('');
+                // Get category icon
+                const categoryInfo = categories.find(c => c.name === question.category);
+                const icon = categoryInfo ? categoryInfo.icon : '📝';
+                
+                let inputHTML = '';
+                
+                if (question.isDescriptive) {
+                    // Descriptive question (textarea)
+                    inputHTML = \`
+                        <textarea 
+                            id="descriptive_\${question.number}"
+                            class="w-full p-4 border-2 rounded-lg focus:border-blue-600 focus:outline-none min-h-32"
+                            placeholder="ご自由にお書きください..."
+                            onchange="selectAnswer(\${question.number}, this.value)"
+                        >\${answers[question.number] || ''}</textarea>
+                    \`;
+                } else {
+                    // Multiple choice question
+                    inputHTML = question.options.map((option, i) => \`
+                        <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition \${answers[question.number] === option ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}">
+                            <input type="radio" name="q\${question.number}" value="\${option}" class="mr-3 w-5 h-5" 
+                                \${answers[question.number] === option ? 'checked' : ''}
+                                onchange="selectAnswer(\${question.number}, this.value)">
+                            <span class="text-lg">\${option}</span>
+                        </label>
+                    \`).join('');
+                }
 
                 container.innerHTML = \`
                     <div class="mb-6">
                         <div class="flex items-center mb-4">
-                            <div class="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg mr-4">
+                            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg mr-4">
                                 \${question.number}
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500 uppercase">\${getCategoryName(question.category)}</p>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-500 font-medium">\${icon} \${question.category}</p>
                                 <h3 class="text-xl font-bold text-gray-800">\${question.text}</h3>
                             </div>
                         </div>
                         <div class="space-y-3">
-                            \${optionsHTML}
+                            \${inputHTML}
                         </div>
                     </div>
                 \`;
 
                 updateProgress();
                 updateButtons();
-            }
-
-            function getCategoryName(category) {
-                const categoryNames = {
-                    'sleep': '睡眠・休養',
-                    'diet': '食事・栄養',
-                    'exercise': '運動・活動',
-                    'stress': 'ストレス・メンタル',
-                    'lifestyle': '生活習慣',
-                    'work': '仕事・日常',
-                    'symptoms': '身体症状',
-                    'medical': '既往歴',
-                    'family': '家族歴'
-                };
-                return categoryNames[category] || category;
+                displayCategoryCards(); // Update category cards
             }
 
             function selectAnswer(questionNumber, answer) {
@@ -197,9 +254,11 @@ questionnaireRoutes.get('/', (c) => {
 
             function updateProgress() {
                 const answered = Object.keys(answers).length;
+                const totalQuestions = questions.filter(q => !q.isDescriptive).length; // Only count non-descriptive
                 const percentage = (answered / questions.length) * 100;
                 document.getElementById('progressBar').style.width = percentage + '%';
                 document.getElementById('progressText').textContent = answered;
+                displayCategoryCards(); // Update category cards on progress change
             }
 
             function updateButtons() {
@@ -269,7 +328,8 @@ questionnaireRoutes.get('/', (c) => {
                         question_number: q.number,
                         question_text: q.text,
                         answer_value: answers[q.number],
-                        category: q.category
+                        category: q.category,
+                        is_descriptive: q.isDescriptive ? 1 : 0
                     }));
 
                     const response = await axios.post('/api/questionnaire', {
@@ -307,6 +367,7 @@ questionnaireRoutes.get('/', (c) => {
 
             // Initialize
             loadSavedAnswers(); // Load saved answers first
+            displayCategoryCards(); // Display category cards
             displayQuestion(0);
         </script>
     </body>
