@@ -999,7 +999,8 @@ app.post('/api/analyze-exam-image', async (c) => {
         }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 1000
+          maxOutputTokens: 2048,
+          responseModalities: ["TEXT"]
         }
       })
     })
@@ -1014,7 +1015,17 @@ app.post('/api/analyze-exam-image', async (c) => {
     }
 
     const aiData = await aiResponse.json()
-    const resultText = aiData.candidates?.[0]?.content?.parts?.[0]?.text
+    
+    // Extract text from all parts (Gemini 2.5 may have multiple parts including thinking)
+    const parts = aiData.candidates?.[0]?.content?.parts || []
+    let resultText = ''
+    
+    // Concatenate all text parts
+    for (const part of parts) {
+      if (part.text) {
+        resultText += part.text
+      }
+    }
     
     if (!resultText) {
       console.error('No text in Gemini response:', aiData)
