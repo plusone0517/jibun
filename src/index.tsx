@@ -963,8 +963,8 @@ app.post('/api/analyze-exam-image', async (c) => {
     const base64Image = btoa(binary)
     const mimeType = imageFile.type || 'image/jpeg'
 
-    // Call Gemini 2.5 Flash Vision API
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+    // Call Gemini 2.0 Flash Vision API (without thinking mode)
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
