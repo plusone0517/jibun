@@ -13,6 +13,7 @@ import { examOcrRoutes } from './routes-exam-ocr'
 type Bindings = {
   DB: D1Database
   OPENAI_API_KEY?: string
+  GEMINI_API_KEY?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -933,12 +934,12 @@ app.get('/api/custom-items/:userId', async (c) => {
   }
 })
 
-// Analyze exam image with OCR (OpenAI GPT-4o Vision)
+// Analyze exam image with OCR (Gemini 2.0 Flash Vision)
 app.post('/api/analyze-exam-image', async (c) => {
   try {
-    const openaiApiKey = c.env.OPENAI_API_KEY
-    if (!openaiApiKey) {
-      return c.json({ success: false, error: 'OpenAI APIキーが設定されていません' }, 500)
+    const geminiApiKey = c.env.GEMINI_API_KEY
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'Gemini APIキーが設定されていません' }, 500)
     }
 
     const formData = await c.req.formData()
@@ -962,21 +963,17 @@ app.post('/api/analyze-exam-image', async (c) => {
     const base64Image = btoa(binary)
     const mimeType = imageFile.type || 'image/jpeg'
 
-    // Call OpenAI GPT-4o Vision API
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Gemini 2.0 Flash Vision API
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [{
-          role: 'user',
-          content: [
+        contents: [{
+          parts: [
             {
-              type: 'text',
-              text: `この画像は医療検査結果です。以下のJSON形式で抽出してください：
+              text: `この画像は医療検査結果です。以下のJSON形式で正確に抽出してください：
 {
   "exam_date": "YYYY-MM-DD形式の検査日（不明な場合は今日の日付）",
   "exam_type": "blood_pressure | body_composition | blood_test | custom（最も適切なタイプ）",
@@ -990,24 +987,26 @@ app.post('/api/analyze-exam-image', async (c) => {
 体組成の場合: weight, body_fat, muscle_mass, bmi
 血液検査の場合: blood_sugar, hba1c, total_cholesterol, ldl_cholesterol, hdl_cholesterol, triglycerides, ast, alt
 
-数値のみを抽出し、単位は分けてください。JSON形式のみを返してください。`
+数値のみを抽出し、単位は分けてください。JSONのみを返してください。マークダウン記法は不要です。`
             },
             {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${base64Image}`
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Image
               }
             }
           ]
         }],
-        max_tokens: 1000,
-        temperature: 0.1
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1000
+        }
       })
     })
 
     if (!aiResponse.ok) {
       const errorData = await aiResponse.json()
-      console.error('OpenAI API error:', errorData)
+      console.error('Gemini API error:', errorData)
       return c.json({ 
         success: false, 
         error: `AI解析に失敗しました: ${errorData.error?.message || 'Unknown error'}`
@@ -1015,7 +1014,15 @@ app.post('/api/analyze-exam-image', async (c) => {
     }
 
     const aiData = await aiResponse.json()
-    const resultText = aiData.choices[0].message.content
+    const resultText = aiData.candidates?.[0]?.content?.parts?.[0]?.text
+    
+    if (!resultText) {
+      console.error('No text in Gemini response:', aiData)
+      return c.json({ 
+        success: false, 
+        error: 'AI応答が空です。画像を確認してください。'
+      }, 500)
+    }
     
     // Parse JSON from response
     let result
