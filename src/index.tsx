@@ -999,8 +999,7 @@ app.post('/api/analyze-exam-image', async (c) => {
         }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 2048,
-          responseModalities: ["TEXT"]
+          maxOutputTokens: 2048
         }
       })
     })
