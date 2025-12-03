@@ -9,6 +9,7 @@ import { historyRoutes } from './routes-history'
 import { analysisHistoryRoutes } from './routes-analysis-history'
 import { adminRoutes } from './routes-admin'
 import { examOcrRoutes } from './routes-exam-ocr'
+import bloodTestRoutes from './routes-blood-test'
 
 type Bindings = {
   DB: D1Database
@@ -31,6 +32,7 @@ app.route('/analysis-history', analysisHistoryRoutes)
 app.route('/history', historyRoutes)
 app.route('/admin', adminRoutes)
 app.route('/exam/ocr', examOcrRoutes)
+app.route('/exam/blood-test', bloodTestRoutes)
 
 // Mount API routes
 app.route('/api/auth', authRoutes)
