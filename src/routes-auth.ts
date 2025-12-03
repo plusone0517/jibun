@@ -207,8 +207,9 @@ authRoutes.get('/login', (c) => {
 
                 <form id="loginForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">生年月日</label>
-                        <input type="date" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" max="2024-12-31">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">生年月日（8桁の数字）</label>
+                        <input type="text" inputmode="numeric" pattern="[0-9]{8}" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="19900101" maxlength="8">
+                        <p class="text-xs text-gray-500 mt-1">例: 1990年1月1日 → 19900101</p>
                     </div>
 
                     <div>
@@ -251,8 +252,20 @@ authRoutes.get('/login', (c) => {
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const birthdate = document.getElementById('birthdate').value;
+                const birthdateInput = document.getElementById('birthdate').value;
                 const password = document.getElementById('password').value;
+
+                // Validate birthdate format (8 digits)
+                if (!/^[0-9]{8}$/.test(birthdateInput)) {
+                    showError('生年月日は8桁の数字で入力してください（例: 19900101）');
+                    return;
+                }
+
+                // Convert YYYYMMDD to YYYY-MM-DD format for API
+                const year = birthdateInput.substring(0, 4);
+                const month = birthdateInput.substring(4, 6);
+                const day = birthdateInput.substring(6, 8);
+                const birthdate = \`\${year}-\${month}-\${day}\`;
 
                 try {
                     const response = await axios.post('/api/auth/login', {
