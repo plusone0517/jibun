@@ -664,12 +664,16 @@ examOcrRoutes.get('/', (c) => {
                         <div class="text-sm text-gray-600 mb-1">検査タイプ</div>
                         <div class="text-lg font-bold text-blue-600">\${examTypeNames[data.exam_type] || data.exam_type}</div>
                     </div>
-                    <div class="border-t pt-4">
-                        <div class="text-sm text-gray-600 mb-3">測定値</div>
-                        <div class="grid md:grid-cols-2 gap-3">
                 \`;
 
+                // Display structured measurements if available
                 if (data.measurements && data.measurements.length > 0) {
+                    html += \`
+                        <div class="border-t pt-4 mb-4">
+                            <div class="text-sm text-gray-600 mb-3">主な測定値</div>
+                            <div class="grid md:grid-cols-2 gap-3">
+                    \`;
+                    
                     data.measurements.forEach(m => {
                         const name = measurementNames[m.key] || m.key;
                         html += \`
@@ -679,14 +683,24 @@ examOcrRoutes.get('/', (c) => {
                             </div>
                         \`;
                     });
-                } else {
-                    html += '<div class="col-span-2 text-gray-500 text-center py-4">測定値が読み取れませんでした</div>';
+                    
+                    html += \`
+                            </div>
+                        </div>
+                    \`;
                 }
 
-                html += \`
+                // Display OCR raw text if available
+                if (data.ocr_raw_text) {
+                    html += \`
+                        <div class="border-t pt-4">
+                            <div class="text-sm text-gray-600 mb-3">📝 OCRで読み取った全テキスト（AI解析で活用）</div>
+                            <div class="bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                                <pre class="text-xs text-gray-700 whitespace-pre-wrap font-mono">\${data.ocr_raw_text}</pre>
+                            </div>
                         </div>
-                    </div>
-                \`;
+                    \`;
+                }
 
                 container.innerHTML = html;
                 document.getElementById('ocrResults').classList.remove('hidden');
