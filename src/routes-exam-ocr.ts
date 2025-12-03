@@ -842,3 +842,8 @@ examOcrRoutes.get('/', (c) => {
     </html>
   `)
 })
+
+// New route with 52 blood test items (cache bypass)
+examOcrRoutes.get('/v2', (c) => {
+  return c.redirect('/exam/ocr')
+})
