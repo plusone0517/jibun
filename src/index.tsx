@@ -864,14 +864,14 @@ app.post('/api/exam', async (c) => {
   try {
     const { user_id, exam_date, exam_type, measurements, data_source, ocr_raw_text } = await c.req.json()
 
-    if (!user_id || !exam_date || !exam_type || !measurements || measurements.length === 0) {
+    if (!user_id || !exam_date || !exam_type || !measurements) {
       return c.json({ success: false, error: '必須項目が不足しています' }, 400)
     }
 
     const db = c.env.DB
     
-    // Set data_source to 'manual' if not provided
-    const source = data_source || 'manual'
+    // Set data_source to 'manual_input' if not provided
+    const source = data_source || 'manual_input'
 
     // Insert exam_data record with data_source and ocr_raw_text
     const examResult = await db.prepare(
@@ -880,11 +880,29 @@ app.post('/api/exam', async (c) => {
 
     const examDataId = examResult.meta.last_row_id
 
+    // Convert measurements to array format if it's an object
+    let measurementsArray = []
+    if (Array.isArray(measurements)) {
+      // Already array format: [{ key: 'rbc', value: 450, unit: '×10⁴/µL' }, ...]
+      measurementsArray = measurements
+    } else if (typeof measurements === 'object') {
+      // Object format: { rbc: { value: 450, unit: '×10⁴/µL' }, ... }
+      measurementsArray = Object.entries(measurements).map(([key, data]) => ({
+        key: key,
+        value: data.value,
+        unit: data.unit || ''
+      }))
+    }
+
+    if (measurementsArray.length === 0) {
+      return c.json({ success: false, error: '測定値が空です' }, 400)
+    }
+
     // Insert measurements
-    for (const measurement of measurements) {
+    for (const measurement of measurementsArray) {
       await db.prepare(
         'INSERT INTO exam_measurements (exam_data_id, measurement_key, measurement_value, measurement_unit) VALUES (?, ?, ?, ?)'
-      ).bind(examDataId, measurement.key, measurement.value, measurement.unit || '').run()
+      ).bind(examDataId, measurement.key, measurement.value.toString(), measurement.unit || '').run()
     }
 
     return c.json({ 
