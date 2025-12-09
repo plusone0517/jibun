@@ -343,13 +343,13 @@ app.get('/exam', (c) => {
                     <div id="customFields" class="space-y-4">
                         <!-- Dynamic custom fields will be added here -->
                     </div>
-                    <button onclick="addCustomField()" class="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
+                    <button onclick="addCustomField()" class="mt-4 btn-3d bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
                         <i class="fas fa-plus mr-2"></i>検査項目を追加
                     </button>
                 </div>
 
                 <div class="mt-8 flex gap-4">
-                    <button onclick="saveExamData()" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
+                    <button onclick="saveExamData()" class="flex-1 btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-save mr-2"></i>保存する
                     </button>
                     <a href="/" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition text-center font-bold">

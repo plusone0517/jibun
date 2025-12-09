@@ -1,1 +1,146 @@
 h1 { font-family: Arial, Helvetica, sans-serif; }
+
+/* 3D Button Styles */
+.btn-3d {
+    position: relative;
+    transform: translateY(0);
+    transition: all 0.15s ease;
+    box-shadow: 
+        0 6px 0 0 rgba(0, 0, 0, 0.2),
+        0 8px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+.btn-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 0 0 rgba(0, 0, 0, 0.2),
+        0 12px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.btn-3d:active {
+    transform: translateY(4px);
+    box-shadow: 
+        0 2px 0 0 rgba(0, 0, 0, 0.2),
+        0 4px 8px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Blue Button 3D */
+.bg-blue-600.btn-3d {
+    box-shadow: 
+        0 6px 0 0 #1e40af,
+        0 8px 12px 0 rgba(37, 99, 235, 0.3);
+}
+
+.bg-blue-600.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 #1e40af,
+        0 12px 20px 0 rgba(37, 99, 235, 0.4);
+}
+
+.bg-blue-600.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 #1e40af,
+        0 4px 8px 0 rgba(37, 99, 235, 0.3);
+}
+
+/* Green Button 3D */
+.bg-green-600.btn-3d {
+    box-shadow: 
+        0 6px 0 0 #15803d,
+        0 8px 12px 0 rgba(22, 163, 74, 0.3);
+}
+
+.bg-green-600.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 #15803d,
+        0 12px 20px 0 rgba(22, 163, 74, 0.4);
+}
+
+.bg-green-600.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 #15803d,
+        0 4px 8px 0 rgba(22, 163, 74, 0.3);
+}
+
+/* Purple Button 3D */
+.bg-purple-600.btn-3d {
+    box-shadow: 
+        0 6px 0 0 #7e22ce,
+        0 8px 12px 0 rgba(147, 51, 234, 0.3);
+}
+
+.bg-purple-600.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 #7e22ce,
+        0 12px 20px 0 rgba(147, 51, 234, 0.4);
+}
+
+.bg-purple-600.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 #7e22ce,
+        0 4px 8px 0 rgba(147, 51, 234, 0.3);
+}
+
+/* Gradient Button 3D (AI Analysis button) */
+.bg-gradient-to-r.btn-3d {
+    box-shadow: 
+        0 6px 0 0 rgba(79, 70, 229, 0.8),
+        0 8px 12px 0 rgba(79, 70, 229, 0.3);
+}
+
+.bg-gradient-to-r.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 rgba(79, 70, 229, 0.8),
+        0 12px 20px 0 rgba(79, 70, 229, 0.4);
+}
+
+.bg-gradient-to-r.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 rgba(79, 70, 229, 0.8),
+        0 4px 8px 0 rgba(79, 70, 229, 0.3);
+}
+
+/* Red Button 3D */
+.bg-red-600.btn-3d {
+    box-shadow: 
+        0 6px 0 0 #b91c1c,
+        0 8px 12px 0 rgba(220, 38, 38, 0.3);
+}
+
+.bg-red-600.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 #b91c1c,
+        0 12px 20px 0 rgba(220, 38, 38, 0.4);
+}
+
+.bg-red-600.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 #b91c1c,
+        0 4px 8px 0 rgba(220, 38, 38, 0.3);
+}
+
+/* Gray Button 3D */
+.bg-gray-300.btn-3d {
+    box-shadow: 
+        0 6px 0 0 #9ca3af,
+        0 8px 12px 0 rgba(156, 163, 175, 0.3);
+}
+
+.bg-gray-300.btn-3d:hover {
+    box-shadow: 
+        0 8px 0 0 #9ca3af,
+        0 12px 20px 0 rgba(156, 163, 175, 0.4);
+}
+
+.bg-gray-300.btn-3d:active {
+    box-shadow: 
+        0 2px 0 0 #9ca3af,
+        0 4px 8px 0 rgba(156, 163, 175, 0.3);
+}
+
+/* Disabled button - no 3D effect */
+.btn-3d:disabled {
+    transform: translateY(0) !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+}

@@ -86,7 +86,7 @@ authRoutes.get('/register', (c) => {
                         <p class="text-xs text-gray-500 mt-1">※ パスワードリセット用（任意）</p>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
+                    <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-user-plus mr-2"></i>登録する
                     </button>
                 </form>
@@ -217,7 +217,7 @@ authRoutes.get('/login', (c) => {
                         <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="パスワード">
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
+                    <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-sign-in-alt mr-2"></i>ログイン
                     </button>
                 </form>

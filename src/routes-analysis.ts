@@ -80,7 +80,7 @@ analysisRoutes.get('/', (c) => {
             <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-8 mb-6">
                 <div class="text-center">
                     <p class="text-gray-700 mb-4">選択したデータを使用してAI解析を実行します</p>
-                    <button onclick="startAnalysis()" id="analyzeButton" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-12 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button onclick="startAnalysis()" id="analyzeButton" class="btn-3d bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-12 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i class="fas fa-robot mr-2"></i>🤖 AI解析を実行する
                     </button>
                     <p id="selectionSummary" class="text-sm text-gray-600 mt-3"></p>
@@ -220,7 +220,7 @@ analysisRoutes.get('/', (c) => {
                 <div class="bg-white rounded-lg shadow-lg p-8 text-center">
                     <h3 class="text-2xl font-bold mb-4">サプリ処方オーダーシート</h3>
                     <p class="text-gray-600 mb-6">解析結果とサプリメント推奨をPDFでダウンロードできます</p>
-                    <button onclick="generatePDF()" class="bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition font-bold text-lg">
+                    <button onclick="generatePDF()" class="btn-3d bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition font-bold text-lg">
                         <i class="fas fa-file-pdf mr-2"></i>PDFをダウンロード
                     </button>
                 </div>

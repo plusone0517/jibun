@@ -68,19 +68,19 @@ questionnaireRoutes.get('/', (c) => {
 
                 <!-- Navigation buttons -->
                 <div class="flex justify-between items-center">
-                    <button id="prevBtn" onclick="prevQuestion()" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-bold disabled:opacity-50" disabled>
+                    <button id="prevBtn" onclick="prevQuestion()" class="btn-3d bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-bold disabled:opacity-50" disabled>
                         <i class="fas fa-arrow-left mr-2"></i>前へ
                     </button>
                     
                     <!-- Submit Anytime Button (always visible) -->
-                    <button id="submitAnytimeBtn" onclick="submitQuestionnaire()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
+                    <button id="submitAnytimeBtn" onclick="submitQuestionnaire()" class="btn-3d bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
                         <i class="fas fa-paper-plane mr-2"></i>途中送信してAI解析へ
                     </button>
                     
-                    <button id="nextBtn" onclick="nextQuestion()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
+                    <button id="nextBtn" onclick="nextQuestion()" class="btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
                         次へ<i class="fas fa-arrow-right ml-2"></i>
                     </button>
-                    <button id="submitBtn" onclick="submitQuestionnaire()" class="hidden bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
+                    <button id="submitBtn" onclick="submitQuestionnaire()" class="hidden btn-3d bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
                         <i class="fas fa-check mr-2"></i>完了して送信
                     </button>
                 </div>

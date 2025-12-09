@@ -500,7 +500,7 @@ bloodTestRoutes.get('/', (c) => {
                 <!-- Submit Button -->
                 <div class="flex justify-center">
                     <button type="submit" 
-                            class="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
+                            class="btn-3d px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-save mr-2"></i>保存してAI解析へ
                     </button>
                 </div>

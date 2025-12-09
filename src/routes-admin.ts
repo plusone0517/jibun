@@ -58,7 +58,7 @@ adminRoutes.get('/login', (c) => {
                         <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500" placeholder="パスワード">
                     </div>
 
-                    <button type="submit" class="w-full bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition font-bold">
+                    <button type="submit" class="w-full btn-3d bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition font-bold">
                         <i class="fas fa-sign-in-alt mr-2"></i>ログイン
                     </button>
                 </form>
@@ -935,7 +935,7 @@ adminRoutes.get('/supplements/:id/edit', (c) => {
                     </div>
 
                     <div class="mt-8 flex gap-4">
-                        <button type="submit" class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-bold">
+                        <button type="submit" class="flex-1 btn-3d bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-bold">
                             <i class="fas fa-save mr-2"></i>保存
                         </button>
                         <button type="button" onclick="window.location.href='/admin/supplements'" class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-bold">

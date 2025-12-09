@@ -44,7 +44,7 @@ passwordResetRoutes.get('/forgot', (c) => {
                         <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
+                    <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-key mr-2"></i>リセットトークンを発行
                     </button>
                 </form>
@@ -153,7 +153,7 @@ passwordResetRoutes.get('/reset', (c) => {
                         <input type="password" id="passwordConfirm" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="パスワードを再入力">
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
+                    <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-lock mr-2"></i>パスワードを変更する
                     </button>
                 </form>
