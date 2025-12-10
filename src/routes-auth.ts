@@ -198,18 +198,20 @@ authRoutes.get('/login', (c) => {
         <div class="max-w-md w-full mx-4">
             <div class="bg-white rounded-lg shadow-xl p-8">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-blue-600 mb-2">
-                        <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんサプリ育成
-                    </h1>
-                    <p class="text-gray-600">ログイン</p>
+                    <div class="relative inline-block">
+                        <h1 class="text-3xl font-bold text-blue-600 mb-2">
+                            <i class="fas fa-heartbeat mr-2"></i>
+                            じぶんサプリ育成
+                        </h1>
+                        <span class="absolute -top-2 -right-12 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">β版</span>
+                    </div>
+                    <p class="text-gray-600 mt-4">ログイン</p>
                 </div>
 
                 <form id="loginForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">生年月日（8桁の数字）</label>
-                        <input type="text" inputmode="numeric" pattern="[0-9]{8}" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="19900101" maxlength="8">
-                        <p class="text-xs text-gray-500 mt-1">例: 1990年1月1日 → 19900101</p>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス</label>
+                        <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
                     </div>
 
                     <div>
@@ -252,24 +254,12 @@ authRoutes.get('/login', (c) => {
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const birthdateInput = document.getElementById('birthdate').value;
+                const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-
-                // Validate birthdate format (8 digits)
-                if (!/^[0-9]{8}$/.test(birthdateInput)) {
-                    showError('生年月日は8桁の数字で入力してください（例: 19900101）');
-                    return;
-                }
-
-                // Convert YYYYMMDD to YYYY-MM-DD format for API
-                const year = birthdateInput.substring(0, 4);
-                const month = birthdateInput.substring(4, 6);
-                const day = birthdateInput.substring(6, 8);
-                const birthdate = \`\${year}-\${month}-\${day}\`;
 
                 try {
                     const response = await axios.post('/api/auth/login', {
-                        birthdate,
+                        email,
                         password
                     });
 
