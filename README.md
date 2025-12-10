@@ -277,39 +277,73 @@ npm run db:reset
 
 ## デプロイ手順
 
-### Cloudflare Pagesへのデプロイ
+### 📦 簡単デプロイ（推奨）
 
-1. **Cloudflare APIキー設定**
-
-```bash
-# Deploy タブでAPIキーを設定後
-setup_cloudflare_api_key
-```
-
-2. **D1データベース作成**
-
-```bash
-npx wrangler d1 create jibun-supple-production
-# 出力されたdatabase_idをwrangler.jsoncに設定
-```
-
-3. **マイグレーション実行**
-
-```bash
-npm run db:migrate:prod
-```
-
-4. **デプロイ**
-
+**ワンコマンドデプロイ**:
 ```bash
 npm run deploy
 ```
 
-5. **環境変数設定**
+このコマンドで以下が自動実行されます:
+- ✅ Cloudflare認証確認
+- ✅ プロジェクトビルド
+- ✅ D1データベース確認
+- ✅ デプロイ実行
+
+### 📚 詳細な手順
+
+詳しい手順は [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) を参照してください。
+
+### 🚀 クイックコマンド集
 
 ```bash
+# 1. Cloudflare認証確認
+npm run cf:whoami
+
+# 2. D1データベース作成
+npm run db:create
+
+# 3. マイグレーション実行（本番）
+npm run db:migrate:prod
+
+# 4. プロジェクト作成（初回のみ）
+npm run cf:project:create
+
+# 5. デプロイ（対話式）
+npm run deploy
+
+# 6. デプロイ（確認なし）
+npm run deploy:quick
+
+# 7. 環境変数設定
 npx wrangler pages secret put OPENAI_API_KEY --project-name jibun-supple
+
+# 8. ログ確認
+npm run cf:logs
 ```
+
+### ⚙️ 利用可能なnpmスクリプト
+
+**Cloudflare関連**:
+- `npm run cf:whoami` - 認証確認
+- `npm run cf:project:create` - プロジェクト作成
+- `npm run cf:project:list` - プロジェクト一覧
+- `npm run cf:secret:list` - 環境変数一覧
+- `npm run cf:logs` - ログ監視
+
+**データベース関連**:
+- `npm run db:create` - D1作成
+- `npm run db:list` - D1一覧
+- `npm run db:migrate:local` - ローカルマイグレーション
+- `npm run db:migrate:prod` - 本番マイグレーション
+- `npm run db:seed` - サンプルデータ投入
+- `npm run db:reset` - ローカルDB初期化
+
+**デプロイ関連**:
+- `npm run build` - ビルドのみ
+- `npm run deploy` - 対話式デプロイ
+- `npm run deploy:quick` - 確認なしデプロイ
+- `npm run deploy:prod` - 本番デプロイ
 
 ## 今後の開発予定
 
