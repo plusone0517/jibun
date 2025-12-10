@@ -60,10 +60,10 @@ examOcrRoutes.get('/', (c) => {
                 
                 <div class="flex flex-col gap-4">
                     <label class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-6 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition cursor-pointer text-center font-bold shadow-lg">
-                        <i class="fas fa-image mr-2 text-2xl"></i>
-                        <span class="text-xl">画像を選択</span>
-                        <p class="text-sm mt-2 opacity-90">カメラ撮影 または ファイルから選択</p>
-                        <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
+                        <i class="fas fa-file-medical mr-2 text-2xl"></i>
+                        <span class="text-xl">画像・PDFを選択</span>
+                        <p class="text-sm mt-2 opacity-90">画像ファイル（JPG/PNG）またはPDFファイル</p>
+                        <input type="file" id="imageUpload" accept="image/*,application/pdf" class="hidden" onchange="handleFileUpload(this)">
                     </label>
                     
                     <div id="imagePreviewContainer" class="hidden">
@@ -348,25 +348,57 @@ examOcrRoutes.get('/', (c) => {
                 }
             }
 
-            // Handle image upload
-            function handleImageUpload(input) {
+            // Handle file upload (image or PDF)
+            function handleFileUpload(input) {
                 const file = input.files[0];
                 if (!file) return;
 
                 selectedImage = file;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('imagePreview').src = e.target.result;
-                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
-                    document.getElementById('analyzeBtn').disabled = false;
-                };
-                reader.readAsDataURL(file);
+                
+                // Check if it's a PDF or image
+                if (file.type === 'application/pdf') {
+                    // For PDF, show a PDF icon with filename
+                    const previewContainer = document.getElementById('imagePreviewContainer');
+                    const previewImg = document.getElementById('imagePreview');
+                    
+                    // Set PDF icon as preview
+                    previewImg.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iI2VmNDQ0NCIgcng9IjIiLz48dGV4dCB4PSI1MCUiIHk9IjYwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI2IiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlBERjwvdGV4dD48L3N2Zz4=';
+                    previewImg.style.maxHeight = '150px';
+                    previewContainer.classList.remove('hidden');
+                    
+                    // Add PDF filename label
+                    let fileLabel = previewContainer.querySelector('.pdf-filename');
+                    if (!fileLabel) {
+                        fileLabel = document.createElement('p');
+                        fileLabel.className = 'pdf-filename text-center text-gray-700 font-bold mt-2 mb-4';
+                        previewImg.parentElement.insertBefore(fileLabel, previewImg.nextSibling);
+                    }
+                    fileLabel.innerHTML = '<i class="fas fa-file-pdf text-red-600 mr-2"></i>' + file.name;
+                } else {
+                    // For images, show preview as before
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewImg = document.getElementById('imagePreview');
+                        previewImg.src = e.target.result;
+                        previewImg.style.maxHeight = '384px';
+                        document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                        
+                        // Remove PDF label if exists
+                        const fileLabel = document.querySelector('.pdf-filename');
+                        if (fileLabel) fileLabel.remove();
+                        
+                        document.getElementById('analyzeBtn').disabled = false;
+                    };
+                    reader.readAsDataURL(file);
+                }
+                
+                document.getElementById('analyzeBtn').disabled = false;
             }
 
-            // Analyze image with OCR
+            // Analyze image/PDF with OCR
             async function analyzeImage() {
                 if (!selectedImage) {
-                    showError('画像を選択してください');
+                    showError('ファイルを選択してください');
                     return;
                 }
 

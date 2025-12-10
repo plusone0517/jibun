@@ -972,10 +972,10 @@ app.post('/api/analyze-exam-image', async (c) => {
     const imageFile = formData.get('image') as File
     
     if (!imageFile) {
-      return c.json({ success: false, error: '画像ファイルが必要です' }, 400)
+      return c.json({ success: false, error: 'ファイルが必要です' }, 400)
     }
 
-    // Convert image to base64 (handle large images without stack overflow)
+    // Convert file to base64 (handle large files without stack overflow)
     const arrayBuffer = await imageFile.arrayBuffer()
     const bytes = new Uint8Array(arrayBuffer)
     
@@ -989,7 +989,7 @@ app.post('/api/analyze-exam-image', async (c) => {
     const base64Image = btoa(binary)
     const mimeType = imageFile.type || 'image/jpeg'
 
-    // Call Gemini 2.0 Flash Vision API (without thinking mode)
+    // Call Gemini 2.0 Flash Vision API (supports both images and PDFs)
     const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
@@ -999,7 +999,7 @@ app.post('/api/analyze-exam-image', async (c) => {
         contents: [{
           parts: [
             {
-              text: `この画像は医療検査結果です。以下のJSON形式で正確に抽出してください：
+              text: `この画像またはPDFは医療検査結果です。以下のJSON形式で正確に抽出してください：
 {
   "exam_date": "YYYY-MM-DD形式の検査日（不明な場合は今日の日付）",
   "exam_type": "blood_pressure | body_composition | blood_test | custom（最も適切なタイプ）",
@@ -1056,7 +1056,7 @@ app.post('/api/analyze-exam-image', async (c) => {
       console.error('No text in Gemini response:', aiData)
       return c.json({ 
         success: false, 
-        error: 'AI応答が空です。画像を確認してください。'
+        error: 'AI応答が空です。ファイルの内容を確認してください。'
       }, 500)
     }
     
@@ -1072,7 +1072,7 @@ app.post('/api/analyze-exam-image', async (c) => {
       console.error('JSON parse error:', parseError, 'Raw text:', resultText)
       return c.json({ 
         success: false, 
-        error: '解析結果の形式が不正です。画像を確認してください。'
+        error: '解析結果の形式が不正です。ファイルの内容を確認してください。'
       }, 500)
     }
 
