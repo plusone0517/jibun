@@ -50,7 +50,7 @@ app.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>じぶんサプリ育成アプリ</title>
+        <title>じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -88,7 +88,7 @@ app.get('/welcome', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>じぶんサプリ育成アプリ</title>
+        <title>じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     </head>
@@ -98,7 +98,7 @@ app.get('/welcome', (c) => {
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold text-blue-600">
                         <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんサプリ育成
+                        じぶんを知ることからアプリ
                     </h1>
                     <div class="flex space-x-4">
                         <a href="/auth/login" class="text-gray-600 hover:text-gray-800">
@@ -185,7 +185,7 @@ app.get('/welcome', (c) => {
                     <div class="flex items-start space-x-3">
                         <i class="fas fa-check-circle text-green-500 text-xl mt-1"></i>
                         <div>
-                            <h4 class="font-bold mb-1">サプリ処方シート自動生成</h4>
+                            <h4 class="font-bold mb-1">健康レポート自動生成</h4>
                             <p class="text-gray-600 text-sm">医療機関監修の処方オーダーシートをPDFで出力</p>
                         </div>
                     </div>
@@ -195,7 +195,7 @@ app.get('/welcome', (c) => {
 
         <footer class="bg-gray-800 text-white mt-16 py-8">
             <div class="max-w-7xl mx-auto px-4 text-center">
-                <p class="text-sm">© 2024 じぶんサプリ育成アプリ - 医療機関監修</p>
+                <p class="text-sm">© 2024 じぶんを知ることからアプリ - 医療機関監修</p>
                 <p class="text-xs text-gray-400 mt-2">本アプリの情報は医学的アドバイスの代わりにはなりません。必ず医師にご相談ください。</p>
             </div>
         </footer>
@@ -212,7 +212,7 @@ app.get('/exam', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>検査データ入力 - じぶんサプリ育成</title>
+        <title>検査データ入力 - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -224,7 +224,7 @@ app.get('/exam', (c) => {
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/" class="hover:text-blue-700">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
+                            じぶんを知ることからアプリ
                         </a>
                     </h1>
                     <a href="/" class="text-gray-600 hover:text-gray-800">

@@ -18,7 +18,7 @@ examOcrRoutes.get('/', (c) => {
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
         <meta http-equiv="Pragma" content="no-cache">
         <meta http-equiv="Expires" content="0">
-        <title>画像読み取り - じぶんサプリ育成 v2.0</title>
+        <title>画像読み取り - じぶんを知ることからアプリ v2.0</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -30,7 +30,7 @@ examOcrRoutes.get('/', (c) => {
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/" class="hover:text-blue-700">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
+                            じぶんを知ることからアプリ
                         </a>
                     </h1>
                     <a href="/" class="text-gray-600 hover:text-gray-800">

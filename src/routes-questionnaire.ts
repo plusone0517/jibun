@@ -18,7 +18,7 @@ questionnaireRoutes.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>健康ヒアリング - じぶんサプリ育成</title>
+        <title>健康ヒアリング - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -30,7 +30,7 @@ questionnaireRoutes.get('/', (c) => {
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/" class="hover:text-blue-700">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
+                            じぶんを知ることからアプリ
                         </a>
                     </h1>
                     <a href="/" class="text-gray-600 hover:text-gray-800">
@@ -459,7 +459,7 @@ questionnaireRoutes.get('/history', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ヒアリング - じぶんサプリ育成</title>
+        <title>ヒアリング - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     </head>

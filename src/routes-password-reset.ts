@@ -15,7 +15,7 @@ passwordResetRoutes.get('/forgot', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>パスワードリセット - じぶんサプリ育成</title>
+        <title>パスワードリセット - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -26,7 +26,7 @@ passwordResetRoutes.get('/forgot', (c) => {
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-blue-600 mb-2">
                         <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんサプリ育成
+                        じぶんを知ることからアプリ
                     </h1>
                     <p class="text-gray-600">パスワードリセット</p>
                 </div>
@@ -120,7 +120,7 @@ passwordResetRoutes.get('/reset', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>新しいパスワード設定 - じぶんサプリ育成</title>
+        <title>新しいパスワード設定 - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -131,7 +131,7 @@ passwordResetRoutes.get('/reset', (c) => {
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold text-blue-600 mb-2">
                         <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんサプリ育成
+                        じぶんを知ることからアプリ
                     </h1>
                     <p class="text-gray-600">新しいパスワード設定</p>
                 </div>

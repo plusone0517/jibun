@@ -15,7 +15,7 @@ analysisRoutes.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AI解析結果 - じぶんサプリ育成</title>
+        <title>AI解析結果 - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -29,7 +29,7 @@ analysisRoutes.get('/', (c) => {
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/" class="hover:text-blue-700">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
+                            じぶんを知ることからアプリ
                         </a>
                     </h1>
                     <a href="/" class="text-gray-600 hover:text-gray-800">
@@ -218,7 +218,7 @@ analysisRoutes.get('/', (c) => {
 
                 <!-- PDF Download Button -->
                 <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-                    <h3 class="text-2xl font-bold mb-4">サプリ処方オーダーシート</h3>
+                    <h3 class="text-2xl font-bold mb-4">健康分析レポート</h3>
                     <p class="text-gray-600 mb-6">解析結果とサプリメント推奨をPDFでダウンロードできます</p>
                     <button onclick="generatePDF()" class="btn-3d bg-purple-600 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition font-bold text-lg">
                         <i class="fas fa-file-pdf mr-2"></i>PDFをダウンロード
@@ -890,7 +890,7 @@ analysisRoutes.get('/', (c) => {
                     
                     // PDF header
                     pdf.setFontSize(20);
-                    pdf.text('じぶんサプリ育成', 105, 20, { align: 'center' });
+                    pdf.text('じぶんを知ることからアプリ', 105, 20, { align: 'center' });
                     pdf.setFontSize(16);
                     pdf.text('サプリメント処方オーダーシート', 105, 30, { align: 'center' });
                     pdf.setFontSize(10);
@@ -957,7 +957,7 @@ analysisRoutes.get('/', (c) => {
                     }
                     
                     // Save PDF
-                    pdf.save('じぶんサプリ処方シート_' + today + '.pdf');
+                    pdf.save('健康分析レポート_' + today + '.pdf');
                 } catch (error) {
                     console.error('Error generating PDF:', error);
                     alert('PDF生成中にエラーが発生しました');

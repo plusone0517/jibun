@@ -15,7 +15,7 @@ historyRoutes.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>検査履歴 - じぶんサプリ育成</title>
+        <title>検査履歴 - じぶんを知ることからアプリ</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -28,7 +28,7 @@ historyRoutes.get('/', (c) => {
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/dashboard" class="hover:text-blue-700">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
+                            じぶんを知ることからアプリ
                         </a>
                     </h1>
                     <div class="flex space-x-4">

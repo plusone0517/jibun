@@ -1,5 +1,5 @@
 {
-  "name": "jibun-supple",
+  "name": "jibun-shiru-app",
   "type": "module",
   "scripts": {
     "dev": "vite",
