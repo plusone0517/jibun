@@ -18,7 +18,7 @@ questionnaireRoutes.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>健康問診 - じぶんサプリ育成</title>
+        <title>健康ヒアリング - じぶんサプリ育成</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -47,8 +47,8 @@ questionnaireRoutes.get('/', (c) => {
             </div>
 
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">健康問診（45問）</h2>
-                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。カテゴリごとに保存できます。</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">健康ヒアリング（45問）</h2>
+                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。回答は自動保存され、履歴として記録されます。</p>
                 
                 <!-- Progress bar -->
                 <div class="mb-8">
@@ -197,9 +197,12 @@ questionnaireRoutes.get('/', (c) => {
                 }
             }
 
-            function displayQuestion(index) {
+            function displayQuestion(index, keepScrollPosition = false) {
                 const question = questions[index];
                 const container = document.getElementById('questionContainer');
+                
+                // Save current scroll position
+                const scrollY = keepScrollPosition ? window.scrollY : 0;
                 
                 // Get category icon
                 const categoryInfo = categories.find(c => c.name === question.category);
@@ -249,6 +252,11 @@ questionnaireRoutes.get('/', (c) => {
                 updateProgress();
                 updateButtons();
                 displayCategoryCards(); // Update category cards
+                
+                // Restore scroll position if needed
+                if (keepScrollPosition) {
+                    setTimeout(() => window.scrollTo(0, scrollY), 0);
+                }
             }
 
             function selectAnswer(questionNumber, answer) {
@@ -256,6 +264,7 @@ questionnaireRoutes.get('/', (c) => {
                 updateProgress();
                 updateButtons(); // Update button states after answering
                 saveAnswersToLocalStorage(); // Auto-save on every answer
+                displayCategoryCards(); // Update category cards without scrolling
             }
 
             function updateProgress() {

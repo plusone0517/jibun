@@ -1080,7 +1080,7 @@ app.post('/api/analyze-exam-image', async (c) => {
   }
 })
 
-// Save questionnaire responses
+// Save questionnaire responses (with history support)
 app.post('/api/questionnaire', async (c) => {
   try {
     const { user_id, responses } = await c.req.json()
@@ -1091,19 +1091,20 @@ app.post('/api/questionnaire', async (c) => {
 
     const db = c.env.DB
 
-    // Delete existing responses for this user
-    await db.prepare('DELETE FROM questionnaire_responses WHERE user_id = ?').bind(user_id).run()
+    // Generate session_id for this submission (timestamp + random)
+    const session_id = `${Date.now()}-${Math.random().toString(36).substring(7)}`
 
-    // Insert new responses
+    // Insert new responses with session_id (keep all history, don't delete)
     for (const response of responses) {
       await db.prepare(
-        'INSERT INTO questionnaire_responses (user_id, question_number, question_text, answer_value, category, is_descriptive) VALUES (?, ?, ?, ?, ?, ?)'
-      ).bind(user_id, response.question_number, response.question_text, response.answer_value, response.category, response.is_descriptive || 0).run()
+        'INSERT INTO questionnaire_responses (user_id, question_number, question_text, answer_value, category, is_descriptive, session_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).bind(user_id, response.question_number, response.question_text, response.answer_value, response.category, response.is_descriptive || 0, session_id).run()
     }
 
     return c.json({ 
       success: true,
-      message: '問診が保存されました'
+      message: 'ヒアリングが保存されました',
+      session_id: session_id
     })
   } catch (error) {
     console.error('Error saving questionnaire:', error)
@@ -1111,19 +1112,72 @@ app.post('/api/questionnaire', async (c) => {
   }
 })
 
-// Get questionnaire responses for user
+// Get latest questionnaire responses for user
 app.get('/api/questionnaire/:userId', async (c) => {
   try {
     const userId = c.req.param('userId')
     const db = c.env.DB
 
+    // Get the latest session_id for this user
+    const latestSession = await db.prepare(
+      'SELECT session_id FROM questionnaire_responses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+    ).bind(userId).first()
+
+    if (!latestSession) {
+      return c.json({ success: true, responses: [] })
+    }
+
+    // Get all responses from the latest session
     const { results } = await db.prepare(
-      'SELECT * FROM questionnaire_responses WHERE user_id = ? ORDER BY question_number'
-    ).bind(userId).all()
+      'SELECT * FROM questionnaire_responses WHERE user_id = ? AND session_id = ? ORDER BY question_number'
+    ).bind(userId, latestSession.session_id).all()
 
     return c.json({ success: true, responses: results })
   } catch (error) {
     console.error('Error fetching questionnaire responses:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get questionnaire history (list of all sessions)
+app.get('/api/questionnaire/:userId/history', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    // Get all unique sessions with summary info
+    const { results } = await db.prepare(`
+      SELECT 
+        session_id,
+        MIN(created_at) as created_at,
+        COUNT(*) as answer_count
+      FROM questionnaire_responses 
+      WHERE user_id = ? 
+      GROUP BY session_id 
+      ORDER BY created_at DESC
+    `).bind(userId).all()
+
+    return c.json({ success: true, sessions: results })
+  } catch (error) {
+    console.error('Error fetching questionnaire history:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get specific session responses
+app.get('/api/questionnaire/:userId/session/:sessionId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const sessionId = c.req.param('sessionId')
+    const db = c.env.DB
+
+    const { results } = await db.prepare(
+      'SELECT * FROM questionnaire_responses WHERE user_id = ? AND session_id = ? ORDER BY question_number'
+    ).bind(userId, sessionId).all()
+
+    return c.json({ success: true, responses: results })
+  } catch (error) {
+    console.error('Error fetching session responses:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })

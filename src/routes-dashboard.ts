@@ -48,15 +48,15 @@ dashboardRoutes.get('/', async (c) => {
 
             <!-- Action Cards -->
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                <!-- 1. 健康問診 -->
+                <!-- 1. 健康ヒアリング -->
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
                     <div class="text-center">
-                        <div class="text-5xl mb-4">📋</div>
-                        <h3 class="text-xl font-bold mb-3">健康問診</h3>
-                        <p class="text-gray-600 mb-4 text-sm">50問の詳細な問診</p>
+                        <div class="text-5xl mb-4">🎤</div>
+                        <h3 class="text-xl font-bold mb-3">健康ヒアリング</h3>
+                        <p class="text-gray-600 mb-4 text-sm">45問の詳細なヒアリング</p>
                         <div class="flex flex-col gap-2">
                             <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                                問診開始
+                                ヒアリング開始
                             </a>
                             <a href="/questionnaire/history" class="inline-block bg-white border-2 border-green-600 text-green-600 px-6 py-2 rounded-lg hover:bg-green-50 transition text-sm">
                                 <i class="fas fa-history mr-1"></i>履歴を見る
