@@ -1543,10 +1543,10 @@ function generateSessionToken(): string {
 // Register API
 app.post('/api/auth/register', async (c) => {
   try {
-    const { name, email, password, age, gender } = await c.req.json()
+    const { name, email, password, birthdate, age, gender } = await c.req.json()
 
-    if (!name || !email || !password) {
-      return c.json({ success: false, error: '必須項目が不足しています' }, 400)
+    if (!name || !email || !password || !birthdate) {
+      return c.json({ success: false, error: '必須項目が不足しています（名前、メールアドレス、パスワード、生年月日）' }, 400)
     }
 
     const db = c.env.DB
@@ -1560,10 +1560,10 @@ app.post('/api/auth/register', async (c) => {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Insert user
+    // Insert user with birthdate
     const result = await db.prepare(
-      'INSERT INTO users (name, email, password_hash, age, gender) VALUES (?, ?, ?, ?, ?)'
-    ).bind(name, email, passwordHash, age, gender).run()
+      'INSERT INTO users (name, email, password_hash, birthdate, age, gender) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(name, email, passwordHash, birthdate, age, gender).run()
 
     return c.json({
       success: true,

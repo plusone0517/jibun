@@ -41,11 +41,14 @@ authRoutes.get('/register', (c) => {
         <div class="max-w-md w-full mx-4">
             <div class="bg-white rounded-lg shadow-xl p-8">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-blue-600 mb-2">
-                        <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんサプリ育成
-                    </h1>
-                    <p class="text-gray-600">新規ユーザー登録</p>
+                    <div class="relative inline-block">
+                        <h1 class="text-3xl font-bold text-blue-600 mb-2">
+                            <i class="fas fa-heartbeat mr-2"></i>
+                            じぶんサプリ育成
+                        </h1>
+                        <span class="absolute -top-2 -right-12 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">β版</span>
+                    </div>
+                    <p class="text-gray-600 mt-4">新規ユーザー登録</p>
                 </div>
 
                 <form id="registerForm" class="space-y-4">
@@ -57,7 +60,7 @@ authRoutes.get('/register', (c) => {
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">生年月日 *</label>
                         <input type="date" id="birthdate" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" max="2024-12-31">
-                        <p class="text-xs text-gray-500 mt-1">※ ログイン時に必要となります</p>
+                        <p class="text-xs text-gray-500 mt-1">※ 健康アドバイスに使用されます</p>
                     </div>
 
                     <div>
@@ -81,9 +84,9 @@ authRoutes.get('/register', (c) => {
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス（任意）</label>
-                        <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
-                        <p class="text-xs text-gray-500 mt-1">※ パスワードリセット用（任意）</p>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">メールアドレス *</label>
+                        <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="example@example.com">
+                        <p class="text-xs text-gray-500 mt-1">※ ログインIDとして使用されます</p>
                     </div>
 
                     <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
@@ -131,6 +134,11 @@ authRoutes.get('/register', (c) => {
                     return;
                 }
 
+                if (!email) {
+                    showError('メールアドレスを入力してください');
+                    return;
+                }
+
                 // Calculate age from birthdate
                 const birthDate = new Date(birthdate);
                 const today = new Date();
@@ -147,7 +155,7 @@ authRoutes.get('/register', (c) => {
                         password,
                         age,
                         gender: gender || null,
-                        email: email || null
+                        email: email
                     });
 
                     if (response.data.success) {
