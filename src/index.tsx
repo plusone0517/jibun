@@ -139,7 +139,7 @@ app.get('/welcome', (c) => {
                     <div class="text-center">
                         <div class="text-5xl mb-4">🎤</div>
                         <h3 class="text-xl font-bold mb-3">健康ヒアリング</h3>
-                        <p class="text-gray-600 mb-4">45問の詳細なヒアリングで生活習慣を分析</p>
+                        <p class="text-gray-600 mb-4">45問の詳細なヒアリングで生活習慣を分析<br><span class="text-sm text-green-600">途中保存・再開可能</span></p>
                         <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
                             ヒアリング開始
                         </a>
@@ -1139,48 +1139,15 @@ app.get('/api/questionnaire/:userId', async (c) => {
   }
 })
 
-// Get questionnaire history (list of all sessions)
-app.get('/api/questionnaire/:userId/history', async (c) => {
-  try {
-    const userId = c.req.param('userId')
-    const db = c.env.DB
+// Note: History feature has been removed. 
+// Questionnaire now auto-saves to localStorage and can be resumed anytime.
+// Database still stores responses with session_id for AI analysis purposes.
 
-    // Get all unique sessions with summary info
-    const { results } = await db.prepare(`
-      SELECT 
-        session_id,
-        MIN(created_at) as created_at,
-        COUNT(*) as answer_count
-      FROM questionnaire_responses 
-      WHERE user_id = ? 
-      GROUP BY session_id 
-      ORDER BY created_at DESC
-    `).bind(userId).all()
+// Disabled: Get questionnaire history (list of all sessions)
+// app.get('/api/questionnaire/:userId/history', async (c) => { ... })
 
-    return c.json({ success: true, sessions: results })
-  } catch (error) {
-    console.error('Error fetching questionnaire history:', error)
-    return c.json({ success: false, error: error.message }, 500)
-  }
-})
-
-// Get specific session responses
-app.get('/api/questionnaire/:userId/session/:sessionId', async (c) => {
-  try {
-    const userId = c.req.param('userId')
-    const sessionId = c.req.param('sessionId')
-    const db = c.env.DB
-
-    const { results } = await db.prepare(
-      'SELECT * FROM questionnaire_responses WHERE user_id = ? AND session_id = ? ORDER BY question_number'
-    ).bind(userId, sessionId).all()
-
-    return c.json({ success: true, responses: results })
-  } catch (error) {
-    console.error('Error fetching session responses:', error)
-    return c.json({ success: false, error: error.message }, 500)
-  }
-})
+// Disabled: Get specific session responses  
+// app.get('/api/questionnaire/:userId/session/:sessionId', async (c) => { ... })
 
 // Perform AI analysis
 async function performAnalysis(c: any) {

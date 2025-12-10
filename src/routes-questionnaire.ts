@@ -48,7 +48,8 @@ questionnaireRoutes.get('/', (c) => {
 
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                 <h2 class="text-3xl font-bold text-gray-800 mb-4">健康ヒアリング（45問）</h2>
-                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。回答は自動保存され、履歴として記録されます。</p>
+                <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。<br>
+                <span class="text-green-600 font-semibold">✅ 回答は自動保存されます。途中で離れても、いつでも続きから再開できます。</span></p>
                 
                 <!-- Progress bar -->
                 <div class="mb-8">
@@ -450,7 +451,7 @@ questionnaireRoutes.get('/api/:userId', async (c) => {
   }
 })
 
-// Questionnaire history page
+// Questionnaire history page (disabled - redirect to questionnaire)
 questionnaireRoutes.get('/history', (c) => {
   return c.html(`
     <!DOCTYPE html>
@@ -458,212 +459,36 @@ questionnaireRoutes.get('/history', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>問診履歴 - じぶんサプリ育成</title>
+        <title>ヒアリング - じぶんサプリ育成</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     </head>
-    <body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
-        <nav class="bg-white shadow-lg mb-8">
-            <div class="max-w-7xl mx-auto px-4 py-4">
-                <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-blue-600">
-                        <a href="/" class="hover:text-blue-700">
-                            <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんサプリ育成
-                        </a>
-                    </h1>
-                    <a href="/" class="text-gray-600 hover:text-gray-800">
-                        <i class="fas fa-home mr-1"></i>ホーム
-                    </a>
+    <body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen flex items-center justify-center">
+        <div class="max-w-2xl mx-auto px-4">
+            <div class="bg-white rounded-lg shadow-xl p-8 text-center">
+                <div class="text-6xl mb-4">🎤</div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">ヒアリング機能について</h1>
+                <p class="text-gray-600 mb-6">
+                    ヒアリングは<strong class="text-green-600">自動保存機能</strong>に変更されました。<br>
+                    回答途中でも自動的に保存され、いつでも続きから再開できます。
+                </p>
+                <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
+                    <p class="text-green-800 font-semibold mb-2">✅ 新しい仕様</p>
+                    <ul class="text-left text-sm text-gray-700 space-y-1">
+                        <li>• 回答は自動保存されます</li>
+                        <li>• ブラウザを閉じても続きから再開可能</li>
+                        <li>• 履歴機能は廃止されました</li>
+                    </ul>
                 </div>
+                <a href="/questionnaire" class="inline-block bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-bold">
+                    <i class="fas fa-microphone mr-2"></i>ヒアリングを始める
+                </a>
+                <br>
+                <a href="/" class="inline-block mt-4 text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-home mr-1"></i>ホームに戻る
+                </a>
             </div>
-        </nav>
-
-        <main class="max-w-6xl mx-auto px-4 pb-12">
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold text-gray-800">
-                        <i class="fas fa-clipboard-list mr-3"></i>問診履歴
-                    </h2>
-                    <a href="/questionnaire" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold">
-                        <i class="fas fa-plus mr-2"></i>新規問診
-                    </a>
-                </div>
-
-                <div id="loadingState" class="text-center py-8">
-                    <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
-                    <p class="text-gray-600">問診履歴を読み込み中...</p>
-                </div>
-
-                <div id="historyContainer" class="hidden">
-                    <!-- History will be displayed here -->
-                </div>
-
-                <div id="noDataState" class="hidden text-center py-8">
-                    <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-600 mb-4">まだ問診履歴がありません</p>
-                    <a href="/questionnaire" class="text-blue-600 hover:underline">
-                        <i class="fas fa-arrow-right mr-2"></i>問診を始める
-                    </a>
-                </div>
-            </div>
-        </main>
-
-        <script>
-            let currentUser = null;
-
-            async function loadHistory() {
-                try {
-                    // Get current user
-                    const userResponse = await axios.get('/api/auth/me');
-                    if (!userResponse.data.success) {
-                        window.location.href = '/auth/login';
-                        return;
-                    }
-                    currentUser = userResponse.data.user;
-
-                    // Get questionnaire responses
-                    const response = await axios.get(\`/questionnaire/api/\${currentUser.id}\`);
-                    
-                    if (response.data.success && response.data.responses && response.data.responses.length > 0) {
-                        displayHistory(response.data.responses);
-                    } else {
-                        document.getElementById('loadingState').classList.add('hidden');
-                        document.getElementById('noDataState').classList.remove('hidden');
-                    }
-                } catch (error) {
-                    console.error('Error loading history:', error);
-                    document.getElementById('loadingState').innerHTML = \`
-                        <div class="text-red-600">
-                            <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
-                            <p>エラーが発生しました: \${error.message}</p>
-                        </div>
-                    \`;
-                }
-            }
-
-            function displayHistory(responses) {
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('historyContainer').classList.remove('hidden');
-
-                // Group by category
-                const categories = {};
-                responses.forEach(r => {
-                    if (!categories[r.category]) {
-                        categories[r.category] = [];
-                    }
-                    categories[r.category].push(r);
-                });
-
-                let html = \`
-                    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-sm text-gray-600">回答完了数</p>
-                                <p class="text-3xl font-bold text-blue-600">\${responses.length}<span class="text-lg text-gray-500"> / 50問</span></p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-sm text-gray-600">最終更新</p>
-                                <p class="text-lg font-semibold text-gray-800">\${new Date(responses[0].created_at).toLocaleString('ja-JP', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}</p>
-                            </div>
-                        </div>
-                    </div>
-                \`;
-
-                // Display by category
-                Object.entries(categories).forEach(([category, items]) => {
-                    const categoryName = getCategoryName(category);
-                    const categoryIcon = getCategoryIcon(category);
-                    const categoryColor = getCategoryColor(category);
-                    
-                    html += \`
-                        <div class="mb-6">
-                            <div class="bg-gradient-to-r \${categoryColor} text-white p-4 rounded-t-lg flex items-center">
-                                <i class="fas \${categoryIcon} text-2xl mr-3"></i>
-                                <h3 class="text-xl font-bold">\${categoryName}</h3>
-                                <span class="ml-auto bg-white bg-opacity-30 px-3 py-1 rounded-full text-sm">\${items.length}問</span>
-                            </div>
-                            <div class="bg-white border border-gray-200 rounded-b-lg p-4 space-y-3">
-                    \`;
-
-                    items.forEach((item, index) => {
-                        html += \`
-                            <div class="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                                <div class="bg-\${categoryColor.includes('blue') ? 'blue' : categoryColor.includes('green') ? 'green' : categoryColor.includes('orange') ? 'orange' : categoryColor.includes('red') ? 'red' : categoryColor.includes('purple') ? 'purple' : categoryColor.includes('pink') ? 'pink' : categoryColor.includes('indigo') ? 'indigo' : 'yellow'}-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 mr-3">
-                                    \${item.question_number}
-                                </div>
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-800 mb-1">\${item.question_text}</p>
-                                    <p class="text-blue-600 font-medium"><i class="fas fa-check-circle mr-1"></i>\${item.answer_value}</p>
-                                </div>
-                            </div>
-                        \`;
-                    });
-
-                    html += \`
-                            </div>
-                        </div>
-                    \`;
-                });
-
-                document.getElementById('historyContainer').innerHTML = html;
-            }
-
-            function getCategoryName(category) {
-                const categoryNames = {
-                    'sleep': '睡眠・休養',
-                    'diet': '食事・栄養',
-                    'exercise': '運動・活動',
-                    'stress': 'ストレス・メンタル',
-                    'lifestyle': '生活習慣',
-                    'work': '仕事・日常',
-                    'symptoms': '身体症状',
-                    'medical': '既往歴',
-                    'family': '家族歴'
-                };
-                return categoryNames[category] || category;
-            }
-
-            function getCategoryIcon(category) {
-                const icons = {
-                    'sleep': 'fa-bed',
-                    'diet': 'fa-utensils',
-                    'exercise': 'fa-running',
-                    'stress': 'fa-brain',
-                    'lifestyle': 'fa-home',
-                    'work': 'fa-briefcase',
-                    'symptoms': 'fa-notes-medical',
-                    'medical': 'fa-hospital',
-                    'family': 'fa-users'
-                };
-                return icons[category] || 'fa-question-circle';
-            }
-
-            function getCategoryColor(category) {
-                const colors = {
-                    'sleep': 'from-blue-500 to-blue-600',
-                    'diet': 'from-green-500 to-green-600',
-                    'exercise': 'from-orange-500 to-orange-600',
-                    'stress': 'from-red-500 to-red-600',
-                    'lifestyle': 'from-purple-500 to-purple-600',
-                    'work': 'from-pink-500 to-pink-600',
-                    'symptoms': 'from-indigo-500 to-indigo-600',
-                    'medical': 'from-yellow-500 to-yellow-600',
-                    'family': 'from-teal-500 to-teal-600'
-                };
-                return colors[category] || 'from-gray-500 to-gray-600';
-            }
-
-            // Initialize
-            loadHistory();
-        </script>
+        </div>
     </body>
     </html>
   `)

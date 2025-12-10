@@ -53,15 +53,10 @@ dashboardRoutes.get('/', async (c) => {
                     <div class="text-center">
                         <div class="text-5xl mb-4">🎤</div>
                         <h3 class="text-xl font-bold mb-3">健康ヒアリング</h3>
-                        <p class="text-gray-600 mb-4 text-sm">45問の詳細なヒアリング</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                                ヒアリング開始
-                            </a>
-                            <a href="/questionnaire/history" class="inline-block bg-white border-2 border-green-600 text-green-600 px-6 py-2 rounded-lg hover:bg-green-50 transition text-sm">
-                                <i class="fas fa-history mr-1"></i>履歴を見る
-                            </a>
-                        </div>
+                        <p class="text-gray-600 mb-4 text-sm">45問の詳細なヒアリング<br>途中保存・再開可能</p>
+                        <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                            ヒアリング開始
+                        </a>
                     </div>
                 </div>
 
