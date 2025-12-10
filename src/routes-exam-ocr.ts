@@ -18,7 +18,7 @@ examOcrRoutes.get('/', (c) => {
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
         <meta http-equiv="Pragma" content="no-cache">
         <meta http-equiv="Expires" content="0">
-        <title>画像読み取り - じぶんを知ることからアプリ v2.0</title>
+        <title>画像読み取り - じぶんを知ることから v2.0</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -27,12 +27,15 @@ examOcrRoutes.get('/', (c) => {
         <nav class="bg-white shadow-lg mb-8">
             <div class="max-w-7xl mx-auto px-4 py-4">
                 <div class="flex justify-between items-center">
+                    <div class="flex items-center">
                     <h1 class="text-2xl font-bold text-blue-600">
                         <a href="/" class="hover:text-blue-700">
-                            <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんを知ることからアプリ
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            じぶんを知ることから
                         </a>
                     </h1>
+                        <span class="ml-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">β版</span>
+                    </div>
                     <a href="/" class="text-gray-600 hover:text-gray-800">
                         <i class="fas fa-home mr-1"></i>ホーム
                     </a>

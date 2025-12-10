@@ -16,7 +16,7 @@ dashboardRoutes.get('/', async (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ダッシュボード - じぶんを知ることからアプリ</title>
+        <title>ダッシュボード - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -26,10 +26,13 @@ dashboardRoutes.get('/', async (c) => {
         <nav class="bg-white shadow-lg">
             <div class="max-w-7xl mx-auto px-4 py-4">
                 <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-blue-600">
-                        <i class="fas fa-heartbeat mr-2"></i>
-                        じぶんを知ることからアプリ
-                    </h1>
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-blue-600">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            じぶんを知ることから
+                        </h1>
+                        <span class="ml-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">β版</span>
+                    </div>
                     <div class="flex items-center space-x-4">
                         <span id="userName" class="text-gray-700"></span>
                         <button onclick="logout()" class="text-gray-600 hover:text-gray-800">
@@ -140,7 +143,7 @@ dashboardRoutes.get('/', async (c) => {
 
         <footer class="bg-gray-800 text-white mt-16 py-8">
             <div class="max-w-7xl mx-auto px-4 text-center">
-                <p class="text-sm">© 2024 じぶんを知ることからアプリ - 医療機関監修</p>
+                <p class="text-sm">© 2024 じぶんを知ることから - 医療機関監修</p>
             </div>
         </footer>
 

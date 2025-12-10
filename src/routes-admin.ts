@@ -31,7 +31,7 @@ adminRoutes.get('/login', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>管理者ログイン - じぶんを知ることからアプリ</title>
+        <title>管理者ログイン - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -44,7 +44,7 @@ adminRoutes.get('/login', (c) => {
                         <i class="fas fa-user-shield mr-2"></i>
                         管理者ログイン
                     </h1>
-                    <p class="text-gray-600">じぶんを知ることからアプリ</p>
+                    <p class="text-gray-600">じぶんを知ることから</p>
                 </div>
 
                 <form id="loginForm" class="space-y-4">
@@ -126,7 +126,7 @@ adminRoutes.get('/dashboard', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>管理者ダッシュボード - じぶんを知ることからアプリ</title>
+        <title>管理者ダッシュボード - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -555,7 +555,7 @@ adminRoutes.get('/supplements', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>サプリマスター管理 - じぶんを知ることからアプリ</title>
+        <title>サプリマスター管理 - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -827,7 +827,7 @@ adminRoutes.get('/supplements/:id/edit', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>サプリ編集 - じぶんを知ることからアプリ</title>
+        <title>サプリ編集 - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>

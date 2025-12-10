@@ -32,7 +32,7 @@ authRoutes.get('/register', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ユーザー登録 - じぶんを知ることからアプリ</title>
+        <title>ユーザー登録 - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -44,7 +44,7 @@ authRoutes.get('/register', (c) => {
                     <div class="relative inline-block">
                         <h1 class="text-3xl font-bold text-blue-600 mb-2">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんを知ることからアプリ
+                            じぶんを知ることから
                         </h1>
                         <span class="absolute -top-2 -right-12 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">β版</span>
                     </div>
@@ -197,7 +197,7 @@ authRoutes.get('/login', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ログイン - じぶんを知ることからアプリ</title>
+        <title>ログイン - じぶんを知ることから</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -209,7 +209,7 @@ authRoutes.get('/login', (c) => {
                     <div class="relative inline-block">
                         <h1 class="text-3xl font-bold text-blue-600 mb-2">
                             <i class="fas fa-heartbeat mr-2"></i>
-                            じぶんを知ることからアプリ
+                            じぶんを知ることから
                         </h1>
                         <span class="absolute -top-2 -right-12 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">β版</span>
                     </div>
