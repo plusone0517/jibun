@@ -382,6 +382,16 @@ adminRoutes.get('/user/:userId', (c) => {
                 </div>
             </div>
 
+            <!-- Questionnaire History -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4">
+                    <i class="fas fa-clipboard-list mr-2"></i>ヒアリングデータ
+                </h2>
+                <div id="questionnaireData">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+
             <!-- Analysis History -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-2xl font-bold mb-4">
@@ -444,6 +454,15 @@ adminRoutes.get('/user/:userId', (c) => {
                         document.getElementById('examChart').parentElement.innerHTML = '<p class="text-gray-600">検査データがありません</p>';
                     }
 
+                    // Load questionnaire data
+                    const questionnaireResponse = await axios.get(\`/api/questionnaire/\${userId}\`);
+                    
+                    if (questionnaireResponse.data.success && questionnaireResponse.data.responses.length > 0) {
+                        renderQuestionnaireData(questionnaireResponse.data.responses);
+                    } else {
+                        document.getElementById('questionnaireData').innerHTML = '<p class="text-gray-600">ヒアリングデータがありません</p>';
+                    }
+
                     // Load analysis history
                     const analysisResponse = await axios.get(\`/api/analysis-history/\${userId}\`);
                     
@@ -501,6 +520,8 @@ adminRoutes.get('/user/:userId', (c) => {
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">日付</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">タイプ</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">測定値</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">データソース</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">OCRテキスト</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -509,11 +530,53 @@ adminRoutes.get('/user/:userId', (c) => {
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${exam.exam_date}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${exam.exam_type}</td>
                                     <td class="px-6 py-4 text-sm">\${exam.measurements.map(m => \`\${m.measurement_key}:\${m.measurement_value}\${m.measurement_unit}\`).join(', ')}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span class="px-2 py-1 rounded text-xs \${exam.data_source === 'ocr' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                                            \${exam.data_source === 'ocr' ? '📸 OCR' : '✍️ 手動'}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        \${exam.ocr_raw_text ? \`
+                                            <details class="cursor-pointer">
+                                                <summary class="text-blue-600 hover:text-blue-800">テキストを表示</summary>
+                                                <pre class="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto max-h-40">\${exam.ocr_raw_text}</pre>
+                                            </details>
+                                        \` : '<span class="text-gray-400">-</span>'}
+                                    </td>
                                 </tr>
                             \`).join('')}
                         </tbody>
                     </table>
                 \`;
+            }
+
+            function renderQuestionnaireData(responses) {
+                const dataDiv = document.getElementById('questionnaireData');
+                
+                // Group by category
+                const categories = {};
+                responses.forEach(r => {
+                    if (!categories[r.category]) {
+                        categories[r.category] = [];
+                    }
+                    categories[r.category].push(r);
+                });
+
+                dataDiv.innerHTML = Object.keys(categories).map(category => \`
+                    <details class="mb-4 border rounded-lg">
+                        <summary class="cursor-pointer bg-gray-50 px-4 py-3 font-bold hover:bg-gray-100 rounded-lg">
+                            📋 \${category} (\${categories[category].length}問)
+                        </summary>
+                        <div class="p-4">
+                            \${categories[category].map(q => \`
+                                <div class="mb-3 pb-3 border-b last:border-b-0">
+                                    <div class="font-medium text-sm text-gray-700">Q\${q.question_number}. \${q.question_text}</div>
+                                    <div class="text-sm text-blue-600 mt-1">→ \${q.answer_value}</div>
+                                </div>
+                            \`).join('')}
+                        </div>
+                    </details>
+                \`).join('');
             }
 
             function renderAnalysisHistory(analyses) {
