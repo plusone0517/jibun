@@ -868,7 +868,7 @@ app.get('/exam', (c) => {
 // Save exam data
 app.post('/api/exam', async (c) => {
   try {
-    const { user_id, exam_date, exam_type, measurements, data_source, ocr_raw_text } = await c.req.json()
+    const { user_id, exam_date, exam_type, measurements, data_source, ocr_raw_text, ocr_image_url } = await c.req.json()
 
     if (!user_id || !exam_date || !exam_type || !measurements) {
       return c.json({ success: false, error: '必須項目が不足しています' }, 400)
@@ -879,10 +879,10 @@ app.post('/api/exam', async (c) => {
     // Set data_source to 'manual_input' if not provided
     const source = data_source || 'manual_input'
 
-    // Insert exam_data record with data_source and ocr_raw_text
+    // Insert exam_data record with data_source, ocr_raw_text, and ocr_image_url
     const examResult = await db.prepare(
-      'INSERT INTO exam_data (user_id, exam_date, exam_type, data_source, ocr_raw_text) VALUES (?, ?, ?, ?, ?)'
-    ).bind(user_id, exam_date, exam_type, source, ocr_raw_text || null).run()
+      'INSERT INTO exam_data (user_id, exam_date, exam_type, data_source, ocr_raw_text, ocr_image_url) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(user_id, exam_date, exam_type, source, ocr_raw_text || null, ocr_image_url || null).run()
 
     const examDataId = examResult.meta.last_row_id
 

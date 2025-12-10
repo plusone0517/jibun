@@ -521,6 +521,7 @@ adminRoutes.get('/user/:userId', (c) => {
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">タイプ</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">測定値</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">データソース</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">OCR画像</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">OCRテキスト</th>
                             </tr>
                         </thead>
@@ -536,9 +537,25 @@ adminRoutes.get('/user/:userId', (c) => {
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm">
+                                        \${exam.ocr_image_url ? \`
+                                            <details class="cursor-pointer">
+                                                <summary class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                                    <i class="fas fa-image"></i>
+                                                    画像を表示
+                                                </summary>
+                                                <div class="mt-2 p-2 bg-gray-50 rounded">
+                                                    <img src="\${exam.ocr_image_url}" alt="OCR画像" class="max-w-md max-h-96 object-contain border rounded" />
+                                                </div>
+                                            </details>
+                                        \` : '<span class="text-gray-400">-</span>'}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
                                         \${exam.ocr_raw_text ? \`
                                             <details class="cursor-pointer">
-                                                <summary class="text-blue-600 hover:text-blue-800">テキストを表示</summary>
+                                                <summary class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                                    <i class="fas fa-file-alt"></i>
+                                                    テキストを表示
+                                                </summary>
                                                 <pre class="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto max-h-40">\${exam.ocr_raw_text}</pre>
                                             </details>
                                         \` : '<span class="text-gray-400">-</span>'}
