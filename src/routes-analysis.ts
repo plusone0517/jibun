@@ -420,7 +420,7 @@ analysisRoutes.get('/', (c) => {
                                    checked>
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3 mb-2">
-                                    <span class="font-bold text-gray-800">健康問診（50問）</span>
+                                    <span class="font-bold text-gray-800">健康ヒアリング（45問）</span>
                                     <span class="text-sm bg-green-600 text-white px-3 py-1 rounded-full font-bold">
                                         \${completionRate}% 完了
                                     </span>
@@ -594,7 +594,7 @@ analysisRoutes.get('/', (c) => {
                 
                 // Add questionnaire details
                 details.push({
-                    name: '健康問診',
+                    name: '健康ヒアリング',
                     count: actualQuestions > 0 ? 1 : 0,
                     avgMeasurements: actualQuestions,
                     score: Math.round(questionnaireRatio * 100),
@@ -603,7 +603,7 @@ analysisRoutes.get('/', (c) => {
                 });
                 
                 if (actualQuestions === 0) {
-                    missing.push('健康問診（50問）');
+                    missing.push('健康ヒアリング（45問）');
                 }
                 
                 return {

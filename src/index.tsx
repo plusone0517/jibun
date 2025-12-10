@@ -137,11 +137,11 @@ app.get('/welcome', (c) => {
 
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
                     <div class="text-center">
-                        <div class="text-5xl mb-4">📋</div>
-                        <h3 class="text-xl font-bold mb-3">健康問診</h3>
-                        <p class="text-gray-600 mb-4">50問の詳細な問診で生活習慣を分析</p>
+                        <div class="text-5xl mb-4">🎤</div>
+                        <h3 class="text-xl font-bold mb-3">健康ヒアリング</h3>
+                        <p class="text-gray-600 mb-4">45問の詳細なヒアリングで生活習慣を分析</p>
                         <a href="/questionnaire" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                            問診開始
+                            ヒアリング開始
                         </a>
                     </div>
                 </div>
