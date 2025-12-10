@@ -295,21 +295,22 @@ authRoutes.get('/login', (c) => {
   `)
 })
 
-// Register API
+// Note: Register API is now handled by /api/auth/register in index.tsx
+// This old route is kept for backwards compatibility but should not be used
 authRoutes.post('/register', async (c) => {
   try {
     const { name, birthdate, password, age, gender, email } = await c.req.json()
 
-    if (!name || !birthdate || !password) {
-      return c.json({ success: false, error: '必須項目が不足しています' }, 400)
+    if (!name || !email || !password || !birthdate) {
+      return c.json({ success: false, error: '必須項目が不足しています（名前、メールアドレス、パスワード、生年月日）' }, 400)
     }
 
     const db = c.env.DB
 
-    // Check if birthdate already exists
-    const existingUser = await db.prepare('SELECT id FROM users WHERE birthdate = ?').bind(birthdate).first()
+    // Check if email already exists (changed from birthdate)
+    const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
     if (existingUser) {
-      return c.json({ success: false, error: 'この生年月日は既に登録されています' }, 400)
+      return c.json({ success: false, error: 'このメールアドレスは既に登録されています' }, 400)
     }
 
     // Hash password
@@ -317,8 +318,8 @@ authRoutes.post('/register', async (c) => {
 
     // Insert user
     const result = await db.prepare(
-      'INSERT INTO users (name, birthdate, email, password_hash, age, gender) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(name, birthdate, email, passwordHash, age, gender).run()
+      'INSERT INTO users (name, email, password_hash, birthdate, age, gender) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(name, email, passwordHash, birthdate, age, gender).run()
 
     return c.json({
       success: true,
@@ -331,27 +332,28 @@ authRoutes.post('/register', async (c) => {
   }
 })
 
-// Login API
+// Note: Login API is now handled by /api/auth/login in index.tsx
+// This old route is kept for backwards compatibility but should not be used
 authRoutes.post('/login', async (c) => {
   try {
-    const { birthdate, password } = await c.req.json()
+    const { email, password } = await c.req.json()
 
-    if (!birthdate || !password) {
-      return c.json({ success: false, error: '生年月日とパスワードを入力してください' }, 400)
+    if (!email || !password) {
+      return c.json({ success: false, error: 'メールアドレスとパスワードを入力してください' }, 400)
     }
 
     const db = c.env.DB
 
-    // Find user
-    const user = await db.prepare('SELECT * FROM users WHERE birthdate = ?').bind(birthdate).first()
+    // Find user by email (changed from birthdate)
+    const user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first()
     if (!user) {
-      return c.json({ success: false, error: '生年月日またはパスワードが正しくありません' }, 401)
+      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
     }
 
     // Verify password
     const passwordHash = await hashPassword(password)
     if (passwordHash !== user.password_hash) {
-      return c.json({ success: false, error: '生年月日またはパスワードが正しくありません' }, 401)
+      return c.json({ success: false, error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
     }
 
     // Create session
