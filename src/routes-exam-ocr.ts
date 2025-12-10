@@ -63,6 +63,7 @@ examOcrRoutes.get('/', (c) => {
                         <i class="fas fa-file-medical mr-2 text-2xl"></i>
                         <span class="text-xl">画像・PDFを選択</span>
                         <p class="text-sm mt-2 opacity-90">画像ファイル（JPG/PNG）またはPDFファイル</p>
+                        <p class="text-xs mt-1 opacity-75">⚠️ ファイルサイズ: 5MB以下</p>
                         <input type="file" id="imageUpload" accept="image/*,application/pdf" class="hidden" onchange="handleFileUpload(this)">
                     </label>
                     
@@ -352,6 +353,14 @@ examOcrRoutes.get('/', (c) => {
             function handleFileUpload(input) {
                 const file = input.files[0];
                 if (!file) return;
+
+                // Check file size (max 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                if (file.size > maxSize) {
+                    showError('ファイルサイズが大きすぎます。5MB以下のファイルを選択してください。');
+                    input.value = ''; // Reset input
+                    return;
+                }
 
                 selectedImage = file;
                 

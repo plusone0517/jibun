@@ -975,6 +975,15 @@ app.post('/api/analyze-exam-image', async (c) => {
       return c.json({ success: false, error: 'ファイルが必要です' }, 400)
     }
 
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (imageFile.size > maxSize) {
+      return c.json({ 
+        success: false, 
+        error: 'ファイルサイズが大きすぎます。5MB以下のファイルをアップロードしてください。' 
+      }, 400)
+    }
+
     // Convert file to base64 (handle large files without stack overflow)
     const arrayBuffer = await imageFile.arrayBuffer()
     const bytes = new Uint8Array(arrayBuffer)
