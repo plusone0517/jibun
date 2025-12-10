@@ -1356,56 +1356,88 @@ ${supplementsCatalog}
    ・スコアの根拠を3-5つのポイントで説明
    ・前回との比較（初回の場合は標準値との比較）
 
-2. 健康アドバイス（1000文字以上）
-   ・現在の健康状態の総合評価（良い点・改善点）
-   ・優先的に取り組むべき3つの改善項目
-   ・各項目について：
-     - 現状分析（検査値・問診結果からの根拠）
-     - 具体的な改善方法（数値目標付き）
-     - 期待される効果
-     - 実践のコツと注意点
-   ・生活習慣の具体的な改善提案：
-     - 睡眠：就寝時刻、睡眠時間、睡眠環境
-     - 運動：種類、頻度、強度、時間帯
-     - ストレス管理：具体的な方法
-     - その他の生活習慣改善
+2. 健康アドバイス
+   以下の内容を1000文字以上で詳細に記載してください：
+   
+   ・現在の健康状態の総合評価
+     検査値から見た良い点（具体的な数値を明記）
+     改善が必要な点（具体的な数値を明記）
+   
+   ・優先的に取り組むべき改善項目（3つ）
+     【改善項目1】
+     現状分析：検査値○○が△△、問診で「□□」と回答
+     改善方法：具体的な方法と数値目標
+     期待効果：○週間〜○ヶ月で期待される変化
+     実践のコツ：日常生活での具体的な取り入れ方
+     
+     【改善項目2】（同様の形式で記載）
+     【改善項目3】（同様の形式で記載）
+   
+   ・生活習慣の改善提案
+     睡眠：就寝時刻、睡眠時間、環境改善
+     運動：種類、頻度、強度、時間帯
+     ストレス管理：具体的な方法
 
-3. 栄養指導（1000文字以上）
+3. 栄養指導
+   以下の内容を1000文字以上で詳細に記載してください：
+   
    ・現在の栄養状態の評価
-   ・推奨される食事パターン（地中海食、和食など）
-   ・重点的に摂取すべき栄養素TOP5：
-     - 各栄養素について：目標量、多く含む食品、調理方法
-   ・控えるべき食品・栄養素とその理由
+     検査値から見た栄養バランス（具体的な項目名と数値）
+     問診から見た食生活の課題
+   
+   ・推奨される食事パターン
+     基本方針（地中海食、和食など）
+     その理由
+   
+   ・重点的に摂取すべき栄養素TOP5
+     【栄養素1】ビタミンD（例）
+     目標摂取量：1日○○μg
+     多く含む食品：サケ、マグロ、きのこ類
+     調理方法：油と一緒に摂取で吸収率UP
+     期待効果：骨の健康、免疫機能向上
+     
+     （栄養素2-5も同様の形式で記載）
+   
+   ・控えるべき食品と理由
    ・1日の食事例（朝・昼・夕・間食）
    ・水分摂取量の目安
-   ・食事のタイミングと頻度
    ・外食時の注意点
 
-4. 健康リスク評価（800文字以上）
-   ・短期的リスク（今後3ヶ月）：
-     - リスク項目、発生確率、予防策
-   ・中期的リスク（今後1年）：
-     - リスク項目、発生確率、予防策
-   ・長期的リスク（今後5-10年）：
-     - リスク項目、発生確率、予防策
-   ・各リスクについて：
-     - 根拠となる検査値・問診結果
-     - 具体的な予防策（3つ以上）
-     - 定期的な検査・モニタリング項目
+4. 健康リスク評価
+   以下の内容を800文字以上で詳細に記載してください：
+   
+   ・短期的リスク（今後3ヶ月）
+     リスク項目：○○症
+     発生確率：中程度（根拠：検査値△△が基準値の110%）
+     予防策：①具体策1、②具体策2、③具体策3
+   
+   ・中期的リスク（今後1年）
+     （同様の形式で記載）
+   
+   ・長期的リスク（今後5-10年）
+     （同様の形式で記載）
+   
+   ・定期的なモニタリング推奨項目
+     検査項目、推奨頻度、目標値
 
 5. レーダーチャート用データ
    ・睡眠、栄養、運動、ストレス、生活習慣、検査値の6項目を0-100で評価
    ・各項目の評価根拠を簡潔に記載
 
 6. 推奨サプリメント（5-8種類、優先順位付き）
-   ・各サプリメントについて：
-     - 名称（具体的な製品名）
-     - カテゴリー（ビタミン、ミネラル等）
-     - 推奨理由（検査値・問診結果からの根拠、期待される効果）
-     - 用量（1日あたり）
-     - 摂取タイミング（朝・昼・夕、食前・食後）
-     - 優先度（1=最優先、2=推奨、3=余裕があれば）
-     - 注意事項・相互作用
+   【重要】上記の「利用可能なサプリメント製品カタログ」から、必ず具体的な製品コードと製品名を使用してください。
+   
+   各サプリメントについて以下の形式で記載してください：
+   
+   【サプリ1】製品コード：SUP001、製品名：○○○
+   カテゴリー：ビタミン
+   推奨理由：検査値で△△が□□mg/dL（基準値より○%高い）であり、問診で「◇◇」と回答していることから、この製品に含まれる成分AAが効果的です。期待される効果は、○○の改善と△△のサポートです。
+   用量：1日○錠（○○mg相当）
+   摂取タイミング：朝食後
+   優先度：1（最優先）
+   注意事項：○○との相互作用があるため注意。妊娠中は医師に相談。
+   
+   【サプリ2】（同様の形式で5-8製品を記載）
 
 【重要な書式ルール】
 - アスタリスク（*）、ハッシュタグ（#）、箇条書き記号（- や • ）などのマークダウン記号を使用しないでください
@@ -1501,15 +1533,38 @@ function parseScore(text: string): number {
 }
 
 function extractSection(text: string, sectionName: string): string {
+  // Find section by number (2. 健康アドバイス, 3. 栄養指導, etc.)
+  const sectionNumber = sectionName === '健康アドバイス' ? '2' : 
+                       sectionName === '栄養指導' ? '3' : 
+                       sectionName === 'リスク評価' || sectionName === '健康リスク評価' ? '4' : ''
+  
+  if (sectionNumber) {
+    // Try to extract by section number
+    const pattern = new RegExp(`${sectionNumber}\\.\\s*${sectionName}[\\s\\S]*?\\n\\n([\\s\\S]*?)(?=\\n\\n\\d+\\.|$)`, 'i')
+    const match = text.match(pattern)
+    if (match && match[1]) {
+      let content = match[1].trim()
+      // Remove instruction lines like "以下の内容を〜" and "〜文字以上"
+      content = content.replace(/^以下の内容を.*?\n/gm, '')
+      content = content.replace(/^\d+文字以上.*?\n/gm, '')
+      return content
+    }
+  }
+  
+  // Fallback: use section name patterns
   const patterns = [
-    new RegExp(`${sectionName}[：:]?\\s*([\\s\\S]*?)(?=\\n\\n|\\n[0-9]\\.|$)`, 'i'),
-    new RegExp(`${sectionName}[：:]?\\s*([\\s\\S]*?)(?=【|\\d+\\.|$)`, 'i')
+    new RegExp(`${sectionName}[：:]?\\s*\\n([\\s\\S]*?)(?=\\n\\n\\d+\\.|$)`, 'i'),
+    new RegExp(`${sectionName}[：:]?\\s*([\\s\\S]*?)(?=\\n\\d+\\.|【|$)`, 'i')
   ]
   
   for (const pattern of patterns) {
     const match = text.match(pattern)
     if (match && match[1]) {
-      return match[1].trim()
+      let content = match[1].trim()
+      // Remove instruction lines
+      content = content.replace(/^以下の内容を.*?\n/gm, '')
+      content = content.replace(/^\d+文字以上.*?\n/gm, '')
+      return content
     }
   }
   
@@ -1517,33 +1572,75 @@ function extractSection(text: string, sectionName: string): string {
 }
 
 function parseSupplements(text: string): Array<{name: string, type: string, dosage: string, frequency: string, reason: string, priority: number}> {
-  // Default supplements if parsing fails (use names from master data)
-  return [
-    {
-      name: 'ビタミンミックス11種類',
-      type: 'ビタミン',
-      dosage: '1錠',
-      frequency: '1日1回',
-      reason: '全般的な栄養バランスをサポート',
-      priority: 1
-    },
-    {
-      name: 'クリルオイル',
-      type: '脂肪酸',
-      dosage: '250mg',
-      frequency: '1日1回',
-      reason: '心血管健康と抗炎症作用をサポート',
-      priority: 1
-    },
-    {
-      name: 'ビタミンD3+グルコン酸亜鉛+シクロデキストリン',
-      type: 'ビタミン',
-      dosage: '1カプセル',
-      frequency: '1日1回',
-      reason: '骨の健康と免疫機能をサポート',
-      priority: 2
+  const supplements: Array<{name: string, type: string, dosage: string, frequency: string, reason: string, priority: number}> = []
+  
+  // Try to find supplement sections (【サプリ1】, 【サプリ2】, etc.)
+  const supplementPattern = /【サプリ\d+】[\s\S]*?(?=【サプリ\d+】|$)/g
+  const matches = text.match(supplementPattern)
+  
+  if (matches && matches.length > 0) {
+    for (const match of matches) {
+      try {
+        // Extract product name (製品名：xxxx)
+        const nameMatch = match.match(/製品名[：:](.*?)(?:\n|カテゴリー|、)/)
+        // Extract category (カテゴリー：xxxx)
+        const typeMatch = match.match(/カテゴリー[：:](.*?)(?:\n|推奨理由)/)
+        // Extract dosage (用量：xxxx)
+        const dosageMatch = match.match(/用量[：:](.*?)(?:\n|摂取タイミング)/)
+        // Extract timing (摂取タイミング：xxxx)
+        const timingMatch = match.match(/摂取タイミング[：:](.*?)(?:\n|優先度)/)
+        // Extract reason (推奨理由：xxxx)
+        const reasonMatch = match.match(/推奨理由[：:]([\s\S]*?)(?:\n用量|\n優先度)/)
+        // Extract priority (優先度：x)
+        const priorityMatch = match.match(/優先度[：:](\d+)/)
+        
+        if (nameMatch) {
+          supplements.push({
+            name: nameMatch[1].trim(),
+            type: typeMatch ? typeMatch[1].trim() : '',
+            dosage: dosageMatch ? dosageMatch[1].trim() : '',
+            frequency: timingMatch ? timingMatch[1].trim() : '1日1回',
+            reason: reasonMatch ? reasonMatch[1].trim().substring(0, 200) : '',
+            priority: priorityMatch ? parseInt(priorityMatch[1]) : 2
+          })
+        }
+      } catch (e) {
+        console.error('Error parsing supplement:', e)
+      }
     }
-  ]
+  }
+  
+  // If parsing failed, return default supplements
+  if (supplements.length === 0) {
+    return [
+      {
+        name: 'ビタミンミックス11種類',
+        type: 'ビタミン',
+        dosage: '1錠',
+        frequency: '1日1回',
+        reason: '全般的な栄養バランスをサポート',
+        priority: 1
+      },
+      {
+        name: 'クリルオイル',
+        type: '脂質',
+        dosage: '250mg',
+        frequency: '1日1回',
+        reason: '心血管健康と抗炎症作用をサポート',
+        priority: 1
+      },
+      {
+        name: 'ミネラルミックス7種類',
+        type: 'ミネラル',
+        dosage: '1錠',
+        frequency: '1日1回',
+        reason: 'ミネラルバランスの最適化',
+        priority: 2
+      }
+    ]
+  }
+  
+  return supplements
 }
 
 // Get analysis history for user
