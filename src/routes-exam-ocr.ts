@@ -85,12 +85,17 @@ examOcrRoutes.get('/', (c) => {
             <!-- OCR Data Preview Form -->
             <!-- OCR Results Display (text format) -->
             <div id="ocrResults" class="hidden bg-white rounded-lg shadow-lg p-8 mb-6">
-                <h3 class="text-2xl font-bold text-gray-800 mb-4">
-                    ✅ OCR読み取り結果
-                </h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        ✅ OCR読み取り結果
+                    </h3>
+                    <span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                        <i class="fas fa-robot mr-1"></i>AI解析完了
+                    </span>
+                </div>
                 <p class="text-green-600 mb-6">
                     <i class="fas fa-check-circle mr-2"></i>
-                    データを自動保存しました。AI解析ですぐに使用できます。
+                    データを自動保存しました。AI健康解析ですぐに使用できます。
                 </p>
                 
                 <div id="ocrResultContent" class="bg-gray-50 rounded-lg p-6 space-y-4">
@@ -786,25 +791,111 @@ examOcrRoutes.get('/', (c) => {
                     'blood_pressure': '血圧測定',
                     'body_composition': '体組成測定',
                     'blood_test': '血液検査',
+                    'autonomic_nervous': '自律神経測定',
                     'custom': 'カスタム検査'
                 };
                 
                 const measurementNames = {
+                    // 血圧・脈拍
                     'systolic_bp': '収縮期血圧',
                     'diastolic_bp': '拡張期血圧',
                     'pulse': '脈拍',
+                    'heart_rate': '心拍数',
+                    
+                    // 体組成
                     'weight': '体重',
                     'body_fat': '体脂肪率',
                     'muscle_mass': '筋肉量',
                     'bmi': 'BMI',
+                    'visceral_fat': '内臓脂肪',
+                    'body_age': '体内年齢',
+                    'basal_metabolism': '基礎代謝',
+                    
+                    // 糖代謝
                     'blood_sugar': '血糖値',
+                    'fbs': '空腹時血糖',
+                    'glucose': 'グルコース',
                     'hba1c': 'HbA1c',
+                    'insulin': 'インスリン',
+                    'iri': 'IRI',
+                    
+                    // 脂質
                     'total_cholesterol': '総コレステロール',
+                    'tc': '総コレステロール',
                     'ldl_cholesterol': 'LDLコレステロール',
+                    'ldl': 'LDL',
                     'hdl_cholesterol': 'HDLコレステロール',
+                    'hdl': 'HDL',
                     'triglycerides': '中性脂肪',
-                    'ast': 'AST',
-                    'alt': 'ALT'
+                    'tg': '中性脂肪',
+                    'non_hdl': 'non-HDL',
+                    
+                    // 肝機能
+                    'ast': 'AST(GOT)',
+                    'got': 'AST(GOT)',
+                    'alt': 'ALT(GPT)',
+                    'gpt': 'ALT(GPT)',
+                    'ggt': 'γ-GTP',
+                    'alp': 'ALP',
+                    'ldh': 'LDH',
+                    'bilirubin': 'ビリルビン',
+                    'albumin': 'アルブミン',
+                    'total_protein': '総タンパク',
+                    'tp': '総タンパク',
+                    
+                    // 腎機能
+                    'creatinine': 'クレアチニン',
+                    'cr': 'クレアチニン',
+                    'bun': '尿素窒素',
+                    'uric_acid': '尿酸',
+                    'ua': '尿酸',
+                    'egfr': 'eGFR',
+                    
+                    // 電解質
+                    'sodium': 'ナトリウム',
+                    'na': 'Na',
+                    'potassium': 'カリウム',
+                    'k': 'K',
+                    'chloride': 'クロール',
+                    'cl': 'Cl',
+                    'calcium': 'カルシウム',
+                    'ca': 'Ca',
+                    'magnesium': 'マグネシウム',
+                    'mg': 'Mg',
+                    
+                    // 血球
+                    'wbc': '白血球',
+                    'rbc': '赤血球',
+                    'hemoglobin': 'ヘモグロビン',
+                    'hb': 'Hb',
+                    'hematocrit': 'ヘマトクリット',
+                    'ht': 'Ht',
+                    'platelet': '血小板',
+                    'plt': '血小板',
+                    'mcv': 'MCV',
+                    'mch': 'MCH',
+                    'mchc': 'MCHC',
+                    
+                    // 炎症マーカー
+                    'crp': 'CRP',
+                    'esr': '血沈',
+                    
+                    // 甲状腺
+                    'tsh': 'TSH',
+                    'ft3': 'FT3',
+                    'ft4': 'FT4',
+                    
+                    // ビタミン・その他
+                    'ferritin': 'フェリチン',
+                    'folic_acid': '葉酸',
+                    'vitamin_b12': 'ビタミンB12',
+                    'vitamin_d': 'ビタミンD',
+                    
+                    // 自律神経
+                    'sympathetic': '交感神経活動',
+                    'parasympathetic': '副交感神経活動',
+                    'autonomic_balance': '自律神経バランス',
+                    'vascular_age': '血管年齢'
                 };
 
                 let html = \`
@@ -828,10 +919,30 @@ examOcrRoutes.get('/', (c) => {
                     
                     data.measurements.forEach(m => {
                         const name = measurementNames[m.key] || m.key;
+                        const hasRange = m.normal_range_min !== null && m.normal_range_max !== null;
+                        const rangeText = hasRange ? \`（基準値: \${m.normal_range_min}-\${m.normal_range_max}）\` : '';
+                        
+                        // Check if value is within normal range
+                        let statusClass = 'text-gray-800';
+                        let statusIcon = '';
+                        if (hasRange) {
+                            const value = parseFloat(m.value);
+                            if (value < m.normal_range_min || value > m.normal_range_max) {
+                                statusClass = 'text-red-600';
+                                statusIcon = '<i class="fas fa-exclamation-triangle text-red-500 ml-2"></i>';
+                            } else {
+                                statusClass = 'text-green-600';
+                                statusIcon = '<i class="fas fa-check-circle text-green-500 ml-2"></i>';
+                            }
+                        }
+                        
                         html += \`
                             <div class="bg-white p-3 rounded border border-gray-200">
-                                <div class="text-xs text-gray-500">\${name}</div>
-                                <div class="text-xl font-bold text-gray-800">\${m.value} <span class="text-sm text-gray-500">\${m.unit || ''}</span></div>
+                                <div class="text-xs text-gray-500">\${name} \${rangeText}</div>
+                                <div class="text-xl font-bold \${statusClass}">
+                                    \${m.value} <span class="text-sm text-gray-500">\${m.unit || ''}</span>
+                                    \${statusIcon}
+                                </div>
                             </div>
                         \`;
                     });

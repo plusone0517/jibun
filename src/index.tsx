@@ -1008,21 +1008,70 @@ app.post('/api/analyze-exam-image', async (c) => {
         contents: [{
           parts: [
             {
-              text: `この画像またはPDFは医療検査結果です。以下のJSON形式で正確に抽出してください：
+              text: `あなたは医療検査結果を読み取る専門AIです。この画像またはPDFから検査データを正確に抽出してください。
+
+【重要な指示】
+1. すべての検査項目と数値を抽出してください
+2. 日本語の検査名も英語キーに変換してください
+3. 基準値範囲があれば抽出してください
+4. 検査日を必ず確認してください
+5. 表形式のデータも見逃さないでください
+
+【対応する検査タイプ】
+- 血圧測定（blood_pressure）: 収縮期血圧、拡張期血圧、脈拍
+- 体組成（body_composition）: 体重、体脂肪率、筋肉量、BMI、内臓脂肪
+- 血液検査（blood_test）: 下記の全項目
+- 自律神経測定（autonomic_nervous）: 交感神経、副交感神経活動
+- その他（custom）: 上記以外の検査
+
+【血液検査項目（可能な限りすべて抽出）】
+糖代謝: 空腹時血糖(FBS), HbA1c, インスリン(IRI), グルコース
+脂質: 総コレステロール(TC), LDLコレステロール, HDLコレステロール, 中性脂肪(TG), non-HDL
+肝機能: AST(GOT), ALT(GPT), γ-GTP, ALP, LDH, ビリルビン, アルブミン
+腎機能: クレアチニン(Cr), 尿素窒素(BUN), 尿酸(UA), eGFR
+電解質: ナトリウム(Na), カリウム(K), クロール(Cl), カルシウム(Ca), マグネシウム(Mg)
+血球: 白血球(WBC), 赤血球(RBC), ヘモグロビン(Hb), ヘマトクリット(Ht), 血小板(PLT)
+炎症: CRP, 血沈(ESR)
+甲状腺: TSH, FT3, FT4
+その他: フェリチン, 葉酸, ビタミンB12, ビタミンD
+
+【出力JSON形式】
 {
-  "exam_date": "YYYY-MM-DD形式の検査日（不明な場合は今日の日付）",
-  "exam_type": "blood_pressure | body_composition | blood_test | custom（最も適切なタイプ）",
+  "exam_date": "YYYY-MM-DD形式の検査日（画像から抽出、不明なら今日）",
+  "exam_type": "blood_pressure | body_composition | blood_test | autonomic_nervous | custom",
   "measurements": [
-    {"key": "systolic_bp", "value": "135", "unit": "mmHg"},
-    {"key": "diastolic_bp", "value": "88", "unit": "mmHg"}
+    {
+      "key": "検査項目の英語キー（例: systolic_bp, fbs, hba1c）",
+      "value": "数値のみ（例: 135）",
+      "unit": "単位（例: mmHg, mg/dL, %）",
+      "normal_range_min": 基準値下限（あれば数値、なければnull）,
+      "normal_range_max": 基準値上限（あれば数値、なければnull）
+    }
   ]
 }
 
-血圧の場合: systolic_bp, diastolic_bp, pulse
-体組成の場合: weight, body_fat, muscle_mass, bmi
-血液検査の場合: blood_sugar, hba1c, total_cholesterol, ldl_cholesterol, hdl_cholesterol, triglycerides, ast, alt
+【日本語検査名の変換例】
+- 収縮期血圧 → systolic_bp
+- 拡張期血圧 → diastolic_bp
+- 空腹時血糖 → fbs
+- HbA1c → hba1c
+- 総コレステロール → total_cholesterol
+- 中性脂肪 → triglycerides
+- AST(GOT) → ast
+- ALT(GPT) → alt
+- γ-GTP → ggt
+- クレアチニン → creatinine
+- 尿酸 → uric_acid
+- 白血球 → wbc
+- 赤血球 → rbc
+- ヘモグロビン → hemoglobin
 
-数値のみを抽出し、単位は分けてください。JSONのみを返してください。マークダウン記法は不要です。`
+【注意事項】
+- 数値のみを抽出し、単位は必ず分けてください
+- 基準値範囲（例: 3.5-5.5）があれば、min/maxに分けて格納
+- 表の中の全データを見逃さないでください
+- 複数ページある場合は全ページから抽出してください
+- JSONのみを返してください（マークダウン記法不要）`
             },
             {
               inline_data: {
@@ -1034,7 +1083,7 @@ app.post('/api/analyze-exam-image', async (c) => {
         }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 2048
+          maxOutputTokens: 4096
         }
       })
     })
