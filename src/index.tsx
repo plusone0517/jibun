@@ -1182,10 +1182,17 @@ async function performAnalysis(c: any) {
        ORDER BY ed.exam_date DESC`
     ).bind(user_id).all()
 
-    // Fetch questionnaire responses
-    const questionnaireData = await db.prepare(
-      'SELECT * FROM questionnaire_responses WHERE user_id = ? ORDER BY question_number'
-    ).bind(user_id).all()
+    // Fetch latest questionnaire responses (最新のsession_idのみ)
+    const latestSession = await db.prepare(
+      'SELECT session_id FROM questionnaire_responses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
+    ).bind(user_id).first()
+    
+    let questionnaireData = { results: [] }
+    if (latestSession?.session_id) {
+      questionnaireData = await db.prepare(
+        'SELECT * FROM questionnaire_responses WHERE user_id = ? AND session_id = ? ORDER BY question_number'
+      ).bind(user_id, latestSession.session_id).all()
+    }
 
     if ((!examData.results || examData.results.length === 0) && (!questionnaireData.results || questionnaireData.results.length === 0)) {
       return c.json({ 
