@@ -10,6 +10,7 @@
     "deploy:quick": "npm run build && wrangler pages deploy dist --project-name jibun-supple",
     "deploy:prod": "npm run build && wrangler pages deploy dist --project-name jibun-supple",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "cf:auth": "bash verify-cloudflare-auth.sh",
     "cf:whoami": "wrangler whoami",
     "cf:project:create": "wrangler pages project create jibun-supple --production-branch main --compatibility-date 2025-12-01",
     "cf:project:list": "wrangler pages project list",
