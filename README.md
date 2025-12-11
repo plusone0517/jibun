@@ -277,22 +277,33 @@ npm run db:reset
 
 ## デプロイ手順
 
-### 📦 簡単デプロイ（推奨）
+### 🎯 デプロイ先を選択
 
-**ワンコマンドデプロイ**:
+このアプリは2つのプラットフォームにデプロイできます:
+
+#### 1️⃣ Google Cloud Run（推奨）✨
+- ✅ フルNode.js環境
+- ✅ 簡単なデプロイ
+- ✅ ファイルシステム使用可能
+- 💰 従量課金（無料枠あり）
+
 ```bash
-npm run deploy
+npm run deploy:cloudrun
 ```
 
-このコマンドで以下が自動実行されます:
-- ✅ Cloudflare認証確認
-- ✅ プロジェクトビルド
-- ✅ D1データベース確認
-- ✅ デプロイ実行
+詳細: [`CLOUD_RUN_DEPLOYMENT.md`](./CLOUD_RUN_DEPLOYMENT.md)
 
-### 📚 詳細な手順
+#### 2️⃣ Cloudflare Pages
+- ✅ エッジで高速
+- ✅ 大きな無料枠
+- ⚠️ Workers環境（制限あり）
+- ⚠️ API認証が必要
 
-詳しい手順は [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) を参照してください。
+```bash
+npm run deploy:cloudflare
+```
+
+詳細: [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md)
 
 ### 🚀 クイックコマンド集
 
