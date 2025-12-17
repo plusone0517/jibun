@@ -277,33 +277,31 @@ npm run db:reset
 
 ## デプロイ手順
 
-### 🎯 デプロイ先を選択
+### 🚀 Cloudflare Pages デプロイ（推奨）
 
-このアプリは2つのプラットフォームにデプロイできます:
+このアプリはCloudflare Pagesに最適化されています。
 
-#### 1️⃣ Google Cloud Run（推奨）✨
-- ✅ フルNode.js環境
-- ✅ 簡単なデプロイ
-- ✅ ファイルシステム使用可能
-- 💰 従量課金（無料枠あり）
+#### 特徴
+- ✅ グローバルCDNで高速配信
+- ✅ 無料枠が充実（D1, R2, Pages）
+- ✅ 自動HTTPS設定
+- ✅ 自動スケーリング
 
+#### 📖 デプロイ方法
+
+**初心者向け完全ガイド**: [`SIMPLE_DEPLOY.md`](./SIMPLE_DEPLOY.md)
+- 図解付きの詳しい手順書
+- 初めてでも15〜20分でデプロイ可能
+
+**自動セットアップスクリプト**:
 ```bash
-npm run deploy:cloudrun
+# 全自動で本番環境を構築
+./setup-production.sh
 ```
 
-詳細: [`CLOUD_RUN_DEPLOYMENT.md`](./CLOUD_RUN_DEPLOYMENT.md)
-
-#### 2️⃣ Cloudflare Pages
-- ✅ エッジで高速
-- ✅ 大きな無料枠
-- ⚠️ Workers環境（制限あり）
-- ⚠️ API認証が必要
-
-```bash
-npm run deploy:cloudflare
-```
-
-詳細: [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md)
+**手動デプロイ手順**: [`DEPLOY_GUIDE.md`](./DEPLOY_GUIDE.md)
+- 上級者向けの詳細ガイド
+- トラブルシューティング情報あり
 
 ### 🚀 クイックコマンド集
 
