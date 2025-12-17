@@ -272,9 +272,11 @@ adminRoutes.get('/dashboard', (c) => {
 
                         data.users.forEach(user => {
                             const row = document.createElement('tr');
+                            // Remove any special styling for admin users
+                            const userName = user.name;
                             row.innerHTML = \`
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.id}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">\${user.name}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${userName}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.email}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.age || '-'}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.gender || '-'}</td>
