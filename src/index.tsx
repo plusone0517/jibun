@@ -15,7 +15,7 @@ type Bindings = {
   DB: D1Database
   OPENAI_API_KEY?: string
   GEMINI_API_KEY?: string
-  OCR_IMAGES: R2Bucket
+  OCR_IMAGES?: R2Bucket
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -869,6 +869,14 @@ app.get('/exam', (c) => {
 // Upload image to R2
 app.post('/api/upload-ocr-image', async (c) => {
   try {
+    // Check if R2 is available
+    if (!c.env.OCR_IMAGES) {
+      return c.json({ 
+        success: false, 
+        error: 'R2ストレージが有効化されていません。Cloudflareダッシュボードで有効化してください。' 
+      }, 503)
+    }
+
     const formData = await c.req.formData()
     const file = formData.get('image') as File
     
@@ -904,6 +912,14 @@ app.post('/api/upload-ocr-image', async (c) => {
 // Get OCR image from R2
 app.get('/api/ocr-image/:fileName', async (c) => {
   try {
+    // Check if R2 is available
+    if (!c.env.OCR_IMAGES) {
+      return c.json({ 
+        success: false, 
+        error: 'R2ストレージが有効化されていません' 
+      }, 503)
+    }
+
     const fileName = c.req.param('fileName')
     const bucket = c.env.OCR_IMAGES
     
