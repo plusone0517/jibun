@@ -480,6 +480,17 @@ adminRoutes.get('/user/:userId', (c) => {
                         <div><strong>メール:</strong> \${user.email}</div>
                         <div><strong>年齢:</strong> \${user.age || '-'}</div>
                         <div><strong>性別:</strong> \${user.gender || '-'}</div>
+                        <div>
+                            <strong>パスワード:</strong> 
+                            <span id="passwordDisplay" class="text-gray-600">
+                                \${user.plain_password ? 
+                                    \`<code class="bg-gray-100 px-2 py-1 rounded">\${user.plain_password}</code>
+                                    <button onclick="copyPassword('\${user.plain_password}')" class="ml-2 text-blue-600 hover:text-blue-800 text-sm">
+                                        <i class="fas fa-copy"></i> コピー
+                                    </button>\` 
+                                    : '<span class="text-orange-600">未設定（リセットして設定してください）</span>'}
+                            </span>
+                        </div>
                         <div><strong>登録日:</strong> \${new Date(user.created_at).toLocaleString('ja-JP')}</div>
                         <div><strong>最終ログイン:</strong> \${user.last_login ? new Date(user.last_login).toLocaleString('ja-JP') : '-'}</div>
                     \`;
@@ -711,6 +722,12 @@ adminRoutes.get('/user/:userId', (c) => {
                         // Clear inputs
                         document.getElementById('newPassword').value = '';
                         document.getElementById('confirmPassword').value = '';
+
+                        // Reload user info after 2 seconds to show updated password
+                        setTimeout(() => {
+                            closePasswordResetModal();
+                            loadUserDetail();
+                        }, 2000);
                     } else {
                         errorDiv.textContent = response.data.error || 'リセットに失敗しました';
                         errorDiv.classList.remove('hidden');

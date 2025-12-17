@@ -1839,10 +1839,10 @@ app.post('/api/auth/register', async (c) => {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Insert user with birthdate
+    // Insert user with birthdate and plain password
     const result = await db.prepare(
-      'INSERT INTO users (name, email, password_hash, birthdate, age, gender) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(name, email, passwordHash, birthdate, age, gender).run()
+      'INSERT INTO users (name, email, password_hash, plain_password, birthdate, age, gender) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(name, email, passwordHash, password, birthdate, age, gender).run()
 
     return c.json({
       success: true,
@@ -2204,7 +2204,7 @@ app.get('/api/admin/user/:userId', async (c) => {
     const db = c.env.DB
 
     const user = await db.prepare(
-      'SELECT id, name, email, age, gender, created_at, last_login FROM users WHERE id = ?'
+      'SELECT id, name, email, age, gender, created_at, last_login, plain_password FROM users WHERE id = ?'
     ).bind(userId).first()
 
     if (!user) {
@@ -2247,10 +2247,10 @@ app.post('/api/admin/user/:userId/reset-password', async (c) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
-    // Update password
+    // Update password (both hashed and plain text)
     await db.prepare(
-      'UPDATE users SET password_hash = ? WHERE id = ?'
-    ).bind(hashedPassword, userId).run()
+      'UPDATE users SET password_hash = ?, plain_password = ? WHERE id = ?'
+    ).bind(hashedPassword, newPassword, userId).run()
 
     return c.json({ 
       success: true, 
