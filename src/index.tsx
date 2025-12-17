@@ -2218,6 +2218,51 @@ app.get('/api/admin/user/:userId', async (c) => {
   }
 })
 
+// Reset user password (admin only)
+app.post('/api/admin/user/:userId/reset-password', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const body = await c.req.json()
+    const newPassword = body.password
+    const db = c.env.DB
+
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      return c.json({ success: false, error: 'パスワードは6文字以上で入力してください' }, 400)
+    }
+
+    // Check if user exists
+    const user = await db.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(userId).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    // Hash password
+    const encoder = new TextEncoder()
+    const data = encoder.encode(newPassword)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    // Update password
+    await db.prepare(
+      'UPDATE users SET password_hash = ? WHERE id = ?'
+    ).bind(hashedPassword, userId).run()
+
+    return c.json({ 
+      success: true, 
+      message: 'パスワードをリセットしました',
+      newPassword: newPassword // Return plain password for display
+    })
+  } catch (error) {
+    console.error('Error resetting password:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // Get all supplements (admin only - includes inactive)
 app.get('/api/admin/supplements', async (c) => {
   try {

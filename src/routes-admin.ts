@@ -363,11 +363,51 @@ adminRoutes.get('/user/:userId', (c) => {
 
             <!-- User Info Card -->
             <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4">
-                    <i class="fas fa-id-card mr-2"></i>基本情報
-                </h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">
+                        <i class="fas fa-id-card mr-2"></i>基本情報
+                    </h2>
+                    <button onclick="showPasswordResetModal()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                        <i class="fas fa-key mr-2"></i>パスワードをリセット
+                    </button>
+                </div>
                 <div id="userInfo" class="grid md:grid-cols-2 gap-4">
                     <!-- Will be populated -->
+                </div>
+            </div>
+
+            <!-- Password Reset Modal -->
+            <div id="passwordResetModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">
+                                <i class="fas fa-key mr-2"></i>パスワードをリセット
+                            </h3>
+                            <button onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">新しいパスワード</label>
+                            <input type="password" id="newPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="新しいパスワードを入力">
+                            <p class="text-xs text-gray-500 mt-1">8文字以上推奨</p>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">パスワード確認</label>
+                            <input type="password" id="confirmPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="パスワードを再入力">
+                        </div>
+                        <div id="passwordError" class="hidden mt-3 text-sm text-red-600"></div>
+                        <div id="passwordSuccess" class="hidden mt-3 text-sm text-green-600"></div>
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button onclick="closePasswordResetModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                                キャンセル
+                            </button>
+                            <button onclick="resetUserPassword()" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">
+                                <i class="fas fa-check mr-1"></i>リセット実行
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -609,6 +649,86 @@ adminRoutes.get('/user/:userId', (c) => {
                         </div>
                     </div>
                 \`).join('');
+            }
+
+            function showPasswordResetModal() {
+                document.getElementById('passwordResetModal').classList.remove('hidden');
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                document.getElementById('passwordError').classList.add('hidden');
+                document.getElementById('passwordSuccess').classList.add('hidden');
+            }
+
+            function closePasswordResetModal() {
+                document.getElementById('passwordResetModal').classList.add('hidden');
+            }
+
+            async function resetUserPassword() {
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const errorDiv = document.getElementById('passwordError');
+                const successDiv = document.getElementById('passwordSuccess');
+
+                // Clear messages
+                errorDiv.classList.add('hidden');
+                successDiv.classList.add('hidden');
+
+                // Validate
+                if (!newPassword) {
+                    errorDiv.textContent = 'パスワードを入力してください';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    errorDiv.textContent = 'パスワードは6文字以上で入力してください';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    errorDiv.textContent = 'パスワードが一致しません';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    const response = await axios.post(\`/api/admin/user/\${userId}/reset-password\`, {
+                        password: newPassword
+                    });
+
+                    if (response.data.success) {
+                        successDiv.innerHTML = \`
+                            <i class="fas fa-check-circle mr-1"></i>
+                            パスワードをリセットしました！<br>
+                            <strong>新しいパスワード:</strong> <code class="bg-gray-100 px-2 py-1 rounded">\${response.data.newPassword}</code>
+                            <button onclick="copyPassword('\${response.data.newPassword}')" class="ml-2 text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-copy"></i> コピー
+                            </button>
+                        \`;
+                        successDiv.classList.remove('hidden');
+
+                        // Clear inputs
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } else {
+                        errorDiv.textContent = response.data.error || 'リセットに失敗しました';
+                        errorDiv.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error resetting password:', error);
+                    errorDiv.textContent = 'リセットに失敗しました: ' + (error.response?.data?.error || error.message);
+                    errorDiv.classList.remove('hidden');
+                }
+            }
+
+            function copyPassword(password) {
+                navigator.clipboard.writeText(password).then(() => {
+                    alert('パスワードをコピーしました！');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('コピーに失敗しました');
+                });
             }
 
             async function logout() {
