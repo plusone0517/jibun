@@ -504,36 +504,30 @@ examOcrRoutes.get('/', (c) => {
                     if (response.data.success) {
                         const data = response.data.result;
                         
-                        // Get image as Data URL for storage
-                        const reader = new FileReader();
-                        reader.onload = async function(e) {
-                            const imageDataUrl = e.target.result;
-                            
-                            // Automatically save to database with image URL
-                            try {
-                                const saveResponse = await axios.post('/api/exam', {
-                                    user_id: currentUser.id,
-                                    exam_date: data.exam_date || new Date().toISOString().split('T')[0],
-                                    exam_type: data.exam_type || 'blood_test',
-                                    measurements: data.measurements || [],
-                                    data_source: 'ocr',
-                                    ocr_raw_text: data.ocr_raw_text || null,
-                                    ocr_image_url: imageDataUrl
-                                });
+                        // Save to database WITHOUT image (to avoid SQLite size limit)
+                        // OCR text is sufficient for AI analysis
+                        try {
+                            const saveResponse = await axios.post('/api/exam', {
+                                user_id: currentUser.id,
+                                exam_date: data.exam_date || new Date().toISOString().split('T')[0],
+                                exam_type: data.exam_type || 'blood_test',
+                                measurements: data.measurements || [],
+                                data_source: 'ocr',
+                                ocr_raw_text: data.ocr_raw_text || null,
+                                ocr_image_url: null  // Don't save image to avoid SQLITE_TOOBIG error
+                            });
 
-                                if (saveResponse.data.success) {
-                                    // Display OCR results as text
-                                    displayOCRResults(data);
-                                    showSuccess('✅ OCRで検査結果を読み取り、画像と共に自動保存しました！AI解析ですぐに使用できます。');
-                                } else {
-                                    showError('データの保存に失敗しました: ' + saveResponse.data.error);
-                                }
-                            } catch (saveError) {
-                                console.error('Save error:', saveError);
-                                showError('データの保存中にエラーが発生しました');
+                            if (saveResponse.data.success) {
+                                // Display OCR results as text
+                                displayOCRResults(data);
+                                showSuccess('✅ OCRで検査結果を読み取り、自動保存しました！AI解析ですぐに使用できます。');
+                            } else {
+                                showError('データの保存に失敗しました: ' + saveResponse.data.error);
                             }
-                        };
-                        reader.readAsDataURL(selectedImage);
+                        } catch (saveError) {
+                            console.error('Save error:', saveError);
+                            showError('データの保存中にエラーが発生しました');
+                        }
                     } else {
                         showError(response.data.error || 'OCR解析に失敗しました');
                     }
