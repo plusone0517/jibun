@@ -355,7 +355,43 @@ examOcrRoutes.get('/', (c) => {
             }
 
             // Handle file upload (image or PDF)
-            function handleFileUpload(input) {
+            // Compress image to reduce size
+            async function compressImage(file, maxWidth = 1200, quality = 0.8) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            // Calculate new dimensions
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                            
+                            // Create canvas and compress
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Convert to JPEG with quality setting
+                            canvas.toBlob((blob) => {
+                                resolve(blob);
+                            }, 'image/jpeg', quality);
+                        };
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async function handleFileUpload(input) {
                 const file = input.files[0];
                 if (!file) return;
 
@@ -367,10 +403,10 @@ examOcrRoutes.get('/', (c) => {
                     return;
                 }
 
-                selectedImage = file;
-                
                 // Check if it's a PDF or image
                 if (file.type === 'application/pdf') {
+                    selectedImage = file;
+                    
                     // For PDF, show a PDF icon with filename
                     const previewContainer = document.getElementById('imagePreviewContainer');
                     const previewImg = document.getElementById('imagePreview');
@@ -388,25 +424,38 @@ examOcrRoutes.get('/', (c) => {
                         previewImg.parentElement.insertBefore(fileLabel, previewImg.nextSibling);
                     }
                     fileLabel.innerHTML = '<i class="fas fa-file-pdf text-red-600 mr-2"></i>' + file.name;
+                    
+                    document.getElementById('analyzeBtn').disabled = false;
                 } else {
-                    // For images, show preview as before
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewImg = document.getElementById('imagePreview');
-                        previewImg.src = e.target.result;
-                        previewImg.style.maxHeight = '384px';
-                        document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                    // For images, compress then show preview
+                    try {
+                        showSuccess('🔄 画像を圧縮中...');
+                        const compressedBlob = await compressImage(file);
+                        selectedImage = new File([compressedBlob], file.name, { type: 'image/jpeg' });
                         
-                        // Remove PDF label if exists
-                        const fileLabel = document.querySelector('.pdf-filename');
-                        if (fileLabel) fileLabel.remove();
+                        console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
+                        console.log('Compressed size:', (selectedImage.size / 1024).toFixed(2), 'KB');
                         
-                        document.getElementById('analyzeBtn').disabled = false;
-                    };
-                    reader.readAsDataURL(file);
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewImg = document.getElementById('imagePreview');
+                            previewImg.src = e.target.result;
+                            previewImg.style.maxHeight = '384px';
+                            document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                            
+                            // Remove PDF label if exists
+                            const fileLabel = document.querySelector('.pdf-filename');
+                            if (fileLabel) fileLabel.remove();
+                            
+                            document.getElementById('analyzeBtn').disabled = false;
+                            showSuccess('✅ 画像を圧縮しました（' + (file.size / 1024).toFixed(0) + 'KB → ' + (selectedImage.size / 1024).toFixed(0) + 'KB）');
+                        };
+                        reader.readAsDataURL(selectedImage);
+                    } catch (error) {
+                        console.error('Compression error:', error);
+                        showError('画像の圧縮に失敗しました');
+                    }
                 }
-                
-                document.getElementById('analyzeBtn').disabled = false;
             }
 
             // Analyze image/PDF with OCR
