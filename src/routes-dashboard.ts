@@ -75,20 +75,15 @@ dashboardRoutes.get('/', async (c) => {
                     </div>
                 </div>
 
-                <!-- 3. 血液検査52項目 NEW! -->
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200">
+                <!-- 3. 血液検査52項目 -->
+                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition bg-gradient-to-br from-red-50 to-orange-50">
                     <div class="text-center">
                         <div class="text-5xl mb-4">🩸</div>
                         <h3 class="text-xl font-bold mb-3 text-red-700">血液検査52項目</h3>
                         <p class="text-gray-600 mb-4 text-sm">詳細な血液検査データ</p>
-                        <div class="flex flex-col gap-2">
-                            <a href="/exam/blood-test" class="inline-block bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-2 rounded-lg hover:from-red-700 hover:to-orange-700 transition">
-                                <i class="fas fa-flask mr-1"></i>52項目入力
-                            </a>
-                            <span class="text-xs text-red-600 font-bold">
-                                <i class="fas fa-star mr-1"></i>NEW
-                            </span>
-                        </div>
+                        <a href="/exam/blood-test" class="inline-block bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-2 rounded-lg hover:from-red-700 hover:to-orange-700 transition">
+                            <i class="fas fa-flask mr-1"></i>52項目入力
+                        </a>
                     </div>
                 </div>
 
@@ -104,14 +99,14 @@ dashboardRoutes.get('/', async (c) => {
                     </div>
                 </div>
 
-                <!-- 5. AI解析 -->
+                <!-- 5. 画像読み取り -->
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition bg-gradient-to-br from-indigo-50 to-purple-50">
                     <div class="text-center">
-                        <div class="text-5xl mb-4">🤖</div>
-                        <h3 class="text-xl font-bold mb-3 text-indigo-700">AI解析</h3>
-                        <p class="text-gray-600 mb-4 text-sm">健康アドバイスとサプリ</p>
-                        <a href="/analysis" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition">
-                            AI解析実行
+                        <div class="text-5xl mb-4">📸</div>
+                        <h3 class="text-xl font-bold mb-3 text-indigo-700">画像読み取り</h3>
+                        <p class="text-gray-600 mb-4 text-sm">OCRで自動入力</p>
+                        <a href="/exam/ocr" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition">
+                            画像読み取り実行
                         </a>
                     </div>
                 </div>
