@@ -82,6 +82,15 @@ analysisRoutes.get('/', (c) => {
             <!-- Analysis Button -->
             <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-8 mb-6">
                 <div class="text-center">
+                    <div id="premiumRequired" class="hidden mb-4 p-4 bg-yellow-100 border-2 border-yellow-400 rounded-lg">
+                        <p class="text-yellow-800 font-bold mb-2">
+                            <i class="fas fa-crown mr-2"></i>有料会員限定機能
+                        </p>
+                        <p class="text-yellow-700 text-sm">
+                            AI解析機能をご利用いただくには、有料会員へのアップグレードが必要です。<br>
+                            詳しくはお問い合わせください。
+                        </p>
+                    </div>
                     <p class="text-gray-700 mb-4">選択したデータを使用してAI解析を実行します</p>
                     <button onclick="startAnalysis()" id="analyzeButton" class="btn-3d bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-12 py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <i class="fas fa-robot mr-2"></i>🤖 AI解析を実行する
@@ -254,6 +263,14 @@ analysisRoutes.get('/', (c) => {
                         return;
                     }
                     currentUser = authResponse.data.user;
+
+                    // Check membership type
+                    const membershipType = currentUser.membership_type || 'free';
+                    if (membershipType !== 'premium') {
+                        document.getElementById('premiumRequired').classList.remove('hidden');
+                        document.getElementById('analyzeButton').disabled = true;
+                        document.getElementById('analyzeButton').classList.add('opacity-50', 'cursor-not-allowed');
+                    }
 
                     // Load exam data
                     const examResponse = await axios.get(\`/api/history/\${currentUser.id}\`);
@@ -472,6 +489,13 @@ analysisRoutes.get('/', (c) => {
             }
 
             async function startAnalysis() {
+                // Check membership before starting
+                const membershipType = currentUser?.membership_type || 'free';
+                if (membershipType !== 'premium') {
+                    alert('AI解析機能は有料会員限定です。アップグレードしてください。');
+                    return;
+                }
+
                 // Hide selection sections
                 document.getElementById('examSelectionSection').style.display = 'none';
                 document.getElementById('questionnaireSelectionSection').style.display = 'none';
@@ -491,11 +515,21 @@ analysisRoutes.get('/', (c) => {
                         analysisData = response.data.analysis;
                         displayResults(analysisData);
                     } else {
-                        showError(response.data.error || '解析に失敗しました');
+                        // Check if it's a premium requirement error
+                        if (response.data.requires_premium) {
+                            showError('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
+                        } else {
+                            showError(response.data.error || '解析に失敗しました');
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading analysis:', error);
-                    showError('解析中にエラーが発生しました: ' + (error.response?.data?.error || error.message));
+                    const errorMsg = error.response?.data?.error || error.message;
+                    if (error.response?.data?.requires_premium) {
+                        showError('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
+                    } else {
+                        showError('解析中にエラーが発生しました: ' + errorMsg);
+                    }
                 }
             }
 
@@ -995,6 +1029,23 @@ analysisRoutes.post('/api', async (c) => {
 
     if (!openaiApiKey) {
       return c.json({ success: false, error: 'OpenAI APIキーが設定されていません。.dev.varsファイルを確認してください。' }, 500)
+    }
+
+    // Check membership type
+    const user = await db.prepare(
+      'SELECT membership_type FROM users WHERE id = ?'
+    ).bind(user_id).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    if (user.membership_type !== 'premium') {
+      return c.json({ 
+        success: false, 
+        error: 'AI解析機能は有料会員限定です。アップグレードしてください。',
+        requires_premium: true
+      }, 403)
     }
 
     // Fetch exam data - either selected exams or all exams

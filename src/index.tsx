@@ -1949,7 +1949,7 @@ app.get('/api/auth/me', async (c) => {
     }
 
     // Get user
-    const user = await db.prepare('SELECT id, name, email, age, gender FROM users WHERE id = ?')
+    const user = await db.prepare('SELECT id, name, email, age, gender, membership_type FROM users WHERE id = ?')
       .bind(session.user_id).first()
 
     if (!user) {
@@ -2204,7 +2204,7 @@ app.get('/api/admin/user/:userId', async (c) => {
     const db = c.env.DB
 
     const user = await db.prepare(
-      'SELECT id, name, email, age, gender, created_at, last_login, plain_password FROM users WHERE id = ?'
+      'SELECT id, name, email, age, gender, created_at, last_login, plain_password, membership_type FROM users WHERE id = ?'
     ).bind(userId).first()
 
     if (!user) {
@@ -2214,6 +2214,44 @@ app.get('/api/admin/user/:userId', async (c) => {
     return c.json({ success: true, user })
   } catch (error) {
     console.error('Error fetching user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Update user membership type (admin only)
+app.put('/api/admin/user/:userId/membership', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const body = await c.req.json()
+    const membershipType = body.membership_type
+    const db = c.env.DB
+
+    // Validate membership type
+    if (!['free', 'premium'].includes(membershipType)) {
+      return c.json({ success: false, error: '無効な会員タイプです' }, 400)
+    }
+
+    // Check if user exists
+    const user = await db.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(userId).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    // Update membership type
+    await db.prepare(
+      'UPDATE users SET membership_type = ? WHERE id = ?'
+    ).bind(membershipType, userId).run()
+
+    return c.json({ 
+      success: true, 
+      message: '会員タイプを更新しました',
+      membership_type: membershipType
+    })
+  } catch (error) {
+    console.error('Error updating membership:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })

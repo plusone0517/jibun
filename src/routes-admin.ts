@@ -474,12 +474,24 @@ adminRoutes.get('/user/:userId', (c) => {
 
                     const user = userResponse.data.user;
                     const userInfoDiv = document.getElementById('userInfo');
+                    const membershipType = user.membership_type || 'free';
+                    const membershipBadge = membershipType === 'premium' 
+                        ? '<span class="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full text-sm font-bold"><i class="fas fa-crown mr-1"></i>有料会員</span>'
+                        : '<span class="px-3 py-1 bg-gray-400 text-white rounded-full text-sm"><i class="fas fa-user mr-1"></i>無料会員</span>';
+                    
                     userInfoDiv.innerHTML = \`
                         <div><strong>ID:</strong> \${user.id}</div>
                         <div><strong>名前:</strong> \${user.name}</div>
                         <div><strong>メール:</strong> \${user.email}</div>
                         <div><strong>年齢:</strong> \${user.age || '-'}</div>
                         <div><strong>性別:</strong> \${user.gender || '-'}</div>
+                        <div>
+                            <strong>会員タイプ:</strong> 
+                            \${membershipBadge}
+                            <button onclick="toggleMembership()" class="ml-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                                <i class="fas fa-exchange-alt mr-1"></i>変更
+                            </button>
+                        </div>
                         <div>
                             <strong>パスワード:</strong> 
                             <span id="passwordDisplay" class="text-gray-600">
@@ -494,6 +506,9 @@ adminRoutes.get('/user/:userId', (c) => {
                         <div><strong>登録日:</strong> \${new Date(user.created_at).toLocaleString('ja-JP')}</div>
                         <div><strong>最終ログイン:</strong> \${user.last_login ? new Date(user.last_login).toLocaleString('ja-JP') : '-'}</div>
                     \`;
+
+                    // Store current membership type globally
+                    window.currentMembershipType = membershipType;
 
                     // Load exam history
                     const historyResponse = await axios.get(\`/api/history/\${userId}?start_date=2022-01-01\`);
@@ -746,6 +761,34 @@ adminRoutes.get('/user/:userId', (c) => {
                     console.error('Failed to copy:', err);
                     alert('コピーに失敗しました');
                 });
+            }
+
+            async function toggleMembership() {
+                const currentType = window.currentMembershipType || 'free';
+                const newType = currentType === 'free' ? 'premium' : 'free';
+                const confirmMsg = newType === 'premium' 
+                    ? '有料会員に変更しますか？（AI解析が利用可能になります）'
+                    : '無料会員に変更しますか？（AI解析が利用不可になります）';
+
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+
+                try {
+                    const response = await axios.put(\`/api/admin/user/\${userId}/membership\`, {
+                        membership_type: newType
+                    });
+
+                    if (response.data.success) {
+                        alert('会員タイプを変更しました！');
+                        loadUserDetail(); // Reload to show updated badge
+                    } else {
+                        alert('変更に失敗しました: ' + response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Error toggling membership:', error);
+                    alert('変更に失敗しました: ' + (error.response?.data?.error || error.message));
+                }
             }
 
             async function logout() {
