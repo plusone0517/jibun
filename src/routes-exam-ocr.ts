@@ -355,8 +355,8 @@ examOcrRoutes.get('/', (c) => {
             }
 
             // Handle file upload (image or PDF)
-            // Compress image to reduce size
-            async function compressImage(file, maxWidth = 1200, quality = 0.8) {
+            // Compress image to reduce size (stronger compression for SQLite limit)
+            async function compressImage(file, maxWidth = 800, quality = 0.6) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = function(e) {
@@ -430,11 +430,31 @@ examOcrRoutes.get('/', (c) => {
                     // For images, compress then show preview
                     try {
                         showSuccess('🔄 画像を圧縮中...');
-                        const compressedBlob = await compressImage(file);
+                        let compressedBlob = await compressImage(file);
+                        
+                        // If still too large (>700KB after compression), compress more aggressively
+                        const maxSizeKB = 700;
+                        if (compressedBlob.size > maxSizeKB * 1024) {
+                            console.log('First compression too large, re-compressing...');
+                            compressedBlob = await compressImage(file, 600, 0.5);
+                            
+                            // If STILL too large, compress even more
+                            if (compressedBlob.size > maxSizeKB * 1024) {
+                                console.log('Still too large, final aggressive compression...');
+                                compressedBlob = await compressImage(file, 500, 0.4);
+                            }
+                        }
+                        
                         selectedImage = new File([compressedBlob], file.name, { type: 'image/jpeg' });
                         
                         console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
-                        console.log('Compressed size:', (selectedImage.size / 1024).toFixed(2), 'KB');
+                        console.log('Final compressed size:', (selectedImage.size / 1024).toFixed(2), 'KB');
+                        
+                        // Warn if still large
+                        if (selectedImage.size > 800 * 1024) {
+                            showError('⚠️ 画像サイズが大きすぎます。保存時にエラーが発生する可能性があります。');
+                            return;
+                        }
                         
                         const reader = new FileReader();
                         reader.onload = function(e) {
