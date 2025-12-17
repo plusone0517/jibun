@@ -69,11 +69,6 @@ adminRoutes.get('/login', (c) => {
                     </a>
                 </div>
 
-                <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-gray-600">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    デフォルト: admin / admin123
-                </div>
-
                 <div id="errorMessage" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
                     <strong class="font-bold">エラー！</strong>
                     <span class="block sm:inline" id="errorText"></span>
