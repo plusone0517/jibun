@@ -50,12 +50,12 @@ adminRoutes.get('/login', (c) => {
                 <form id="loginForm" class="space-y-4">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">ユーザー名</label>
-                        <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500" placeholder="admin">
+                        <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500">
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">パスワード</label>
-                        <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500" placeholder="パスワード">
+                        <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500">
                     </div>
 
                     <button type="submit" class="w-full btn-3d bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition font-bold">
