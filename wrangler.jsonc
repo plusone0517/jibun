@@ -13,6 +13,13 @@
       "database_name": "jibun-supple-production",
       "database_id": "local-db-for-development"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "OCR_IMAGES",
+      "bucket_name": "jibun-supple-ocr-images",
+      "preview_bucket_name": "jibun-supple-ocr-images-preview"
+    }
   ]
   // "vars": {
   //   "MY_VAR": "my-variable"

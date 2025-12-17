@@ -15,6 +15,7 @@ type Bindings = {
   DB: D1Database
   OPENAI_API_KEY?: string
   GEMINI_API_KEY?: string
+  OCR_IMAGES: R2Bucket
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -687,7 +688,7 @@ app.get('/exam', (c) => {
                                                 <div class="flex items-center space-x-3 mb-2">
                                                     <span class="font-bold text-lg text-gray-800">\${exam.exam_date}</span>
                                                     <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold">
-                                                        <i class="fas fa-magic mr-1"></i>AI解析
+                                                        <i class="fas fa-camera mr-1"></i>画像読み取り
                                                     </span>
                                                 </div>
                                                 <div class="text-sm text-gray-600 space-y-1">
@@ -864,6 +865,65 @@ app.get('/exam', (c) => {
 // ======================
 // API Routes
 // ======================
+
+// Upload image to R2
+app.post('/api/upload-ocr-image', async (c) => {
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('image') as File
+    
+    if (!file) {
+      return c.json({ success: false, error: '画像ファイルが必要です' }, 400)
+    }
+
+    const bucket = c.env.OCR_IMAGES
+    const fileName = `ocr-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
+    
+    // Upload to R2
+    const arrayBuffer = await file.arrayBuffer()
+    await bucket.put(fileName, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type || 'image/jpeg'
+      }
+    })
+
+    // Return R2 URL (public URL will be configured separately)
+    const imageUrl = `/api/ocr-image/${fileName}`
+    
+    return c.json({ 
+      success: true, 
+      image_url: imageUrl,
+      file_name: fileName
+    })
+  } catch (error) {
+    console.error('Error uploading image:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Get OCR image from R2
+app.get('/api/ocr-image/:fileName', async (c) => {
+  try {
+    const fileName = c.req.param('fileName')
+    const bucket = c.env.OCR_IMAGES
+    
+    const object = await bucket.get(fileName)
+    
+    if (!object) {
+      return c.notFound()
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=31536000'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching image:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
 
 // Save exam data
 app.post('/api/exam', async (c) => {
