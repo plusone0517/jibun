@@ -104,7 +104,7 @@ examOcrRoutes.get('/', (c) => {
                 
                 <div class="mt-6 flex gap-4">
                     <a href="/analysis" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition text-center font-bold">
-                        <i class="fas fa-robot mr-2"></i>AI解析を実行
+                        <i class="fas fa-camera mr-2"></i>画像読み取り
                     </a>
                     <button onclick="resetOCR()" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-bold">
                         <i class="fas fa-redo mr-2"></i>別の画像を解析
