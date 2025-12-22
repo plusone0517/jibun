@@ -93,7 +93,7 @@ authRoutes.get('/register', (c) => {
                         <div class="flex items-start">
                             <input type="checkbox" id="agreeTerms" required class="mt-1 mr-3 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                             <label for="agreeTerms" class="text-sm text-gray-700">
-                                <a href="/terms.html" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold underline">利用規約およびプライバシーポリシー</a>に同意します *
+                                <a href="/terms" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold underline">利用規約およびプライバシーポリシー</a>に同意します *
                             </label>
                         </div>
                         <p class="text-xs text-red-600 mt-2 ml-8">※ 登録には利用規約への同意が必須です</p>
