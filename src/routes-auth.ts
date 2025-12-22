@@ -89,6 +89,16 @@ authRoutes.get('/register', (c) => {
                         <p class="text-xs text-gray-500 mt-1">※ ログインIDとして使用されます</p>
                     </div>
 
+                    <div class="border-t border-gray-200 pt-4">
+                        <div class="flex items-start">
+                            <input type="checkbox" id="agreeTerms" required class="mt-1 mr-3 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="agreeTerms" class="text-sm text-gray-700">
+                                <a href="/terms.html" target="_blank" class="text-blue-600 hover:text-blue-700 font-bold underline">利用規約およびプライバシーポリシー</a>に同意します *
+                            </label>
+                        </div>
+                        <p class="text-xs text-red-600 mt-2 ml-8">※ 登録には利用規約への同意が必須です</p>
+                    </div>
+
                     <button type="submit" class="w-full btn-3d bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold">
                         <i class="fas fa-user-plus mr-2"></i>登録する
                     </button>
@@ -123,6 +133,12 @@ authRoutes.get('/register', (c) => {
                 const passwordConfirm = document.getElementById('passwordConfirm').value;
                 const gender = document.getElementById('gender').value;
                 const email = document.getElementById('email').value;
+                const agreeTerms = document.getElementById('agreeTerms').checked;
+
+                if (!agreeTerms) {
+                    showError('利用規約およびプライバシーポリシーに同意してください');
+                    return;
+                }
 
                 if (password !== passwordConfirm) {
                     showError('パスワードが一致しません');
