@@ -53,6 +53,7 @@ app.get('/terms', (c) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>利用規約 - じぶんを知ることから</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
     <div class="max-w-4xl mx-auto px-4 py-8">
@@ -157,9 +158,12 @@ app.get('/terms', (c) => {
             <p class="text-gray-700 text-right mt-8">以上</p>
         </div>
 
-        <div class="text-center">
+        <div class="text-center space-x-4">
+            <button onclick="window.history.back()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i>戻る
+            </button>
             <button onclick="window.close()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
-                閉じる
+                <i class="fas fa-times mr-2"></i>閉じる
             </button>
         </div>
     </div>
