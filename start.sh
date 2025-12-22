@@ -10,6 +10,10 @@ mkdir -p .wrangler/state/v3/d1
 echo "📦 Running database migrations..."
 npx wrangler d1 migrations apply jibun-supple-production --local || echo "⚠️ Migrations already applied or failed"
 
+# Seed essential data (admin user, demo users)
+echo "🌱 Seeding essential data..."
+npx wrangler d1 execute jibun-supple-production --local --file=./seed-production.sql || echo "⚠️ Seed data already exists or failed"
+
 # Start the application
 echo "✅ Starting wrangler pages dev..."
 exec npx wrangler pages dev dist --d1=jibun-supple-production --local --port=${PORT:-8080} --ip=0.0.0.0
