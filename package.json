@@ -28,12 +28,12 @@
     "test": "curl http://localhost:3000"
   },
   "dependencies": {
-    "hono": "^4.10.7"
-  },
-  "devDependencies": {
+    "hono": "^4.10.7",
     "@hono/vite-build": "^1.2.0",
     "@hono/vite-dev-server": "^0.18.2",
     "vite": "^6.3.5",
     "wrangler": "^4.4.0"
+  },
+  "devDependencies": {
   }
 }
