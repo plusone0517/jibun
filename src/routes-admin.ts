@@ -209,9 +209,19 @@ adminRoutes.get('/dashboard', (c) => {
 
             <!-- Users Table -->
             <div class="bg-white rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-bold mb-4">
-                    <i class="fas fa-users mr-2"></i>顧客データ一覧
-                </h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">
+                        <i class="fas fa-users mr-2"></i>顧客データ一覧
+                    </h2>
+                    <div class="space-x-2">
+                        <button onclick="exportUsers()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">
+                            <i class="fas fa-download mr-2"></i>ユーザー一覧CSV
+                        </button>
+                        <button onclick="exportDetailed()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                            <i class="fas fa-file-excel mr-2"></i>詳細データCSV
+                        </button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -245,6 +255,51 @@ adminRoutes.get('/dashboard', (c) => {
                 } catch (error) {
                     window.location.href = '/admin/login';
                     return false;
+                }
+            }
+
+            // Export functions
+            async function exportUsers() {
+                try {
+                    const response = await axios.get('/api/admin/export/users', {
+                        responseType: 'blob'
+                    });
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', \`users_\${new Date().toISOString().split('T')[0]}.csv\`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert('ユーザー一覧CSVをダウンロードしました');
+                } catch (error) {
+                    console.error('Error exporting users:', error);
+                    alert('CSVエクスポートに失敗しました');
+                }
+            }
+            
+            async function exportDetailed() {
+                try {
+                    const response = await axios.get('/api/admin/export/detailed', {
+                        responseType: 'blob'
+                    });
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', \`all_users_detailed_\${new Date().toISOString().split('T')[0]}.csv\`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert('詳細データCSVをダウンロードしました');
+                } catch (error) {
+                    console.error('Error exporting detailed data:', error);
+                    alert('CSVエクスポートに失敗しました');
                 }
             }
 

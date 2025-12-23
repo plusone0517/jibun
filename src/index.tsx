@@ -2461,6 +2461,164 @@ app.put('/api/admin/user/:userId/membership', async (c) => {
   }
 })
 
+// CSV Export: User list
+app.get('/api/admin/export/users', async (c) => {
+  try {
+    const db = c.env.DB
+    
+    // Get all users with detailed information
+    const { results: users } = await db.prepare(
+      'SELECT id, name, email, age, gender, membership_type, created_at, last_login FROM users ORDER BY id ASC'
+    ).all()
+    
+    // Create CSV header
+    const header = ['ID', '名前', 'メールアドレス', '年齢', '性別', '会員タイプ', '登録日', '最終ログイン']
+    
+    // Create CSV rows
+    const rows = users.map(user => [
+      user.id,
+      user.name,
+      user.email,
+      user.age || '',
+      user.gender === 'male' ? '男性' : user.gender === 'female' ? '女性' : user.gender === 'other' ? 'その他' : '',
+      user.membership_type === 'premium' ? '有料会員' : '無料会員',
+      user.created_at || '',
+      user.last_login || ''
+    ])
+    
+    // Combine header and rows
+    const csvContent = [header, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+    
+    // Add BOM for Excel compatibility with Japanese characters
+    const bom = '\uFEFF'
+    
+    return c.text(bom + csvContent, 200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="users_${new Date().toISOString().split('T')[0]}.csv"`
+    })
+  } catch (error) {
+    console.error('Error exporting users CSV:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// CSV Export: Detailed data (exam + questionnaire)
+app.get('/api/admin/export/detailed/:userId?', async (c) => {
+  try {
+    const db = c.env.DB
+    const userId = c.req.param('userId')
+    
+    let userCondition = ''
+    if (userId) {
+      userCondition = ` WHERE u.id = ${userId}`
+    }
+    
+    // Get all users
+    const { results: users } = await db.prepare(
+      `SELECT id, name, email, age, gender, membership_type FROM users${userCondition} ORDER BY id ASC`
+    ).all()
+    
+    const detailedData = []
+    
+    for (const user of users) {
+      // Get exam data
+      const { results: exams } = await db.prepare(
+        'SELECT * FROM exam_data WHERE user_id = ? ORDER BY exam_date DESC'
+      ).bind(user.id).all()
+      
+      // Get questionnaire responses
+      const { results: questionnaires } = await db.prepare(
+        'SELECT question_number, question_text, answer_value FROM questionnaire_responses WHERE user_id = ? ORDER BY question_number ASC'
+      ).bind(user.id).all()
+      
+      // Convert questionnaire to key-value
+      const questionnaireMap = {}
+      questionnaires.forEach(q => {
+        questionnaireMap[`Q${q.question_number}_${q.question_text}`] = q.answer_value
+      })
+      
+      // Get exam measurements
+      for (const exam of exams) {
+        const { results: measurements } = await db.prepare(
+          'SELECT measurement_key, measurement_value, measurement_unit FROM exam_measurements WHERE exam_data_id = ?'
+        ).bind(exam.id).all()
+        
+        const measurementMap = {}
+        measurements.forEach(m => {
+          measurementMap[m.measurement_key] = `${m.measurement_value} ${m.measurement_unit || ''}`
+        })
+        
+        detailedData.push({
+          user_id: user.id,
+          user_name: user.name,
+          user_email: user.email,
+          user_age: user.age,
+          user_gender: user.gender,
+          membership_type: user.membership_type,
+          exam_date: exam.exam_date,
+          exam_type: exam.exam_type,
+          ...measurementMap,
+          ...questionnaireMap
+        })
+      }
+      
+      // If no exam data, include user info with questionnaire only
+      if (exams.length === 0 && questionnaires.length > 0) {
+        detailedData.push({
+          user_id: user.id,
+          user_name: user.name,
+          user_email: user.email,
+          user_age: user.age,
+          user_gender: user.gender,
+          membership_type: user.membership_type,
+          exam_date: '',
+          exam_type: '',
+          ...questionnaireMap
+        })
+      }
+    }
+    
+    if (detailedData.length === 0) {
+      return c.json({ success: false, error: 'エクスポートするデータがありません' }, 404)
+    }
+    
+    // Get all unique keys for CSV header
+    const allKeys = new Set()
+    detailedData.forEach(row => {
+      Object.keys(row).forEach(key => allKeys.add(key))
+    })
+    
+    const header = Array.from(allKeys)
+    
+    // Create CSV rows
+    const rows = detailedData.map(row => 
+      header.map(key => row[key] || '')
+    )
+    
+    // Combine header and rows
+    const csvContent = [header, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+    
+    // Add BOM for Excel compatibility
+    const bom = '\uFEFF'
+    
+    const filename = userId 
+      ? `user_${userId}_detailed_${new Date().toISOString().split('T')[0]}.csv`
+      : `all_users_detailed_${new Date().toISOString().split('T')[0]}.csv`
+    
+    return c.text(bom + csvContent, 200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`
+    })
+  } catch (error) {
+    console.error('Error exporting detailed CSV:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // Reset user password (admin only)
 app.post('/api/admin/user/:userId/reset-password', async (c) => {
   try {
@@ -2662,6 +2820,188 @@ app.get('/api/supplements/master/:code', async (c) => {
     })
   } catch (error) {
     console.error('Error fetching supplement:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ======================
+// CSV Export API (Admin)
+// ======================
+
+// Export all users data to CSV
+app.get('/api/admin/export/users', async (c) => {
+  try {
+    const db = c.env.DB
+
+    // Get all users with detailed information
+    const { results: users } = await db.prepare(`
+      SELECT 
+        id,
+        name,
+        email,
+        birthdate,
+        age,
+        gender,
+        membership_type,
+        created_at,
+        last_login
+      FROM users 
+      ORDER BY created_at DESC
+    `).all()
+
+    // Create CSV content
+    const headers = ['ID', '名前', 'メールアドレス', '生年月日', '年齢', '性別', '会員タイプ', '登録日', '最終ログイン']
+    const csvRows = [headers.join(',')]
+
+    for (const user of users || []) {
+      const row = [
+        user.id,
+        `"${user.name || ''}"`,
+        `"${user.email || ''}"`,
+        user.birthdate || '',
+        user.age || '',
+        `"${user.gender || ''}"`,
+        user.membership_type || 'free',
+        user.created_at || '',
+        user.last_login || ''
+      ]
+      csvRows.push(row.join(','))
+    }
+
+    const csvContent = csvRows.join('\n')
+
+    // Set headers for CSV download
+    return new Response(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="users_${new Date().toISOString().split('T')[0]}.csv"`
+      }
+    })
+  } catch (error) {
+    console.error('Error exporting users:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Export user's exam data to CSV
+app.get('/api/admin/export/exams/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    // Get user info
+    const user = await db.prepare('SELECT name, email FROM users WHERE id = ?').bind(userId).first()
+    
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    // Get exam data
+    const { results: exams } = await db.prepare(`
+      SELECT 
+        ed.id,
+        ed.exam_date,
+        ed.exam_type,
+        em.measurement_key,
+        em.measurement_value,
+        em.measurement_unit,
+        em.normal_range_min,
+        em.normal_range_max
+      FROM exam_data ed
+      LEFT JOIN exam_measurements em ON ed.id = em.exam_data_id
+      WHERE ed.user_id = ?
+      ORDER BY ed.exam_date DESC, em.measurement_key
+    `).bind(userId).all()
+
+    // Create CSV content
+    const headers = ['検査ID', '検査日', '検査タイプ', '測定項目', '測定値', '単位', '基準値(最小)', '基準値(最大)']
+    const csvRows = [
+      `ユーザー: ${user.name} (${user.email})`,
+      '',
+      headers.join(',')
+    ]
+
+    for (const exam of exams || []) {
+      const row = [
+        exam.id,
+        exam.exam_date || '',
+        `"${exam.exam_type || ''}"`,
+        `"${exam.measurement_key || ''}"`,
+        exam.measurement_value || '',
+        exam.measurement_unit || '',
+        exam.normal_range_min || '',
+        exam.normal_range_max || ''
+      ]
+      csvRows.push(row.join(','))
+    }
+
+    const csvContent = csvRows.join('\n')
+
+    return new Response(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="exams_user${userId}_${new Date().toISOString().split('T')[0]}.csv"`
+      }
+    })
+  } catch (error) {
+    console.error('Error exporting exams:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// Export user's questionnaire responses to CSV
+app.get('/api/admin/export/questionnaire/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    // Get user info
+    const user = await db.prepare('SELECT name, email FROM users WHERE id = ?').bind(userId).first()
+    
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    // Get questionnaire responses
+    const { results: responses } = await db.prepare(`
+      SELECT 
+        question_id,
+        category,
+        response,
+        created_at
+      FROM questionnaire_responses
+      WHERE user_id = ?
+      ORDER BY question_id
+    `).bind(userId).all()
+
+    // Create CSV content
+    const headers = ['質問ID', 'カテゴリ', '回答', '回答日時']
+    const csvRows = [
+      `ユーザー: ${user.name} (${user.email})`,
+      '',
+      headers.join(',')
+    ]
+
+    for (const resp of responses || []) {
+      const row = [
+        resp.question_id,
+        `"${resp.category || ''}"`,
+        `"${resp.response || ''}"`,
+        resp.created_at || ''
+      ]
+      csvRows.push(row.join(','))
+    }
+
+    const csvContent = csvRows.join('\n')
+
+    return new Response(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="questionnaire_user${userId}_${new Date().toISOString().split('T')[0]}.csv"`
+      }
+    })
+  } catch (error) {
+    console.error('Error exporting questionnaire:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
