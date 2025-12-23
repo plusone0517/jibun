@@ -1479,10 +1479,10 @@ async function performAnalysis(c: any) {
     }
 
     const db = c.env.DB
-    const openaiApiKey = c.env.OPENAI_API_KEY
+    const geminiApiKey = c.env.GEMINI_API_KEY
 
-    if (!openaiApiKey) {
-      return c.json({ success: false, error: 'OpenAI APIキーが設定されていません。.dev.varsファイルを確認してください。' }, 500)
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'Gemini APIキーが設定されていません。.dev.varsファイルを確認してください。' }, 500)
     }
 
     // Fetch exam data
@@ -1543,19 +1543,8 @@ async function performAnalysis(c: any) {
       `・優先度: ${s.priority === 1 ? '高' : s.priority === 2 ? '中' : '低'}`
     ).join('\n\n') || 'サプリマスターデータなし'
 
-    // Call OpenAI API
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `あなたは医療機関監修の健康アドバイザー兼栄養療法士です。
+    // Call Gemini API
+    const systemPrompt = `あなたは医療機関監修の健康アドバイザー兼栄養療法士です。
 
 【あなたの役割】
 ・検査データと問診結果を総合的に分析
@@ -1577,10 +1566,8 @@ async function performAnalysis(c: any) {
 ・科学的根拠に基づく（栄養学・医学の知見を活用）
 ・段階的（優先順位を明確に）
 ・測定可能（数値目標を設定）`
-          },
-          {
-            role: 'user',
-            content: `以下のデータを分析して、総合的な健康アドバイスを提供してください。
+
+    const userPrompt = `以下のデータを分析して、総合的な健康アドバイスを提供してください。
 
 【検査データ（構造化）】
 ${examSummary}
@@ -1695,16 +1682,30 @@ ${supplementsCatalog}
 - 強調したい部分は「」（かぎかっこ）で囲んでください
 - 箇条書きは「・」（中黒）を使用してください
 - 読みやすく、自然な日本語で記述してください`
-          }
-        ],
-        temperature: 0.5,
-        max_tokens: 8000
+
+    const fullPrompt = systemPrompt + '\n\n' + userPrompt
+
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: fullPrompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.5,
+          maxOutputTokens: 8000
+        }
       })
     })
 
     if (!aiResponse.ok) {
       const errorData = await aiResponse.json()
-      console.error('OpenAI API error:', errorData)
+      console.error('Gemini API error:', errorData)
       return c.json({ 
         success: false, 
         error: `AI解析に失敗しました: ${errorData.error?.message || 'Unknown error'}` 
@@ -1712,7 +1713,14 @@ ${supplementsCatalog}
     }
 
     const aiData = await aiResponse.json()
-    const analysisText = aiData.choices[0].message.content
+    const analysisText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+    if (!analysisText) {
+      return c.json({ 
+        success: false, 
+        error: 'AI解析の結果が空です' 
+      }, 500)
+    }
 
     // Parse AI response (simple parsing - in production, use structured output)
     const overallScore = parseScore(analysisText)
