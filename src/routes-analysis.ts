@@ -255,16 +255,20 @@ analysisRoutes.get('/', (c) => {
             let currentUser = null;
 
             function updateMembershipUI(membershipType) {
+                console.log('🎨 updateMembershipUI called with:', membershipType);
                 const isPremium = membershipType === 'premium';
+                console.log('💎 Is Premium?', isPremium);
                 const premiumRequiredDiv = document.getElementById('premiumRequired');
                 const analyzeButton = document.getElementById('analyzeButton');
                 
                 if (isPremium) {
+                    console.log('✨ Enabling premium features');
                     premiumRequiredDiv.classList.add('hidden');
                     analyzeButton.disabled = false;
                     analyzeButton.classList.remove('opacity-50', 'cursor-not-allowed');
                     analyzeButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
                 } else {
+                    console.log('🔒 Disabling premium features (free member)');
                     premiumRequiredDiv.classList.remove('hidden');
                     analyzeButton.disabled = true;
                     analyzeButton.classList.add('opacity-50', 'cursor-not-allowed');
@@ -276,14 +280,18 @@ analysisRoutes.get('/', (c) => {
                 try {
                     // Check authentication
                     const authResponse = await axios.get('/api/auth/me');
+                    console.log('🔍 Auth Response:', authResponse.data);
                     if (!authResponse.data.success || !authResponse.data.user) {
                         window.location.href = '/auth/login';
                         return;
                     }
                     currentUser = authResponse.data.user;
+                    console.log('👤 Current User:', currentUser);
+                    console.log('💳 Membership Type:', currentUser.membership_type);
 
                     // Check membership type and update UI
                     const membershipType = currentUser.membership_type || 'free';
+                    console.log('✅ Final Membership Type:', membershipType);
                     updateMembershipUI(membershipType);
                     
                     // Set up periodic check for membership changes (every 10 seconds)
