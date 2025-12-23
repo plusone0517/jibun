@@ -475,6 +475,7 @@ adminRoutes.get('/user/:userId', (c) => {
 
         <script>
             const userId = ${userId};
+            let currentChart = null; // Store the current chart instance
 
             async function checkAuth() {
                 try {
@@ -600,6 +601,13 @@ adminRoutes.get('/user/:userId', (c) => {
                 try {
                     console.log('renderExamChart called with', exams.length, 'exams');
                     
+                    // Destroy existing chart if it exists
+                    if (currentChart) {
+                        console.log('Destroying existing chart');
+                        currentChart.destroy();
+                        currentChart = null;
+                    }
+                    
                     const chartElement = document.getElementById('examChart');
                     if (!chartElement) {
                         console.error('Chart element not found');
@@ -637,7 +645,7 @@ adminRoutes.get('/user/:userId', (c) => {
 
                     const ctx = chartElement.getContext('2d');
                     console.log('Creating chart...');
-                    new Chart(ctx, {
+                    currentChart = new Chart(ctx, {
                         type: 'line',
                         data: {
                             labels: dates,
@@ -668,6 +676,10 @@ adminRoutes.get('/user/:userId', (c) => {
 
             function renderExamTable(exams) {
                 const tableDiv = document.getElementById('examTable');
+                if (!tableDiv) {
+                    console.error('examTable element not found');
+                    return;
+                }
                 tableDiv.innerHTML = \`
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
