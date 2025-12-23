@@ -547,7 +547,10 @@ adminRoutes.get('/user/:userId', (c) => {
                         renderExamChart(historyResponse.data.exams);
                         renderExamTable(historyResponse.data.exams);
                     } else {
-                        document.getElementById('examChart').parentElement.innerHTML = '<p class="text-gray-600">検査データがありません</p>';
+                        const chartElement = document.getElementById('examChart');
+                        if (chartElement && chartElement.parentElement) {
+                            chartElement.parentElement.innerHTML = '<p class="text-gray-600">検査データがありません</p>';
+                        }
                     }
 
                     // Load questionnaire data
@@ -568,7 +571,10 @@ adminRoutes.get('/user/:userId', (c) => {
                         document.getElementById('analysisHistory').innerHTML = '<p class="text-gray-600">解析履歴がありません</p>';
                     }
 
-                    document.getElementById('loadingMessage').classList.add('hidden');
+                    const loadingMessage = document.getElementById('loadingMessage');
+                    if (loadingMessage) {
+                        loadingMessage.classList.add('hidden');
+                    }
                 } catch (error) {
                     console.error('Error loading user detail:', error);
                     console.error('Error details:', {
@@ -578,12 +584,15 @@ adminRoutes.get('/user/:userId', (c) => {
                     });
                     
                     const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
-                    document.getElementById('loadingMessage').innerHTML = \`
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        データの読み込みに失敗しました: \${errorMsg}
-                        <div class="text-xs mt-2">ブラウザのコンソール（F12）で詳細を確認してください</div>
-                    \`;
-                    document.getElementById('loadingMessage').className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6';
+                    const loadingMessage = document.getElementById('loadingMessage');
+                    if (loadingMessage) {
+                        loadingMessage.innerHTML = \`
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            データの読み込みに失敗しました: \${errorMsg}
+                            <div class="text-xs mt-2">ブラウザのコンソール（F12）で詳細を確認してください</div>
+                        \`;
+                        loadingMessage.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6';
+                    }
                 }
             }
 
