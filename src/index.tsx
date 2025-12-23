@@ -2133,6 +2133,21 @@ app.post('/api/auth/logout', async (c) => {
 })
 
 // Get current user
+// Debug endpoint
+app.get('/api/debug/user/:id', async (c) => {
+  const userId = c.req.param('id')
+  const db = c.env.DB
+  
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first()
+  
+  return c.json({
+    raw_user: user,
+    membership_type_exists: 'membership_type' in user,
+    membership_type_value: user.membership_type,
+    all_keys: Object.keys(user)
+  })
+})
+
 app.get('/api/auth/me', async (c) => {
   try {
     const cookies = c.req.header('cookie') || ''
@@ -2153,17 +2168,31 @@ app.get('/api/auth/me', async (c) => {
       return c.json({ success: false, error: 'セッションが無効です' }, 401)
     }
 
-    // Get user
-    const user = await db.prepare('SELECT id, name, email, age, gender, membership_type FROM users WHERE id = ?')
+    // Get user (using SELECT * like debug endpoint)
+    const userRow: any = await db.prepare('SELECT * FROM users WHERE id = ?')
       .bind(session.user_id).first()
 
-    if (!user) {
+    if (!userRow) {
       return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
     }
 
-    return c.json({
+    // Build response with explicit membership_type
+    const responseData = {
       success: true,
-      user: user
+      user: {
+        id: userRow.id,
+        name: userRow.name,
+        email: userRow.email,
+        age: userRow.age,
+        gender: userRow.gender,
+        birthdate: userRow.birthdate,
+        membership_type: userRow.membership_type || 'free'
+      }
+    }
+
+    // Return with explicit JSON stringification
+    return new Response(JSON.stringify(responseData), {
+      headers: { 'Content-Type': 'application/json' }
     })
   } catch (error) {
     console.error('Error getting current user:', error)
