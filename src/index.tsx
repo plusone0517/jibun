@@ -1718,15 +1718,25 @@ ${supplementsCatalog}
     if (!analysisText) {
       return c.json({ 
         success: false, 
-        error: 'AI解析の結果が空です' 
+        error: 'AI解析の結果が空です',
+        debug: { aiData: JSON.stringify(aiData).substring(0, 500) }
       }, 500)
     }
+
+    // DEBUG: Log AI response text
+    console.log('🤖 AI Response (first 500 chars):', analysisText.substring(0, 500))
 
     // Parse AI response (simple parsing - in production, use structured output)
     const overallScore = parseScore(analysisText)
     const healthAdvice = extractSection(analysisText, '健康アドバイス')
     const nutritionGuidance = extractSection(analysisText, '栄養指導')
     const riskAssessment = extractSection(analysisText, 'リスク評価')
+    
+    // DEBUG: Log extracted sections
+    console.log('📊 Extracted - Score:', overallScore)
+    console.log('💡 Extracted - Health Advice length:', healthAdvice.length)
+    console.log('🍎 Extracted - Nutrition length:', nutritionGuidance.length)
+    console.log('⚠️  Extracted - Risk length:', riskAssessment.length)
     const radarChartData = {
       labels: ['睡眠', '栄養', '運動', 'ストレス', '生活習慣', '検査値'],
       values: [70, 65, 60, 55, 75, 70] // Default values - in production, parse from AI response
