@@ -1057,6 +1057,18 @@ analysisRoutes.get('/', (c) => {
             function displayExamDataTable() {
                 const tableBody = document.getElementById('examDataTableBody');
                 
+                // Safety check: ensure allExamData and selectedExamIds exist
+                if (typeof allExamData === 'undefined' || typeof selectedExamIds === 'undefined') {
+                    tableBody.innerHTML = \`
+                        <tr>
+                            <td colspan="5" class="border border-gray-300 px-4 py-6 text-center text-gray-500">
+                                検査データを読み込んでいます...
+                            </td>
+                        </tr>
+                    \`;
+                    return;
+                }
+                
                 // Get selected exams
                 const selectedExams = allExamData.filter(exam => selectedExamIds.includes(exam.id));
                 
@@ -1074,6 +1086,11 @@ analysisRoutes.get('/', (c) => {
                 // Process exam data and create table rows
                 const rows = [];
                 selectedExams.forEach(exam => {
+                    // Safety check: ensure measurements exist
+                    if (!exam.measurements || !Array.isArray(exam.measurements)) {
+                        return;
+                    }
+                    
                     exam.measurements.forEach(measurement => {
                         // Calculate trend if there are previous measurements
                         const trend = calculateTrend(exam, measurement.name);
@@ -1084,19 +1101,19 @@ analysisRoutes.get('/', (c) => {
                         let statusIcon = '<i class="fas fa-check-circle text-green-600"></i>';
                         
                         // Simple evaluation based on measurement name
-                        if (measurement.name.includes('血圧') && measurement.value > 140) {
+                        if (measurement.name && measurement.name.includes('血圧') && measurement.value > 140) {
                             statusColor = 'bg-red-100 text-red-800';
                             statusText = '高値';
                             statusIcon = '<i class="fas fa-exclamation-triangle text-red-600"></i>';
-                        } else if (measurement.name.includes('血圧') && measurement.value > 130) {
+                        } else if (measurement.name && measurement.name.includes('血圧') && measurement.value > 130) {
                             statusColor = 'bg-yellow-100 text-yellow-800';
                             statusText = '注意';
                             statusIcon = '<i class="fas fa-exclamation-circle text-yellow-600"></i>';
                         }
                         
                         rows.push({
-                            name: measurement.name,
-                            value: measurement.value + ' ' + measurement.unit,
+                            name: measurement.name || '不明',
+                            value: (measurement.value || 0) + ' ' + (measurement.unit || ''),
                             reference: measurement.reference_range || '基準値なし',
                             status: { color: statusColor, text: statusText, icon: statusIcon },
                             trend: trend
@@ -1105,6 +1122,17 @@ analysisRoutes.get('/', (c) => {
                 });
 
                 // Render table rows
+                if (rows.length === 0) {
+                    tableBody.innerHTML = \`
+                        <tr>
+                            <td colspan="5" class="border border-gray-300 px-4 py-6 text-center text-gray-500">
+                                測定データが見つかりませんでした
+                            </td>
+                        </tr>
+                    \`;
+                    return;
+                }
+
                 tableBody.innerHTML = rows.map(row => \`
                     <tr class="hover:bg-gray-50 transition">
                         <td class="border border-gray-300 px-4 py-3 font-medium text-gray-800">\${row.name}</td>
@@ -1122,8 +1150,13 @@ analysisRoutes.get('/', (c) => {
             }
 
             function calculateTrend(exam, measurementName) {
+                // Safety check
+                if (!exam || !exam.measurements || !Array.isArray(exam.measurements)) {
+                    return '<span class="text-gray-400">−</span>';
+                }
+                
                 // Simple trend calculation - in production, compare with historical data
-                const measurements = exam.measurements.filter(m => m.name === measurementName);
+                const measurements = exam.measurements.filter(m => m && m.name === measurementName);
                 if (measurements.length < 2) {
                     return '<span class="text-gray-400">−</span>';
                 }
