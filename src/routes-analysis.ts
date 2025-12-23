@@ -255,6 +255,89 @@ analysisRoutes.get('/', (c) => {
             let useQuestionnaire = false;
             let currentUser = null;
 
+            // Format advice sections with visual elements
+            function formatAdviceSection(elementId, content, icon, color) {
+                const container = document.getElementById(elementId);
+                if (!content) {
+                    container.innerHTML = '<p class="text-gray-500">データがありません</p>';
+                    return;
+                }
+                
+                // Parse content into sections
+                const lines = content.split('\\n').filter(line => line.trim());
+                let html = '';
+                let currentSection = '';
+                let sectionItems = [];
+                
+                lines.forEach((line, index) => {
+                    // Check if it's a section header (starts with number or bullet)
+                    if (line.match(/^[0-9]+\\.|^【|^■|^◆|^▼/)) {
+                        // Save previous section
+                        if (currentSection && sectionItems.length > 0) {
+                            html += formatSection(currentSection, sectionItems, color);
+                            sectionItems = [];
+                        }
+                        currentSection = line;
+                    } else if (line.match(/^[・•]/)) {
+                        sectionItems.push(line);
+                    } else if (line.trim()) {
+                        if (!currentSection) {
+                            currentSection = line;
+                        } else {
+                            sectionItems.push(line);
+                        }
+                    }
+                });
+                
+                // Add last section
+                if (currentSection && sectionItems.length > 0) {
+                    html += formatSection(currentSection, sectionItems, color);
+                } else if (currentSection) {
+                    html += formatSection(currentSection, [], color);
+                }
+                
+                // If no structured content, show as is with better formatting
+                if (!html) {
+                    html = '<div class="bg-gray-50 rounded-lg p-6 border-l-4 border-' + color + '-500">' +
+                        '<p class="text-gray-700 leading-relaxed whitespace-pre-wrap">' + content + '</p>' +
+                        '</div>';
+                }
+                
+                container.innerHTML = html;
+            }
+            
+            function formatSection(header, items, color) {
+                const colorClasses = {
+                    'yellow': { bg: 'bg-yellow-50', border: 'border-yellow-500', text: 'text-yellow-800', icon: 'text-yellow-600' },
+                    'green': { bg: 'bg-green-50', border: 'border-green-500', text: 'text-green-800', icon: 'text-green-600' },
+                    'orange': { bg: 'bg-orange-50', border: 'border-orange-500', text: 'text-orange-800', icon: 'text-orange-600' },
+                    'blue': { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-800', icon: 'text-blue-600' }
+                };
+                
+                const colors = colorClasses[color] || colorClasses['blue'];
+                
+                let html = '<div class="' + colors.bg + ' rounded-lg p-5 border-l-4 ' + colors.border + ' mb-4">';
+                html += '<h4 class="font-bold ' + colors.text + ' mb-3 text-lg flex items-center">';
+                html += '<i class="fas fa-check-circle ' + colors.icon + ' mr-2"></i>';
+                html += header.replace(/^[0-9]+\\.|^【|^】|^■|^◆|^▼/g, '').trim();
+                html += '</h4>';
+                
+                if (items.length > 0) {
+                    html += '<div class="space-y-2 pl-6">';
+                    items.forEach(item => {
+                        const cleanItem = item.replace(/^[・•]\\s*/, '');
+                        html += '<div class="flex items-start">';
+                        html += '<i class="fas fa-arrow-right text-' + color + '-400 mt-1 mr-2 text-sm"></i>';
+                        html += '<p class="text-gray-700 flex-1">' + cleanItem + '</p>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                return html;
+            }
+
             function updateMembershipUI(membershipType) {
                 console.log('🎨 updateMembershipUI called with:', membershipType);
                 const isPremium = membershipType === 'premium';
@@ -839,89 +922,6 @@ analysisRoutes.get('/', (c) => {
                     scoreAssessment.textContent = '注意が必要です';
                     scoreAssessment.classList.add('text-red-600');
                 }
-            }
-
-            // Format advice sections with visual elements
-            function formatAdviceSection(elementId, content, icon, color) {
-                const container = document.getElementById(elementId);
-                if (!content) {
-                    container.innerHTML = '<p class="text-gray-500">データがありません</p>';
-                    return;
-                }
-                
-                // Parse content into sections
-                const lines = content.split('\n').filter(line => line.trim());
-                let html = '';
-                let currentSection = '';
-                let sectionItems = [];
-                
-                lines.forEach((line, index) => {
-                    // Check if it's a section header (starts with number or bullet)
-                    if (line.match(/^[0-9]+\.|^【|^■|^◆|^▼/)) {
-                        // Save previous section
-                        if (currentSection && sectionItems.length > 0) {
-                            html += formatSection(currentSection, sectionItems, color);
-                            sectionItems = [];
-                        }
-                        currentSection = line;
-                    } else if (line.match(/^[・•]/)) {
-                        sectionItems.push(line);
-                    } else if (line.trim()) {
-                        if (!currentSection) {
-                            currentSection = line;
-                        } else {
-                            sectionItems.push(line);
-                        }
-                    }
-                });
-                
-                // Add last section
-                if (currentSection && sectionItems.length > 0) {
-                    html += formatSection(currentSection, sectionItems, color);
-                } else if (currentSection) {
-                    html += formatSection(currentSection, [], color);
-                }
-                
-                // If no structured content, show as is with better formatting
-                if (!html) {
-                    html = '<div class="bg-gray-50 rounded-lg p-6 border-l-4 border-' + color + '-500">' +
-                        '<p class="text-gray-700 leading-relaxed whitespace-pre-wrap">' + content + '</p>' +
-                        '</div>';
-                }
-                
-                container.innerHTML = html;
-            }
-            
-            function formatSection(header, items, color) {
-                const colorClasses = {
-                    'yellow': { bg: 'bg-yellow-50', border: 'border-yellow-500', text: 'text-yellow-800', icon: 'text-yellow-600' },
-                    'green': { bg: 'bg-green-50', border: 'border-green-500', text: 'text-green-800', icon: 'text-green-600' },
-                    'orange': { bg: 'bg-orange-50', border: 'border-orange-500', text: 'text-orange-800', icon: 'text-orange-600' },
-                    'blue': { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-800', icon: 'text-blue-600' }
-                };
-                
-                const colors = colorClasses[color] || colorClasses['blue'];
-                
-                let html = '<div class="' + colors.bg + ' rounded-lg p-5 border-l-4 ' + colors.border + ' mb-4">';
-                html += '<h4 class="font-bold ' + colors.text + ' mb-3 text-lg flex items-center">';
-                html += '<i class="fas fa-check-circle ' + colors.icon + ' mr-2"></i>';
-                html += header.replace(/^[0-9]+\.|^【|^】|^■|^◆|^▼/g, '').trim();
-                html += '</h4>';
-                
-                if (items.length > 0) {
-                    html += '<div class="space-y-2 pl-6">';
-                    items.forEach(item => {
-                        const cleanItem = item.replace(/^[・•]\s*/, '');
-                        html += '<div class="flex items-start">';
-                        html += '<i class="fas fa-arrow-right text-' + color + '-400 mt-1 mr-2 text-sm"></i>';
-                        html += '<p class="text-gray-700 flex-1">' + cleanItem + '</p>';
-                        html += '</div>';
-                    });
-                    html += '</div>';
-                }
-                
-                html += '</div>';
-                return html;
             }
 
             let selectedSupplements = [];
