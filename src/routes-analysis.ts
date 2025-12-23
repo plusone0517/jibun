@@ -254,6 +254,24 @@ analysisRoutes.get('/', (c) => {
             let useQuestionnaire = false;
             let currentUser = null;
 
+            function updateMembershipUI(membershipType) {
+                const isPremium = membershipType === 'premium';
+                const premiumRequiredDiv = document.getElementById('premiumRequired');
+                const analyzeButton = document.getElementById('analyzeButton');
+                
+                if (isPremium) {
+                    premiumRequiredDiv.classList.add('hidden');
+                    analyzeButton.disabled = false;
+                    analyzeButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    analyzeButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                } else {
+                    premiumRequiredDiv.classList.remove('hidden');
+                    analyzeButton.disabled = true;
+                    analyzeButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    analyzeButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                }
+            }
+
             async function loadExamData() {
                 try {
                     // Check authentication
@@ -264,13 +282,25 @@ analysisRoutes.get('/', (c) => {
                     }
                     currentUser = authResponse.data.user;
 
-                    // Check membership type
+                    // Check membership type and update UI
                     const membershipType = currentUser.membership_type || 'free';
-                    if (membershipType !== 'premium') {
-                        document.getElementById('premiumRequired').classList.remove('hidden');
-                        document.getElementById('analyzeButton').disabled = true;
-                        document.getElementById('analyzeButton').classList.add('opacity-50', 'cursor-not-allowed');
-                    }
+                    updateMembershipUI(membershipType);
+                    
+                    // Set up periodic check for membership changes (every 10 seconds)
+                    setInterval(async () => {
+                        try {
+                            const checkResponse = await axios.get('/api/auth/me');
+                            if (checkResponse.data.success && checkResponse.data.user) {
+                                const newMembershipType = checkResponse.data.user.membership_type || 'free';
+                                if (newMembershipType !== currentUser.membership_type) {
+                                    currentUser = checkResponse.data.user;
+                                    updateMembershipUI(newMembershipType);
+                                }
+                            }
+                        } catch (error) {
+                            console.log('Membership check failed:', error);
+                        }
+                    }, 10000);
 
                     // Load exam data
                     const examResponse = await axios.get(\`/api/history/\${currentUser.id}\`);
@@ -489,10 +519,25 @@ analysisRoutes.get('/', (c) => {
             }
 
             async function startAnalysis() {
-                // Check membership before starting
+                // Re-check authentication and get latest user info
+                try {
+                    const authResponse = await axios.get('/api/auth/me');
+                    if (!authResponse.data.success || !authResponse.data.user) {
+                        alert('認証が切れています。ログインし直してください。');
+                        window.location.href = '/auth/login';
+                        return;
+                    }
+                    currentUser = authResponse.data.user;
+                } catch (error) {
+                    alert('認証確認に失敗しました。ログインし直してください。');
+                    window.location.href = '/auth/login';
+                    return;
+                }
+
+                // Check membership with latest data
                 const membershipType = currentUser?.membership_type || 'free';
                 if (membershipType !== 'premium') {
-                    alert('AI解析機能は有料会員限定です。アップグレードしてください。');
+                    alert('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
                     return;
                 }
 
