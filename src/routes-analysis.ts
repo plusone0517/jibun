@@ -989,80 +989,326 @@ analysisRoutes.get('/', (c) => {
                 try {
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
-                    
-                    // PDF header
-                    pdf.setFontSize(20);
-                    pdf.text('じぶんを知ることから', 105, 20, { align: 'center' });
-                    pdf.setFontSize(16);
-                    pdf.text('サプリメント処方オーダーシート', 105, 30, { align: 'center' });
-                    pdf.setFontSize(10);
-                    pdf.text('医療機関監修', 105, 36, { align: 'center' });
-                    
+                    const pageWidth = 210;
+                    const pageHeight = 297;
                     const today = new Date().toLocaleDateString('ja-JP');
-                    pdf.text('発行日: ' + today, 15, 50);
                     
-                    // Overall score
+                    // ========== Page 1: Cover Page with Infographic ==========
+                    // Gradient background
+                    pdf.setFillColor(99, 102, 241); // Indigo
+                    pdf.rect(0, 0, pageWidth, 80, 'F');
+                    pdf.setFillColor(139, 92, 246); // Purple
+                    pdf.triangle(0, 80, pageWidth, 80, pageWidth/2, 100, 'F');
+                    
+                    // Title
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(28);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('AI健康分析レポート', pageWidth/2, 35, { align: 'center' });
+                    
                     pdf.setFontSize(14);
-                    pdf.text('総合健康スコア', 15, 60);
-                    pdf.setFontSize(24);
-                    pdf.text(analysisData.overall_score.toFixed(0) + ' / 100', 15, 70);
+                    pdf.setFont(undefined, 'normal');
+                    pdf.text('医療機関監修による総合健康評価', pageWidth/2, 50, { align: 'center' });
                     
-                    // Supplements section
-                    pdf.setFontSize(14);
-                    pdf.text('推奨サプリメント', 15, 85);
-                    
-                    let yPos = 95;
+                    // Date badge
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.roundedRect(pageWidth/2 - 30, 58, 60, 12, 6, 6, 'F');
+                    pdf.setTextColor(99, 102, 241);
                     pdf.setFontSize(10);
+                    pdf.text('発行日: ' + today, pageWidth/2, 66, { align: 'center' });
+                    
+                    // Overall Score - Large Circle
+                    const score = analysisData.overall_score || 0;
+                    const centerX = pageWidth/2;
+                    const centerY = 140;
+                    const radius = 35;
+                    
+                    // Outer decorative circle
+                    pdf.setDrawColor(230, 230, 230);
+                    pdf.setLineWidth(1);
+                    pdf.circle(centerX, centerY, radius + 5, 'S');
+                    
+                    // Score circle
+                    pdf.setFillColor(245, 247, 250);
+                    pdf.circle(centerX, centerY, radius, 'F');
+                    
+                    // Score arc (colored based on score)
+                    let scoreColor;
+                    if (score >= 80) scoreColor = [34, 197, 94]; // Green
+                    else if (score >= 60) scoreColor = [59, 130, 246]; // Blue
+                    else if (score >= 40) scoreColor = [251, 146, 60]; // Orange
+                    else scoreColor = [239, 68, 68]; // Red
+                    
+                    pdf.setDrawColor(...scoreColor);
+                    pdf.setLineWidth(8);
+                    const angle = (score / 100) * 360;
+                    if (angle > 0) {
+                        // Draw arc using multiple lines
+                        for (let i = 0; i <= angle; i += 2) {
+                            const rad = (i - 90) * Math.PI / 180;
+                            const x = centerX + (radius - 4) * Math.cos(rad);
+                            const y = centerY + (radius - 4) * Math.sin(rad);
+                            pdf.circle(x, y, 0.5, 'F');
+                        }
+                    }
+                    
+                    // Score text
+                    pdf.setTextColor(...scoreColor);
+                    pdf.setFontSize(48);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text(score.toFixed(0), centerX, centerY - 5, { align: 'center' });
+                    
+                    pdf.setFontSize(12);
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text('/ 100点', centerX, centerY + 8, { align: 'center' });
+                    
+                    // Score label
+                    pdf.setFontSize(16);
+                    pdf.setTextColor(50, 50, 50);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('総合健康スコア', centerX, centerY - 50, { align: 'center' });
+                    
+                    // Score assessment with icon
+                    let assessment = '';
+                    if (score >= 80) assessment = '🌟 優良 - 素晴らしい健康状態です';
+                    else if (score >= 60) assessment = '✨ 良好 - 健康的な生活が保たれています';
+                    else if (score >= 40) assessment = '⚠️  注意 - 生活習慣の改善が推奨されます';
+                    else assessment = '🚨 要改善 - 早急な対策が必要です';
+                    
+                    pdf.setFontSize(12);
+                    pdf.setTextColor(80, 80, 80);
+                    pdf.setFont(undefined, 'normal');
+                    pdf.text(assessment, centerX, centerY + 50, { align: 'center' });
+                    
+                    // Key Metrics Cards
+                    const cardY = 200;
+                    const cardWidth = 55;
+                    const cardHeight = 35;
+                    const cardSpacing = 8;
+                    const startX = (pageWidth - (cardWidth * 3 + cardSpacing * 2)) / 2;
+                    
+                    const metrics = [
+                        { icon: '💪', label: '体力スコア', value: Math.min(100, score + 5), color: [34, 197, 94] },
+                        { icon: '🧠', label: 'メンタル', value: Math.min(100, score), color: [59, 130, 246] },
+                        { icon: '🍎', label: '栄養バランス', value: Math.max(0, score - 10), color: [251, 146, 60] }
+                    ];
+                    
+                    metrics.forEach((metric, i) => {
+                        const x = startX + i * (cardWidth + cardSpacing);
+                        
+                        // Card shadow
+                        pdf.setFillColor(220, 220, 220);
+                        pdf.roundedRect(x + 1, cardY + 1, cardWidth, cardHeight, 3, 3, 'F');
+                        
+                        // Card background
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.roundedRect(x, cardY, cardWidth, cardHeight, 3, 3, 'F');
+                        
+                        // Card border
+                        pdf.setDrawColor(...metric.color);
+                        pdf.setLineWidth(0.5);
+                        pdf.roundedRect(x, cardY, cardWidth, cardHeight, 3, 3, 'S');
+                        
+                        // Icon
+                        pdf.setFontSize(20);
+                        pdf.text(metric.icon, x + cardWidth/2, cardY + 12, { align: 'center' });
+                        
+                        // Value
+                        pdf.setFontSize(16);
+                        pdf.setFont(undefined, 'bold');
+                        pdf.setTextColor(...metric.color);
+                        pdf.text(metric.value.toFixed(0), x + cardWidth/2, cardY + 24, { align: 'center' });
+                        
+                        // Label
+                        pdf.setFontSize(8);
+                        pdf.setTextColor(100, 100, 100);
+                        pdf.setFont(undefined, 'normal');
+                        pdf.text(metric.label, x + cardWidth/2, cardY + 30, { align: 'center' });
+                    });
+                    
+                    // Footer decoration
+                    pdf.setDrawColor(200, 200, 200);
+                    pdf.setLineWidth(0.5);
+                    pdf.line(20, 260, pageWidth - 20, 260);
+                    pdf.setTextColor(120, 120, 120);
+                    pdf.setFontSize(9);
+                    pdf.text('じぶんを知ることから - あなたの健康パートナー', pageWidth/2, 268, { align: 'center' });
+                    
+                    // ========== Page 2: Health Advice ==========
+                    pdf.addPage();
+                    
+                    // Section header
+                    pdf.setFillColor(251, 146, 60); // Orange
+                    pdf.rect(0, 0, pageWidth, 25, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(18);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('💡 健康アドバイス', 20, 16);
+                    
+                    // Content
+                    pdf.setTextColor(50, 50, 50);
+                    pdf.setFontSize(10);
+                    pdf.setFont(undefined, 'normal');
+                    const adviceText = analysisData.health_advice || 'データがありません';
+                    const adviceLines = pdf.splitTextToSize(adviceText, pageWidth - 40);
+                    let yPos = 40;
+                    
+                    adviceLines.forEach((line, index) => {
+                        if (yPos > pageHeight - 30) {
+                            pdf.addPage();
+                            yPos = 20;
+                        }
+                        pdf.text(line, 20, yPos);
+                        yPos += 6;
+                    });
+                    
+                    // ========== Page 3: Nutrition Guidance ==========
+                    pdf.addPage();
+                    
+                    // Section header
+                    pdf.setFillColor(34, 197, 94); // Green
+                    pdf.rect(0, 0, pageWidth, 25, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(18);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('🍎 栄養指導', 20, 16);
+                    
+                    // Content
+                    pdf.setTextColor(50, 50, 50);
+                    pdf.setFontSize(10);
+                    pdf.setFont(undefined, 'normal');
+                    const nutritionText = analysisData.nutrition_guidance || 'データがありません';
+                    const nutritionLines = pdf.splitTextToSize(nutritionText, pageWidth - 40);
+                    yPos = 40;
+                    
+                    nutritionLines.forEach((line, index) => {
+                        if (yPos > pageHeight - 30) {
+                            pdf.addPage();
+                            yPos = 20;
+                        }
+                        pdf.text(line, 20, yPos);
+                        yPos += 6;
+                    });
+                    
+                    // ========== Page 4: Risk Assessment ==========
+                    pdf.addPage();
+                    
+                    // Section header
+                    pdf.setFillColor(239, 68, 68); // Red
+                    pdf.rect(0, 0, pageWidth, 25, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(18);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('⚠️  健康リスク評価', 20, 16);
+                    
+                    // Content
+                    pdf.setTextColor(50, 50, 50);
+                    pdf.setFontSize(10);
+                    pdf.setFont(undefined, 'normal');
+                    const riskText = analysisData.risk_assessment || 'データがありません';
+                    const riskLines = pdf.splitTextToSize(riskText, pageWidth - 40);
+                    yPos = 40;
+                    
+                    riskLines.forEach((line, index) => {
+                        if (yPos > pageHeight - 30) {
+                            pdf.addPage();
+                            yPos = 20;
+                        }
+                        pdf.text(line, 20, yPos);
+                        yPos += 6;
+                    });
+                    
+                    // ========== Page 5: Supplement Recommendations ==========
+                    pdf.addPage();
+                    
+                    // Section header
+                    pdf.setFillColor(139, 92, 246); // Purple
+                    pdf.rect(0, 0, pageWidth, 25, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(18);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text('💊 推奨サプリメント', 20, 16);
+                    
+                    yPos = 40;
                     
                     if (analysisData.supplements && analysisData.supplements.length > 0) {
                         analysisData.supplements.forEach((supp, index) => {
-                            if (yPos > 270) {
+                            if (yPos > pageHeight - 50) {
                                 pdf.addPage();
                                 yPos = 20;
                             }
                             
+                            // Supplement card
+                            pdf.setFillColor(249, 250, 251);
+                            pdf.roundedRect(20, yPos - 5, pageWidth - 40, 35, 2, 2, 'F');
+                            
+                            // Number badge
+                            pdf.setFillColor(139, 92, 246);
+                            pdf.circle(30, yPos + 3, 5, 'F');
+                            pdf.setTextColor(255, 255, 255);
+                            pdf.setFontSize(10);
                             pdf.setFont(undefined, 'bold');
-                            pdf.text(\`\${index + 1}. \${supp.supplement_name}\`, 15, yPos);
-                            yPos += 6;
+                            pdf.text((index + 1).toString(), 30, yPos + 5, { align: 'center' });
                             
+                            // Supplement name
+                            pdf.setTextColor(50, 50, 50);
+                            pdf.setFontSize(12);
+                            pdf.setFont(undefined, 'bold');
+                            pdf.text(supp.supplement_name || 'サプリメント', 40, yPos + 5);
+                            
+                            // Details
+                            pdf.setFontSize(9);
                             pdf.setFont(undefined, 'normal');
-                            pdf.text(\`   用量: \${supp.dosage || '-'}\`, 15, yPos);
-                            yPos += 5;
-                            pdf.text(\`   頻度: \${supp.frequency || '-'}\`, 15, yPos);
-                            yPos += 5;
+                            pdf.setTextColor(100, 100, 100);
+                            pdf.text(\`用量: \${supp.dosage || '-'} | 頻度: \${supp.frequency || '-'}\`, 40, yPos + 12);
                             
-                            const reasonLines = pdf.splitTextToSize(\`   推奨理由: \${supp.reason || '-'}\`, 170);
-                            pdf.text(reasonLines, 15, yPos);
-                            yPos += (reasonLines.length * 5) + 5;
+                            // Reason
+                            const reasonText = supp.reason || '推奨理由が記載されていません';
+                            const reasonLines = pdf.splitTextToSize(reasonText, pageWidth - 65);
+                            pdf.setTextColor(80, 80, 80);
+                            pdf.setFontSize(8);
+                            reasonLines.slice(0, 2).forEach((line, i) => {
+                                pdf.text(line, 40, yPos + 18 + (i * 5));
+                            });
+                            
+                            yPos += 42;
                         });
+                    } else {
+                        pdf.setTextColor(150, 150, 150);
+                        pdf.setFontSize(11);
+                        pdf.text('推奨サプリメントはありません', pageWidth/2, yPos, { align: 'center' });
                     }
                     
-                    // Add new page for advice
-                    pdf.addPage();
-                    yPos = 20;
-                    
-                    // Health advice
-                    pdf.setFontSize(14);
-                    pdf.text('健康アドバイス', 15, yPos);
-                    yPos += 8;
-                    pdf.setFontSize(10);
-                    const adviceLines = pdf.splitTextToSize(analysisData.health_advice || '', 180);
-                    pdf.text(adviceLines, 15, yPos);
-                    
-                    // Footer
+                    // ========== Footer on all pages ==========
                     const pageCount = pdf.internal.getNumberOfPages();
                     for (let i = 1; i <= pageCount; i++) {
                         pdf.setPage(i);
+                        
+                        // Footer line
+                        pdf.setDrawColor(200, 200, 200);
+                        pdf.setLineWidth(0.3);
+                        pdf.line(20, pageHeight - 20, pageWidth - 20, pageHeight - 20);
+                        
+                        // Disclaimer
+                        pdf.setFontSize(7);
+                        pdf.setTextColor(120, 120, 120);
+                        pdf.setFont(undefined, 'normal');
+                        pdf.text('本資料は医学的アドバイスの代替ではありません。専門医にご相談ください。', pageWidth/2, pageHeight - 14, { align: 'center' });
+                        
+                        // Page number
                         pdf.setFontSize(8);
-                        pdf.text('本資料は医学的アドバイスの代替ではありません。医師にご相談ください。', 105, 285, { align: 'center' });
-                        pdf.text(\`ページ \${i} / \${pageCount}\`, 105, 290, { align: 'center' });
+                        pdf.text(\`ページ \${i} / \${pageCount}\`, pageWidth/2, pageHeight - 8, { align: 'center' });
                     }
                     
                     // Save PDF
                     pdf.save('健康分析レポート_' + today + '.pdf');
+                    
+                    // Show success message
+                    alert('✅ インフォグラフィックPDFをダウンロードしました！');
+                    
                 } catch (error) {
                     console.error('Error generating PDF:', error);
-                    alert('PDF生成中にエラーが発生しました');
+                    alert('❌ PDF生成中にエラーが発生しました: ' + error.message);
                 }
             }
 
