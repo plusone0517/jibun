@@ -29,8 +29,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/wrangler.jsonc ./wrangler.jsonc
 
-# Copy seed data and startup script
-COPY seed-production.sql ./seed-production.sql
+# Copy startup script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
