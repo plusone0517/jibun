@@ -331,21 +331,33 @@ analysisRoutes.get('/', (c) => {
                     }
                 } catch (error) {
                     console.error('Error loading exam data:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        response: error.response,
+                        status: error.response?.status,
+                        data: error.response?.data
+                    });
+                    
                     // If auth error, redirect to login
                     if (error.response && error.response.status === 401) {
                         window.location.href = '/auth/login';
                         return;
                     }
+                    
+                    const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
                     document.getElementById('examListContainer').innerHTML = \`
                         <p class="text-red-500 text-center py-4">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            データの読み込みに失敗しました: \${error.message}
+                            データの読み込みに失敗しました: \${errorMsg}
+                        </p>
+                        <p class="text-xs text-gray-500 text-center">
+                            ブラウザのコンソール（F12）で詳細を確認してください
                         </p>
                     \`;
                     document.getElementById('questionnaireContainer').innerHTML = \`
                         <p class="text-red-500 text-center py-4">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            データの読み込みに失敗しました
+                            データの読み込みに失敗しました: \${errorMsg}
                         </p>
                     \`;
                 }
