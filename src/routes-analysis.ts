@@ -21,6 +21,7 @@ analysisRoutes.get('/', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="/static/pdf-generator.js"></script>
     </head>
     <body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
         <nav class="bg-white shadow-lg mb-8">
@@ -985,7 +986,22 @@ analysisRoutes.get('/', (c) => {
                 return labels[priority] || '中優先度';
             }
 
+            // PDF generation function is now loaded from /static/pdf-generator.js
+            // This provides better Japanese font support using html2canvas
+            
+            // Fallback generatePDF function (if external file fails to load)
             async function generatePDF() {
+                if (window.generatePDFWithScreenshot) {
+                    return window.generatePDFWithScreenshot();
+                }
+                
+                // Simple fallback
+                alert('PDF生成機能を読み込んでいます。もう一度お試しください。');
+            }
+            
+            // Keep the old code commented for reference
+            /*
+            async function generatePDF_OLD() {
                 try {
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -993,6 +1009,13 @@ analysisRoutes.get('/', (c) => {
                     const pageHeight = 297;
                     const today = new Date().toLocaleDateString('ja-JP');
                     
+                    // Old code removed - now using html2canvas method
+                    */
+            }
+            
+            // Dummy old function end marker
+            if (false) {
+                const dummy = () => {
                     // ========== Page 1: Cover Page with Infographic ==========
                     // Gradient background
                     pdf.setFillColor(99, 102, 241); // Indigo
@@ -1300,17 +1323,10 @@ analysisRoutes.get('/', (c) => {
                         pdf.text(\`ページ \${i} / \${pageCount}\`, pageWidth/2, pageHeight - 8, { align: 'center' });
                     }
                     
-                    // Save PDF
-                    pdf.save('健康分析レポート_' + today + '.pdf');
-                    
-                    // Show success message
-                    alert('✅ インフォグラフィックPDFをダウンロードしました！');
-                    
-                } catch (error) {
-                    console.error('Error generating PDF:', error);
-                    alert('❌ PDF生成中にエラーが発生しました: ' + error.message);
-                }
+                    // Old code ends here
+                };
             }
+            // End of commented old code
 
             function showError(message) {
                 document.getElementById('loadingState').classList.add('hidden');
