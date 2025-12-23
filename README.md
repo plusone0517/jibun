@@ -118,8 +118,11 @@
 
 ### ストレージ
 
-- **Cloudflare D1**: リレーショナルデータの永続化
-- **ローカル開発**: `.wrangler/state/v3/d1`に自動生成されるSQLite
+- **Cloudflare D1 (本番)**: リレーショナルデータの永続化
+  - Database ID: `810ebef1-c3a8-496a-b349-1295c45cd0c8`
+  - Database Name: `jibun-supple-production`
+  - **⚠️ 重要**: Cloud Run本番環境では`--remote`フラグで本番D1に接続（データ永続化）
+- **ローカル開発**: `.wrangler/state/v3/d1`に自動生成されるSQLite（`--local`フラグ）
 
 ## 技術スタック
 
@@ -274,6 +277,24 @@ npm run db:reset
 - `/admin/dashboard` - 管理者ダッシュボード（統計情報、ユーザー一覧）
 - `/admin/user/:userId` - ユーザー詳細（検査・ヒアリング・解析データ全件閲覧）
 - `/admin/supplements` - サプリマスター管理
+
+## ⚠️ 重要：データ永続化について
+
+### 問題：Cloud Runでのデータ消失
+
+Cloud Runでは、コンテナ再起動時にローカルD1データベース（`--local`）のデータが**すべて消失**します。
+
+### 解決策：本番D1データベースの使用
+
+本番環境では**必ず`--remote`フラグ**を使用して、Cloudflareの本番D1データベースに接続してください。
+
+**環境変数の設定が必須**:
+- `CLOUDFLARE_API_TOKEN`: Cloudflare APIトークン
+- `CLOUDFLARE_ACCOUNT_ID`: `5346c04a48779ed2c86f2f4135f40c23`
+
+詳細は [`CLOUDRUN_ENV_SETUP.md`](./CLOUDRUN_ENV_SETUP.md) を参照してください。
+
+---
 
 ## デプロイ手順
 
