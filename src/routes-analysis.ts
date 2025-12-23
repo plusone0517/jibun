@@ -9,6 +9,8 @@ export const analysisRoutes = new Hono<{ Bindings: Bindings }>()
 
 // Analysis page with radar chart and PDF generation
 analysisRoutes.get('/', (c) => {
+  // Set proper charset in response headers
+  c.header('Content-Type', 'text/html; charset=utf-8')
   return c.html(`
     <!DOCTYPE html>
     <html lang="ja">
