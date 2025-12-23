@@ -571,40 +571,72 @@ adminRoutes.get('/user/:userId', (c) => {
                     document.getElementById('loadingMessage').classList.add('hidden');
                 } catch (error) {
                     console.error('Error loading user detail:', error);
-                    document.getElementById('loadingMessage').innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>データの読み込みに失敗しました';
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        response: error.response
+                    });
+                    
+                    const errorMsg = error.response?.data?.error || error.message || '不明なエラー';
+                    document.getElementById('loadingMessage').innerHTML = \`
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        データの読み込みに失敗しました: \${errorMsg}
+                        <div class="text-xs mt-2">ブラウザのコンソール（F12）で詳細を確認してください</div>
+                    \`;
                     document.getElementById('loadingMessage').className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6';
                 }
             }
 
             function renderExamChart(exams) {
-                const bpData = exams.filter(e => e.exam_type === 'blood_pressure');
-                if (bpData.length === 0) return;
-
-                const dates = bpData.map(d => d.exam_date);
-                const systolic = bpData.map(d => {
-                    const m = d.measurements.find(m => m.measurement_key === 'systolic_bp');
-                    return m ? parseFloat(m.measurement_value) : null;
-                });
-
-                const ctx = document.getElementById('examChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: dates,
-                        datasets: [{
-                            label: '収縮期血圧 (mmHg)',
-                            data: systolic,
-                            borderColor: 'rgb(239, 68, 68)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: true }
-                        }
+                try {
+                    const bpData = exams.filter(e => e.exam_type === 'blood_pressure');
+                    if (bpData.length === 0) {
+                        document.getElementById('examChart').parentElement.innerHTML = '<p class="text-gray-600">血圧データがありません</p>';
+                        return;
                     }
-                });
+
+                    const dates = bpData.map(d => d.exam_date);
+                    const systolic = bpData.map(d => {
+                        const m = d.measurements.find(m => m.measurement_key === 'systolic_bp');
+                        return m ? parseFloat(m.measurement_value) : null;
+                    });
+
+                    const chartElement = document.getElementById('examChart');
+                    if (!chartElement) {
+                        console.error('Chart element not found');
+                        return;
+                    }
+
+                    // Check if Chart.js is loaded
+                    if (typeof Chart === 'undefined') {
+                        console.error('Chart.js is not loaded');
+                        chartElement.parentElement.innerHTML = '<p class="text-gray-600">グラフを表示できません（Chart.jsが読み込まれていません）</p>';
+                        return;
+                    }
+
+                    const ctx = chartElement.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: '収縮期血圧 (mmHg)',
+                                data: systolic,
+                                borderColor: 'rgb(239, 68, 68)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: true }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error rendering exam chart:', error);
+                    document.getElementById('examChart').parentElement.innerHTML = '<p class="text-red-600">グラフの表示に失敗しました</p>';
+                }
             }
 
             function renderExamTable(exams) {
