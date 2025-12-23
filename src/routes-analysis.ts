@@ -181,6 +181,29 @@ analysisRoutes.get('/', (c) => {
                     </div>
                 </div>
 
+                <!-- AI Generated Infographic -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-image text-purple-500 mr-3"></i>
+                        一目でわかる！あなたの健康改善アドバイス
+                    </h3>
+                    <div id="infographicContainer" class="text-center">
+                        <div class="flex justify-center items-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                            <span class="ml-3 text-gray-600">インフォグラフィックを生成中...</span>
+                        </div>
+                    </div>
+                    <div id="infographicImageContainer" class="hidden mt-4">
+                        <img id="infographicImage" src="" alt="健康改善アドバイス" class="w-full rounded-lg shadow-md">
+                        <div class="mt-4 flex justify-center gap-4">
+                            <a id="downloadInfographic" href="" download="健康改善アドバイス.png" 
+                               class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-download mr-2"></i>画像をダウンロード
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Health Advice -->
                 <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                     <h3 class="text-2xl font-bold mb-4 flex items-center">
@@ -754,6 +777,9 @@ analysisRoutes.get('/', (c) => {
                 // Display exam data table
                 displayExamDataTable();
 
+                // Generate infographic image
+                generateInfographicImage(data);
+
                 // Display supplements
                 console.log('Full analysis data:', data);
                 console.log('Received supplements:', data.supplements);
@@ -1175,6 +1201,124 @@ analysisRoutes.get('/', (c) => {
                 } else {
                     return \`<span class="text-green-600"><i class="fas fa-arrow-down"></i> \${diff.toFixed(1)}</span>\`;
                 }
+            }
+
+            async function generateInfographicImage(analysisData) {
+                const container = document.getElementById('infographicContainer');
+                const imageContainer = document.getElementById('infographicImageContainer');
+                const imageEl = document.getElementById('infographicImage');
+                const downloadLink = document.getElementById('downloadInfographic');
+
+                try {
+                    // Create infographic prompt
+                    const score = Math.round(analysisData.overall_score);
+                    const completeness = calculateDataCompleteness();
+                    
+                    // Extract top 3 action items from health advice
+                    const actionItems = extractActionItems(analysisData.health_advice, analysisData.nutrition_guidance);
+                    
+                    // Extract risks
+                    const risks = extractRisks(analysisData.risk_assessment);
+
+                    const prompt = \`Create a professional health advice infographic in Japanese with the following layout:
+
+LEFT SIDE - "現状の診断と将来のリスク" (Current Status and Future Risks):
+- Title: "一目でわかる！あなたの健康改善アドバイス"
+- Overall Health Score: \${score}/100 (displayed as a large semi-circular gauge meter in red/yellow/green)
+  - Show "現在の血圧" with values
+  - Label: "\${score >= 80 ? '非常に良好' : score >= 60 ? '良好' : score >= 40 ? '注意が必要' : '要改善'}"
+- Data Completeness Score: \${completeness.score}/100
+- Health Warning: "\${completeness.score < 50 ? '2% (1/50個回答済み)' : '健康ヒアリング完了'}"
+- Short-term Risk (今後3ヶ月): 高血圧緊急症 with brain and heart icons
+- Long-term Risk (今後5-10年): 生活習慣病の慢性化 with icons for 脳卒中, 心血管疾患, 腎臓病, 認知機能低下
+
+RIGHT SIDE - "改善のための3つのアクションプラン" (3 Action Plans):
+- Plan 1: 計画1: 塩分を減らす「減塩」を徹底する
+  Description: \${actionItems[0]}
+  Icon: NO salt icon with vegetables
+- Plan 2: 計画2: 適度な「運動」を習慣にする
+  Description: \${actionItems[1]}
+  Icon: Person walking/exercising with clock
+- Plan 3: 計画3: 「栄養バランス」を見直す
+  Description: \${actionItems[2]}
+  Icon: Vegetables and fruits with vitamins (K, Mg, Ca)
+
+DESIGN REQUIREMENTS:
+- Vibrant gradient background (orange/red on left, teal/green on right)
+- Professional medical infographic style
+- Decorative organic shapes and illustrations
+- Clear section divisions with colored backgrounds
+- Icons and illustrations for each element
+- Japanese text, clear and readable
+- Size: 1200x630px (landscape orientation)
+- Modern, colorful, and engaging design\`;
+
+                    console.log('🎨 Generating infographic with prompt:', prompt.substring(0, 500));
+
+                    // Call image generation API
+                    const response = await axios.post('/api/generate-infographic', {
+                        prompt: prompt,
+                        score: score,
+                        completeness: completeness.score,
+                        risks: risks,
+                        actionItems: actionItems
+                    });
+
+                    if (response.data.success && response.data.image_url) {
+                        // Hide loading, show image
+                        container.classList.add('hidden');
+                        imageContainer.classList.remove('hidden');
+                        
+                        imageEl.src = response.data.image_url;
+                        downloadLink.href = response.data.image_url;
+                        
+                        console.log('✅ Infographic generated:', response.data.image_url);
+                    } else {
+                        throw new Error('Image generation failed');
+                    }
+                } catch (error) {
+                    console.error('Error generating infographic:', error);
+                    container.innerHTML = \`
+                        <div class="bg-yellow-50 border border-yellow-200 rounded p-4">
+                            <p class="text-yellow-800 font-semibold">⚠️ インフォグラフィックの生成に失敗しました</p>
+                            <p class="text-sm text-yellow-700 mt-2">エラー: \${error.message}</p>
+                        </div>
+                    \`;
+                }
+            }
+
+            function extractActionItems(healthAdvice, nutritionGuidance) {
+                // Extract top 3 action items from advice text
+                const defaultActions = [
+                    '1日の食塩摂取量を6g未満に抑え、加工食品やインスタント食品を控えましょう。',
+                    '週に5回以上、1日30分以上の中強度の運動（ウォーキングなど）を目指しましょう。',
+                    '野菜や果物を増やし、カリウム、マグネシウム、食物繊維を積極的に摂取しましょう。'
+                ];
+                
+                // Try to extract from text (simple implementation)
+                const lines = (healthAdvice + '\\n' + nutritionGuidance).split('\\n').filter(line => line.trim());
+                const actions = lines.filter(line => 
+                    line.includes('減塩') || line.includes('運動') || line.includes('栄養') ||
+                    line.includes('食事') || line.includes('塩分')
+                ).slice(0, 3);
+                
+                return actions.length >= 3 ? actions : defaultActions;
+            }
+
+            function extractRisks(riskAssessment) {
+                const defaultRisks = {
+                    shortTerm: '高血圧緊急症',
+                    longTerm: '生活習慣病の慢性化（脳卒中、心血管疾患、腎臓病、認知機能低下）'
+                };
+                
+                // Simple extraction (in production, parse properly)
+                const shortTermMatch = riskAssessment.match(/短期.*?[:：](.*?)(?=\\n|長期)/s);
+                const longTermMatch = riskAssessment.match(/長期.*?[:：](.*?)(?=\\n|$)/s);
+                
+                return {
+                    shortTerm: shortTermMatch ? shortTermMatch[1].trim().substring(0, 100) : defaultRisks.shortTerm,
+                    longTerm: longTermMatch ? longTermMatch[1].trim().substring(0, 150) : defaultRisks.longTerm
+                };
             }
 
             let selectedSupplements = [];
