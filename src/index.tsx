@@ -1804,42 +1804,58 @@ function parseScore(text: string): number {
 }
 
 function extractSection(text: string, sectionName: string): string {
-  // Find section by number (2. 健康アドバイス, 3. 栄養指導, etc.)
+  // Map section names to expected numbers in AI response
   const sectionNumber = sectionName === '健康アドバイス' ? '2' : 
                        sectionName === '栄養指導' ? '3' : 
                        sectionName === 'リスク評価' || sectionName === '健康リスク評価' ? '4' : ''
   
+  console.log(`🔍 Extracting section: "${sectionName}" (Number: ${sectionNumber})`)
+  
+  // Strategy 1: Extract by section number (most reliable)
   if (sectionNumber) {
-    // Try to extract by section number
-    const pattern = new RegExp(`${sectionNumber}\\.\\s*${sectionName}[\\s\\S]*?\\n\\n([\\s\\S]*?)(?=\\n\\n\\d+\\.|$)`, 'i')
+    // Pattern: "2. 健康アドバイス" followed by content until next numbered section
+    const pattern = new RegExp(`${sectionNumber}\\.\\s*${sectionName}[^\\n]*\\n([\\s\\S]*?)(?=\\n\\d+\\.\\s|$)`, 'i')
     const match = text.match(pattern)
     if (match && match[1]) {
       let content = match[1].trim()
-      // Remove instruction lines like "以下の内容を〜" and "〜文字以上"
-      content = content.replace(/^以下の内容を.*?\n/gm, '')
-      content = content.replace(/^\d+文字以上.*?\n/gm, '')
-      return content
+      console.log(`✅ Found by section number (${sectionNumber}). Length: ${content.length}`)
+      
+      // Clean up content
+      content = content.replace(/^以下.*?：\n/gm, '') // Remove instruction lines
+      content = content.replace(/^\d+文字以上.*?\n/gm, '') // Remove char count instructions
+      
+      if (content.length > 50) { // Minimum meaningful length
+        return content
+      }
     }
   }
   
-  // Fallback: use section name patterns
+  // Strategy 2: Extract by section name pattern
   const patterns = [
-    new RegExp(`${sectionName}[：:]?\\s*\\n([\\s\\S]*?)(?=\\n\\n\\d+\\.|$)`, 'i'),
-    new RegExp(`${sectionName}[：:]?\\s*([\\s\\S]*?)(?=\\n\\d+\\.|【|$)`, 'i')
+    // Pattern: "健康アドバイス：" or "健康アドバイス\n"
+    new RegExp(`${sectionName}[：:]?\\s*\\n([\\s\\S]*?)(?=\\n\\d+\\.\\s|\\n【|$)`, 'i'),
+    // Pattern: "2. 健康アドバイス（〜字以上）" style
+    new RegExp(`\\d+\\.\\s*${sectionName}.*?\\n([\\s\\S]*?)(?=\\n\\d+\\.\\s|$)`, 'i')
   ]
   
-  for (const pattern of patterns) {
-    const match = text.match(pattern)
+  for (let i = 0; i < patterns.length; i++) {
+    const match = text.match(patterns[i])
     if (match && match[1]) {
       let content = match[1].trim()
-      // Remove instruction lines
-      content = content.replace(/^以下の内容を.*?\n/gm, '')
+      console.log(`✅ Found by pattern ${i+1}. Length: ${content.length}`)
+      
+      // Clean up content
+      content = content.replace(/^以下.*?：\n/gm, '')
       content = content.replace(/^\d+文字以上.*?\n/gm, '')
-      return content
+      
+      if (content.length > 50) {
+        return content
+      }
     }
   }
   
-  return '解析結果を取得できませんでした'
+  console.warn(`❌ Section "${sectionName}" not found or too short`)
+  return '該当するセクションが見つかりませんでした'
 }
 
 function parseSupplements(text: string): Array<{name: string, type: string, dosage: string, frequency: string, reason: string, priority: number}> {

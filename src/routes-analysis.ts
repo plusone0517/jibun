@@ -19,6 +19,7 @@ analysisRoutes.get('/', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="/static/pdf-generator.js"></script>
@@ -203,6 +204,50 @@ analysisRoutes.get('/', (c) => {
                         健康リスク評価
                     </h3>
                     <div id="riskAssessment" class="space-y-4"></div>
+                </div>
+
+                <!-- Radar Chart: Health Metrics -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-chart-radar text-indigo-500 mr-3"></i>
+                        健康バランス
+                    </h3>
+                    <div class="flex justify-center">
+                        <div class="w-full max-w-xl">
+                            <canvas id="healthRadarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4" id="radarLegend"></div>
+                </div>
+
+                <!-- Exam Data Comparison Table -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                    <h3 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-table text-teal-500 mr-3"></i>
+                        検査データ比較
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table id="examDataTable" class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-teal-500 to-blue-500 text-white">
+                                    <th class="border border-gray-300 px-4 py-3 text-left">検査項目</th>
+                                    <th class="border border-gray-300 px-4 py-3 text-center">測定値</th>
+                                    <th class="border border-gray-300 px-4 py-3 text-center">基準範囲</th>
+                                    <th class="border border-gray-300 px-4 py-3 text-center">評価</th>
+                                    <th class="border border-gray-300 px-4 py-3 text-center">トレンド</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examDataTableBody">
+                                <!-- Data populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                            トレンド欄は過去の測定値との比較を示しています。
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Supplement Recommendations -->
@@ -699,6 +744,14 @@ analysisRoutes.get('/', (c) => {
                 formatAdviceSection('nutritionGuidance', data.nutrition_guidance, 'apple-alt', 'green');
                 formatAdviceSection('riskAssessment', data.risk_assessment, 'exclamation-triangle', 'orange');
 
+                // Display radar chart
+                if (data.radar_chart_data) {
+                    displayRadarChart(data.radar_chart_data);
+                }
+                
+                // Display exam data table
+                displayExamDataTable();
+
                 // Display supplements
                 console.log('Full analysis data:', data);
                 console.log('Received supplements:', data.supplements);
@@ -921,6 +974,171 @@ analysisRoutes.get('/', (c) => {
                 } else {
                     scoreAssessment.textContent = '注意が必要です';
                     scoreAssessment.classList.add('text-red-600');
+                }
+            }
+
+            let radarChartInstance = null;
+
+            function displayRadarChart(radarData) {
+                // Default data if not provided
+                const chartData = radarData || {
+                    labels: ['睡眠', '栄養', '運動', 'ストレス', '生活習慣', '検査値'],
+                    values: [70, 65, 60, 55, 75, 70]
+                };
+
+                const ctx = document.getElementById('healthRadarChart');
+                
+                // Destroy existing chart if any
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                }
+
+                // Create new radar chart
+                radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: '健康スコア',
+                            data: chartData.values,
+                            fill: true,
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgb(99, 102, 241)',
+                            pointBackgroundColor: 'rgb(99, 102, 241)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(99, 102, 241)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    backdropColor: 'transparent'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+
+                // Display legend with color indicators
+                const legendEl = document.getElementById('radarLegend');
+                legendEl.innerHTML = chartData.labels.map((label, index) => {
+                    const value = chartData.values[index];
+                    const colorClass = value >= 80 ? 'bg-green-500' : value >= 60 ? 'bg-blue-500' : value >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+                    return \`
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 rounded-full \${colorClass}"></div>
+                            <span class="text-sm font-medium text-gray-700">\${label}</span>
+                            <span class="text-sm font-bold text-gray-900">\${value}</span>
+                        </div>
+                    \`;
+                }).join('');
+            }
+
+            function displayExamDataTable() {
+                const tableBody = document.getElementById('examDataTableBody');
+                
+                // Get selected exams
+                const selectedExams = allExamData.filter(exam => selectedExamIds.includes(exam.id));
+                
+                if (selectedExams.length === 0) {
+                    tableBody.innerHTML = \`
+                        <tr>
+                            <td colspan="5" class="border border-gray-300 px-4 py-6 text-center text-gray-500">
+                                選択された検査データがありません
+                            </td>
+                        </tr>
+                    \`;
+                    return;
+                }
+
+                // Process exam data and create table rows
+                const rows = [];
+                selectedExams.forEach(exam => {
+                    exam.measurements.forEach(measurement => {
+                        // Calculate trend if there are previous measurements
+                        const trend = calculateTrend(exam, measurement.name);
+                        
+                        // Determine status color
+                        let statusColor = 'bg-green-100 text-green-800';
+                        let statusText = '正常';
+                        let statusIcon = '<i class="fas fa-check-circle text-green-600"></i>';
+                        
+                        // Simple evaluation based on measurement name
+                        if (measurement.name.includes('血圧') && measurement.value > 140) {
+                            statusColor = 'bg-red-100 text-red-800';
+                            statusText = '高値';
+                            statusIcon = '<i class="fas fa-exclamation-triangle text-red-600"></i>';
+                        } else if (measurement.name.includes('血圧') && measurement.value > 130) {
+                            statusColor = 'bg-yellow-100 text-yellow-800';
+                            statusText = '注意';
+                            statusIcon = '<i class="fas fa-exclamation-circle text-yellow-600"></i>';
+                        }
+                        
+                        rows.push({
+                            name: measurement.name,
+                            value: measurement.value + ' ' + measurement.unit,
+                            reference: measurement.reference_range || '基準値なし',
+                            status: { color: statusColor, text: statusText, icon: statusIcon },
+                            trend: trend
+                        });
+                    });
+                });
+
+                // Render table rows
+                tableBody.innerHTML = rows.map(row => \`
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="border border-gray-300 px-4 py-3 font-medium text-gray-800">\${row.name}</td>
+                        <td class="border border-gray-300 px-4 py-3 text-center font-bold text-gray-900">\${row.value}</td>
+                        <td class="border border-gray-300 px-4 py-3 text-center text-gray-600">\${row.reference}</td>
+                        <td class="border border-gray-300 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium \${row.status.color}">
+                                \${row.status.icon}
+                                <span class="ml-1">\${row.status.text}</span>
+                            </span>
+                        </td>
+                        <td class="border border-gray-300 px-4 py-3 text-center">\${row.trend}</td>
+                    </tr>
+                \`).join('');
+            }
+
+            function calculateTrend(exam, measurementName) {
+                // Simple trend calculation - in production, compare with historical data
+                const measurements = exam.measurements.filter(m => m.name === measurementName);
+                if (measurements.length < 2) {
+                    return '<span class="text-gray-400">−</span>';
+                }
+                
+                // Assume sorted by date
+                const current = measurements[measurements.length - 1].value;
+                const previous = measurements[measurements.length - 2].value;
+                const diff = current - previous;
+                
+                if (Math.abs(diff) < 0.1) {
+                    return '<span class="text-blue-600"><i class="fas fa-minus"></i> 横ばい</span>';
+                } else if (diff > 0) {
+                    return \`<span class="text-red-600"><i class="fas fa-arrow-up"></i> +\${diff.toFixed(1)}</span>\`;
+                } else {
+                    return \`<span class="text-green-600"><i class="fas fa-arrow-down"></i> \${diff.toFixed(1)}</span>\`;
                 }
             }
 
