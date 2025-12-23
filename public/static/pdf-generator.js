@@ -23,54 +23,60 @@ async function generatePDFWithScreenshot() {
             const element = document.getElementById(section.id);
             if (!element || element.classList.contains('hidden')) continue;
             
-            // Capture the section as image
+            // Capture the section as image with higher quality
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 3, // Increased from 2 to 3 for better quality
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight
             });
             
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = pageWidth - 20; // 10mm margin on each side
+            const imgData = canvas.toDataURL('image/png', 1.0); // Maximum quality
+            const imgWidth = pageWidth - 10; // 5mm margin on each side
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             
-            // Split into pages if content is too tall
-            let heightLeft = imgHeight;
-            let position = 10; // Top margin
+            // Calculate how many pages needed
+            const maxPageHeight = pageHeight - 10; // 5mm margin top and bottom
+            const numPages = Math.ceil(imgHeight / maxPageHeight);
             
-            while (heightLeft > 0) {
-                if (!isFirstPage) {
+            // Add pages and split image
+            for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+                if (!isFirstPage || pageIndex > 0) {
                     pdf.addPage();
                 }
                 isFirstPage = false;
                 
-                const pageImgHeight = Math.min(heightLeft, pageHeight - 20);
-                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                // Calculate source position for this page
+                const sourceY = pageIndex * maxPageHeight * (canvas.height / imgHeight);
+                const sourceHeight = Math.min(
+                    maxPageHeight * (canvas.height / imgHeight),
+                    canvas.height - sourceY
+                );
                 
-                heightLeft -= (pageHeight - 20);
-                position -= (pageHeight - 20);
+                // Create a temporary canvas for this page's content
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = sourceHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                tempCtx.drawImage(
+                    canvas,
+                    0, sourceY, canvas.width, sourceHeight,
+                    0, 0, canvas.width, sourceHeight
+                );
+                
+                const pageImgData = tempCanvas.toDataURL('image/png', 1.0);
+                const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+                
+                pdf.addImage(pageImgData, 'PNG', 5, 5, imgWidth, pageImgHeight);
             }
         }
         
-        // Add header and footer to all pages
-        const pageCount = pdf.internal.getNumberOfPages();
+        // Note: Header and footer are removed to avoid Japanese font issues
+        // All content including titles are captured as images from the screen
         const today = new Date().toLocaleDateString('ja-JP');
-        
-        for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
-            
-            // Header
-            pdf.setFontSize(10);
-            pdf.setTextColor(100, 100, 100);
-            pdf.text('じぶんを知ることから - AI健康分析レポート', 10, 7);
-            pdf.text(today, pageWidth - 10, 7, { align: 'right' });
-            
-            // Footer
-            pdf.setFontSize(8);
-            pdf.text('本資料は医学的アドバイスの代替ではありません', pageWidth / 2, pageHeight - 10, { align: 'center' });
-            pdf.text(`${i} / ${pageCount}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
-        }
         
         // Save
         pdf.save(`健康分析レポート_${today.replace(/\//g, '_')}.pdf`);
