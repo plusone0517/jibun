@@ -598,36 +598,45 @@ adminRoutes.get('/user/:userId', (c) => {
 
             function renderExamChart(exams) {
                 try {
+                    console.log('renderExamChart called with', exams.length, 'exams');
+                    
                     const chartElement = document.getElementById('examChart');
                     if (!chartElement) {
                         console.error('Chart element not found');
                         return;
                     }
+                    console.log('Chart element found:', chartElement);
 
                     const bpData = exams.filter(e => e.exam_type === 'blood_pressure');
+                    console.log('Blood pressure data:', bpData.length, 'records');
+                    
                     if (bpData.length === 0) {
+                        console.log('No blood pressure data, showing message');
                         if (chartElement.parentElement) {
                             chartElement.parentElement.innerHTML = '<p class="text-gray-600">血圧データがありません</p>';
                         }
                         return;
                     }
 
+                    // Check if Chart.js is loaded
+                    if (typeof Chart === 'undefined') {
+                        console.error('Chart.js is not loaded');
+                        if (chartElement.parentElement) {
+                            chartElement.parentElement.innerHTML = '<p class="text-red-600">グラフを表示できません（Chart.jsが読み込まれていません）</p>';
+                        }
+                        return;
+                    }
+                    console.log('Chart.js is loaded, version:', Chart.version);
+
                     const dates = bpData.map(d => d.exam_date);
                     const systolic = bpData.map(d => {
                         const m = d.measurements.find(m => m.measurement_key === 'systolic_bp');
                         return m ? parseFloat(m.measurement_value) : null;
                     });
-
-                    // Check if Chart.js is loaded
-                    if (typeof Chart === 'undefined') {
-                        console.error('Chart.js is not loaded');
-                        if (chartElement.parentElement) {
-                            chartElement.parentElement.innerHTML = '<p class="text-gray-600">グラフを表示できません（Chart.jsが読み込まれていません）</p>';
-                        }
-                        return;
-                    }
+                    console.log('Chart data - dates:', dates, 'systolic:', systolic);
 
                     const ctx = chartElement.getContext('2d');
+                    console.log('Creating chart...');
                     new Chart(ctx, {
                         type: 'line',
                         data: {
@@ -646,11 +655,13 @@ adminRoutes.get('/user/:userId', (c) => {
                             }
                         }
                     });
+                    console.log('Chart created successfully');
                 } catch (error) {
                     console.error('Error rendering exam chart:', error);
+                    console.error('Error stack:', error.stack);
                     const chartElement = document.getElementById('examChart');
                     if (chartElement && chartElement.parentElement) {
-                        chartElement.parentElement.innerHTML = '<p class="text-red-600">グラフの表示に失敗しました</p>';
+                        chartElement.parentElement.innerHTML = '<p class="text-red-600">グラフの表示に失敗しました: ' + error.message + '</p>';
                     }
                 }
             }
@@ -900,7 +911,22 @@ adminRoutes.get('/user/:userId', (c) => {
                 window.location.href = '/admin/login';
             }
 
-            loadUserDetail();
+            // Wait for Chart.js to load before initializing
+            function initPage() {
+                if (typeof Chart !== 'undefined') {
+                    loadUserDetail();
+                } else {
+                    console.log('Waiting for Chart.js to load...');
+                    setTimeout(initPage, 100);
+                }
+            }
+            
+            // Start initialization when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPage);
+            } else {
+                initPage();
+            }
         </script>
     </body>
     </html>
