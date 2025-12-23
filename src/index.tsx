@@ -23,6 +23,50 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Enable CORS
 app.use('/api/*', cors())
 
+// ======================
+// Priority API Routes (defined before sub-routes to avoid conflicts)
+// ======================
+
+// /api/auth/me - Get current logged-in user with membership_type
+app.get('/api/auth/me', async (c) => {
+  const cookies = c.req.header('cookie') || ''
+  const sessionToken = cookies.split(';').find(cookie => cookie.trim().startsWith('session_token='))?.split('=')[1]
+
+  if (!sessionToken) {
+    return c.json({ success: false, error: '認証が必要です' }, 401)
+  }
+
+  const db = c.env.DB
+  const session = await db.prepare(
+    'SELECT * FROM sessions WHERE session_token = ? AND expires_at > ?'
+  ).bind(sessionToken, new Date().toISOString()).first()
+
+  if (!session) {
+    return c.json({ success: false, error: 'セッションが無効です' }, 401)
+  }
+
+  const user: any = await db.prepare('SELECT * FROM users WHERE id = ?')
+    .bind(session.user_id).first()
+
+  if (!user) {
+    return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+  }
+
+  // Return filtered user data with membership_type
+  return c.json({
+    success: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      age: user.age,
+      gender: user.gender,
+      birthdate: user.birthdate,
+      membership_type: user.membership_type || 'free'
+    }
+  })
+})
+
 // Mount sub-routes for pages
 app.route('/auth', authRoutes)
 app.route('/password-reset', passwordResetRoutes)
@@ -2146,58 +2190,6 @@ app.get('/api/debug/user/:id', async (c) => {
     membership_type_value: user.membership_type,
     all_keys: Object.keys(user)
   })
-})
-
-app.get('/api/auth/me', async (c) => {
-  try {
-    const cookies = c.req.header('cookie') || ''
-    const sessionToken = cookies.split(';').find(c => c.trim().startsWith('session_token='))?.split('=')[1]
-
-    if (!sessionToken) {
-      return c.json({ success: false, error: '認証が必要です' }, 401)
-    }
-
-    const db = c.env.DB
-
-    // Find session
-    const session = await db.prepare(
-      'SELECT * FROM sessions WHERE session_token = ? AND expires_at > ?'
-    ).bind(sessionToken, new Date().toISOString()).first()
-
-    if (!session) {
-      return c.json({ success: false, error: 'セッションが無効です' }, 401)
-    }
-
-    // Get user (using SELECT * like debug endpoint)
-    const userRow: any = await db.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(session.user_id).first()
-
-    if (!userRow) {
-      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
-    }
-
-    // Build response with explicit membership_type
-    const responseData = {
-      success: true,
-      user: {
-        id: userRow.id,
-        name: userRow.name,
-        email: userRow.email,
-        age: userRow.age,
-        gender: userRow.gender,
-        birthdate: userRow.birthdate,
-        membership_type: userRow.membership_type || 'free'
-      }
-    }
-
-    // Return with explicit JSON stringification
-    return new Response(JSON.stringify(responseData), {
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } catch (error) {
-    console.error('Error getting current user:', error)
-    return c.json({ success: false, error: error.message }, 500)
-  }
 })
 
 // Password Reset API endpoints
