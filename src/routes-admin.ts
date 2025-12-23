@@ -589,9 +589,17 @@ adminRoutes.get('/user/:userId', (c) => {
 
             function renderExamChart(exams) {
                 try {
+                    const chartElement = document.getElementById('examChart');
+                    if (!chartElement) {
+                        console.error('Chart element not found');
+                        return;
+                    }
+
                     const bpData = exams.filter(e => e.exam_type === 'blood_pressure');
                     if (bpData.length === 0) {
-                        document.getElementById('examChart').parentElement.innerHTML = '<p class="text-gray-600">血圧データがありません</p>';
+                        if (chartElement.parentElement) {
+                            chartElement.parentElement.innerHTML = '<p class="text-gray-600">血圧データがありません</p>';
+                        }
                         return;
                     }
 
@@ -601,16 +609,12 @@ adminRoutes.get('/user/:userId', (c) => {
                         return m ? parseFloat(m.measurement_value) : null;
                     });
 
-                    const chartElement = document.getElementById('examChart');
-                    if (!chartElement) {
-                        console.error('Chart element not found');
-                        return;
-                    }
-
                     // Check if Chart.js is loaded
                     if (typeof Chart === 'undefined') {
                         console.error('Chart.js is not loaded');
-                        chartElement.parentElement.innerHTML = '<p class="text-gray-600">グラフを表示できません（Chart.jsが読み込まれていません）</p>';
+                        if (chartElement.parentElement) {
+                            chartElement.parentElement.innerHTML = '<p class="text-gray-600">グラフを表示できません（Chart.jsが読み込まれていません）</p>';
+                        }
                         return;
                     }
 
@@ -635,7 +639,10 @@ adminRoutes.get('/user/:userId', (c) => {
                     });
                 } catch (error) {
                     console.error('Error rendering exam chart:', error);
-                    document.getElementById('examChart').parentElement.innerHTML = '<p class="text-red-600">グラフの表示に失敗しました</p>';
+                    const chartElement = document.getElementById('examChart');
+                    if (chartElement && chartElement.parentElement) {
+                        chartElement.parentElement.innerHTML = '<p class="text-red-600">グラフの表示に失敗しました</p>';
+                    }
                 }
             }
 
