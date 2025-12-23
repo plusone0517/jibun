@@ -2512,7 +2512,7 @@ app.get('/api/admin/export/detailed/:userId?', async (c) => {
     
     let userCondition = ''
     if (userId) {
-      userCondition = ` WHERE u.id = ${userId}`
+      userCondition = ` WHERE id = ${userId}`
     }
     
     // Get all users

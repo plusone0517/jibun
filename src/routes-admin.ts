@@ -213,14 +213,9 @@ adminRoutes.get('/dashboard', (c) => {
                     <h2 class="text-2xl font-bold">
                         <i class="fas fa-users mr-2"></i>顧客データ一覧
                     </h2>
-                    <div class="space-x-2">
-                        <button onclick="exportUsers()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">
-                            <i class="fas fa-download mr-2"></i>ユーザー一覧CSV
-                        </button>
-                        <button onclick="exportDetailed()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
-                            <i class="fas fa-file-excel mr-2"></i>詳細データCSV
-                        </button>
-                    </div>
+                    <button onclick="exportUsers()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">
+                        <i class="fas fa-download mr-2"></i>ユーザー一覧CSV
+                    </button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -277,28 +272,6 @@ adminRoutes.get('/dashboard', (c) => {
                     alert('ユーザー一覧CSVをダウンロードしました');
                 } catch (error) {
                     console.error('Error exporting users:', error);
-                    alert('CSVエクスポートに失敗しました');
-                }
-            }
-            
-            async function exportDetailed() {
-                try {
-                    const response = await axios.get('/api/admin/export/detailed', {
-                        responseType: 'blob'
-                    });
-                    
-                    // Create download link
-                    const url = window.URL.createObjectURL(new Blob([response.data]));
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', \`all_users_detailed_\${new Date().toISOString().split('T')[0]}.csv\`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    alert('詳細データCSVをダウンロードしました');
-                } catch (error) {
-                    console.error('Error exporting detailed data:', error);
                     alert('CSVエクスポートに失敗しました');
                 }
             }
@@ -465,9 +438,14 @@ adminRoutes.get('/user/:userId', (c) => {
 
             <!-- Exam History -->
             <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4">
-                    <i class="fas fa-chart-line mr-2"></i>検査履歴
-                </h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">
+                        <i class="fas fa-chart-line mr-2"></i>検査履歴
+                    </h2>
+                    <button onclick="exportUserData()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">
+                        <i class="fas fa-download mr-2"></i>このユーザーのデータをCSV出力
+                    </button>
+                </div>
                 <canvas id="examChart"></canvas>
                 <div id="examTable" class="mt-6 overflow-x-auto">
                     <!-- Will be populated -->
@@ -813,6 +791,28 @@ adminRoutes.get('/user/:userId', (c) => {
                     console.error('Failed to copy:', err);
                     alert('コピーに失敗しました');
                 });
+            }
+
+            async function exportUserData() {
+                try {
+                    const response = await axios.get(\`/api/admin/export/detailed/\${userId}\`, {
+                        responseType: 'blob'
+                    });
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', \`user_\${userId}_detailed_\${new Date().toISOString().split('T')[0]}.csv\`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert('このユーザーのデータをCSVでダウンロードしました');
+                } catch (error) {
+                    console.error('Error exporting user data:', error);
+                    alert('CSVエクスポートに失敗しました: ' + (error.response?.data?.error || error.message));
+                }
             }
 
             async function toggleMembership() {
