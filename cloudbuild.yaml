@@ -44,7 +44,9 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-env-vars'
-      - 'NODE_ENV=production,GEMINI_API_KEY=AIzaSyAYwyLHuKzpcjJF6RiaXpetSLi5uYaJ_24'
+      - 'NODE_ENV=production'
+      - '--update-secrets'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/jibun-supple:$COMMIT_SHA'
