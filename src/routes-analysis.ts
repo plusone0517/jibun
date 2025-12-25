@@ -1210,7 +1210,7 @@ analysisRoutes.get('/', (c) => {
                 const downloadLink = document.getElementById('downloadInfographic');
 
                 try {
-                    // Create infographic prompt
+                    // Get user data
                     const score = Math.round(analysisData.overall_score);
                     const completeness = calculateDataCompleteness();
                     
@@ -1220,62 +1220,45 @@ analysisRoutes.get('/', (c) => {
                     // Extract risks
                     const risks = extractRisks(analysisData.risk_assessment);
 
-                    const prompt = \`Create a professional health advice infographic in Japanese with the following layout:
+                    console.log('🎨 Generating dynamic infographic with user data:', { score, completeness: completeness.score, risks, actionItems });
 
-LEFT SIDE - "現状の診断と将来のリスク" (Current Status and Future Risks):
-- Title: "一目でわかる！あなたの健康改善アドバイス"
-- Overall Health Score: \${score}/100 (displayed as a large semi-circular gauge meter in red/yellow/green)
-  - Show "現在の血圧" with values
-  - Label: "\${score >= 80 ? '非常に良好' : score >= 60 ? '良好' : score >= 40 ? '注意が必要' : '要改善'}"
-- Data Completeness Score: \${completeness.score}/100
-- Health Warning: "\${completeness.score < 50 ? '2% (1/50個回答済み)' : '健康ヒアリング完了'}"
-- Short-term Risk (今後3ヶ月): 高血圧緊急症 with brain and heart icons
-- Long-term Risk (今後5-10年): 生活習慣病の慢性化 with icons for 脳卒中, 心血管疾患, 腎臓病, 認知機能低下
+                    // Create HTML element for infographic
+                    const infographicHtml = createInfographicHTML(score, completeness.score, risks, actionItems);
+                    
+                    // Create temporary container
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    tempContainer.style.width = '1200px';
+                    tempContainer.innerHTML = infographicHtml;
+                    document.body.appendChild(tempContainer);
 
-RIGHT SIDE - "改善のための3つのアクションプラン" (3 Action Plans):
-- Plan 1: 計画1: 塩分を減らす「減塩」を徹底する
-  Description: \${actionItems[0]}
-  Icon: NO salt icon with vegetables
-- Plan 2: 計画2: 適度な「運動」を習慣にする
-  Description: \${actionItems[1]}
-  Icon: Person walking/exercising with clock
-- Plan 3: 計画3: 「栄養バランス」を見直す
-  Description: \${actionItems[2]}
-  Icon: Vegetables and fruits with vitamins (K, Mg, Ca)
+                    // Wait for fonts and images to load
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
-DESIGN REQUIREMENTS:
-- Vibrant gradient background (orange/red on left, teal/green on right)
-- Professional medical infographic style
-- Decorative organic shapes and illustrations
-- Clear section divisions with colored backgrounds
-- Icons and illustrations for each element
-- Japanese text, clear and readable
-- Size: 1200x630px (landscape orientation)
-- Modern, colorful, and engaging design\`;
-
-                    console.log('🎨 Generating infographic with prompt:', prompt.substring(0, 500));
-
-                    // Call image generation API
-                    const response = await axios.post('/api/generate-infographic', {
-                        prompt: prompt,
-                        score: score,
-                        completeness: completeness.score,
-                        risks: risks,
-                        actionItems: actionItems
+                    // Convert to canvas
+                    const canvas = await html2canvas(tempContainer.firstElementChild, {
+                        width: 1200,
+                        height: 675,
+                        scale: 2,
+                        backgroundColor: null,
+                        logging: false
                     });
 
-                    if (response.data.success && response.data.image_url) {
-                        // Hide loading, show image
-                        container.classList.add('hidden');
-                        imageContainer.classList.remove('hidden');
-                        
-                        imageEl.src = response.data.image_url;
-                        downloadLink.href = response.data.image_url;
-                        
-                        console.log('✅ Infographic generated:', response.data.image_url);
-                    } else {
-                        throw new Error('Image generation failed');
-                    }
+                    // Remove temporary container
+                    document.body.removeChild(tempContainer);
+
+                    // Convert canvas to image
+                    const imageDataUrl = canvas.toDataURL('image/png', 1.0);
+
+                    // Display image
+                    container.classList.add('hidden');
+                    imageContainer.classList.remove('hidden');
+                    imageEl.src = imageDataUrl;
+                    downloadLink.href = imageDataUrl;
+                    downloadLink.download = \`健康改善アドバイス_\${new Date().toISOString().split('T')[0]}.png\`;
+
+                    console.log('✅ Infographic generated successfully');
                 } catch (error) {
                     console.error('Error generating infographic:', error);
                     container.innerHTML = \`
@@ -1285,6 +1268,89 @@ DESIGN REQUIREMENTS:
                         </div>
                     \`;
                 }
+            }
+
+            function createInfographicHTML(score, completenessScore, risks, actionItems) {
+                const scoreColor = score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : '#ef4444';
+                const scoreLabel = score >= 80 ? '非常に良好' : score >= 60 ? '良好' : score >= 40 ? '注意が必要' : '要改善';
+
+                return \`
+                <div style="width: 1200px; height: 675px; display: flex; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; position: relative; overflow: hidden;">
+                    <!-- Left Section -->
+                    <div style="width: 50%; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); padding: 40px; position: relative;">
+                        <!-- Decorative circles -->
+                        <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                        
+                        <!-- Title -->
+                        <h1 style="color: white; font-size: 28px; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">一目でわかる！</h1>
+                        <h2 style="color: white; font-size: 24px; font-weight: bold; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">あなたの健康改善アドバイス</h2>
+                        
+                        <!-- Status Card -->
+                        <div style="background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <h3 style="color: #1f2937; font-size: 20px; font-weight: bold; margin-bottom: 20px;">現状の診断と将来のリスク</h3>
+                            
+                            <!-- Score Display -->
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <div style="font-size: 48px; font-weight: bold; color: \${scoreColor};">\${score}</div>
+                                <div style="font-size: 18px; color: #6b7280;">/ 100</div>
+                                <div style="font-size: 16px; color: #374151; margin-top: 5px;">総合健康スコア</div>
+                                <div style="font-size: 14px; color: \${scoreColor}; margin-top: 5px; font-weight: 600;">\${scoreLabel}</div>
+                            </div>
+                            
+                            <div style="text-align: center; padding-top: 10px; border-top: 2px dashed #e5e7eb;">
+                                <div style="font-size: 14px; color: #6b7280;">データ完全性スコア</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">\${completenessScore}</div>
+                                <div style="font-size: 14px; color: #6b7280;">/ 100</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Boxes -->
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="color: #dc2626; font-weight: bold; font-size: 14px; margin-bottom: 5px;">⚠️ 短期リスク（今後3ヶ月）</div>
+                            <div style="color: #1f2937; font-size: 13px;">\${risks.shortTerm}</div>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="color: #dc2626; font-weight: bold; font-size: 14px; margin-bottom: 5px;">⚠️ 長期リスク（今後5-10年）</div>
+                            <div style="color: #1f2937; font-size: 13px;">\${risks.longTerm}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Section -->
+                    <div style="width: 50%; background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%); padding: 40px; position: relative;">
+                        <!-- Decorative circles -->
+                        <div style="position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                        
+                        <!-- Title -->
+                        <h2 style="color: white; font-size: 24px; font-weight: bold; margin-bottom: 25px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">改善のための3つのアクションプラン</h2>
+                        
+                        <!-- Action Card 1 -->
+                        <div style="background: white; border-left: 5px solid #10b981; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 18px; font-weight: bold; color: #10b981; margin-bottom: 8px;">🚫 計画1: 塩分を減らす「減塩」を徹底する</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[0]}</div>
+                        </div>
+                        
+                        <!-- Action Card 2 -->
+                        <div style="background: white; border-left: 5px solid #3b82f6; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 18px; font-weight: bold; color: #3b82f6; margin-bottom: 8px;">🏃 計画2: 適度な「運動」を習慣にする</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[1]}</div>
+                        </div>
+                        
+                        <!-- Action Card 3 -->
+                        <div style="background: white; border-left: 5px solid #8b5cf6; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 18px; font-weight: bold; color: #8b5cf6; margin-bottom: 8px;">🥗 計画3: 「栄養バランス」を見直す</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[2]}</div>
+                        </div>
+                        
+                        <!-- Footer Note -->
+                        <div style="margin-top: 20px; padding: 12px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                            <div style="color: white; font-size: 11px; text-align: center;">※ 本アドバイスは医療機関の診断に代わるものではありません</div>
+                        </div>
+                    </div>
+                </div>
+                \`;
             }
 
             function extractActionItems(healthAdvice, nutritionGuidance) {
