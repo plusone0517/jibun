@@ -125,58 +125,86 @@ analysisRoutes.get('/', (c) => {
 
             <!-- Results container (initially hidden) -->
             <div id="resultsContainer" class="hidden">
-                <!-- Overall Score -->
+                <!-- Score Overview Section (横並び) -->
                 <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                    <h3 class="text-2xl font-bold mb-4 text-center">総合健康スコア</h3>
-                    <div class="flex justify-center items-center">
-                        <div class="relative">
-                            <svg class="transform -rotate-90 w-48 h-48">
-                                <circle cx="96" cy="96" r="80" stroke="#e5e7eb" stroke-width="16" fill="transparent"/>
-                                <circle id="scoreCircle" cx="96" cy="96" r="80" stroke="#3b82f6" stroke-width="16" 
-                                        fill="transparent" stroke-dasharray="502.4" stroke-dashoffset="502.4"
-                                        class="transition-all duration-1000 ease-out"/>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div id="scoreValue" class="text-5xl font-bold text-blue-600">--</div>
-                                    <div class="text-gray-500 text-sm">/ 100</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="scoreAssessment" class="text-center mt-4 text-lg font-medium text-gray-700"></div>
-                </div>
-
-                <!-- Data Completeness Score -->
-                <div class="bg-white rounded-lg shadow-lg p-8 mb-6" id="dataCompletenessSection">
-                    <h3 class="text-2xl font-bold mb-6 text-center flex items-center justify-center">
-                        <i class="fas fa-clipboard-check text-blue-600 mr-3"></i>
-                        データ完全性スコア
-                    </h3>
-                    <div class="max-w-3xl mx-auto">
-                        <div class="flex justify-center mb-6">
-                            <div class="relative w-48 h-48">
-                                <svg class="transform -rotate-90 w-full h-full">
-                                    <circle cx="96" cy="96" r="80" stroke="#e5e7eb" stroke-width="16" fill="transparent"/>
-                                    <circle id="completenessCircle" cx="96" cy="96" r="80" stroke="#10b981" stroke-width="16" 
-                                            fill="transparent" stroke-dasharray="502.4" stroke-dashoffset="502.4"
-                                            class="transition-all duration-1000 ease-out"/>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <div class="text-center">
-                                        <div id="completenessValue" class="text-4xl font-bold text-green-600">--</div>
-                                        <div class="text-gray-500 text-xs">/ 100</div>
+                    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">
+                        <i class="fas fa-chart-line text-indigo-600 mr-3"></i>
+                        総合スコア概要
+                    </h2>
+                    
+                    <!-- 2つのスコアを横並び表示 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        <!-- Overall Health Score -->
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold mb-4 text-gray-700">総合健康スコア</h3>
+                            <div class="flex justify-center items-center mb-4">
+                                <div class="relative">
+                                    <svg class="transform -rotate-90 w-48 h-48">
+                                        <circle cx="96" cy="96" r="80" stroke="#e5e7eb" stroke-width="16" fill="transparent"/>
+                                        <circle id="scoreCircle" cx="96" cy="96" r="80" stroke="#3b82f6" stroke-width="16" 
+                                                fill="transparent" stroke-dasharray="502.4" stroke-dashoffset="502.4"
+                                                class="transition-all duration-1000 ease-out"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <div id="scoreValue" class="text-5xl font-bold text-blue-600">--</div>
+                                            <div class="text-gray-500 text-sm">/ 100</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div id="scoreAssessment" class="text-lg font-medium text-gray-700 mb-4"></div>
+                            
+                            <!-- 総合健康スコアの根拠 -->
+                            <div class="mt-4 p-4 bg-blue-50 rounded-lg text-left">
+                                <h4 class="font-bold text-blue-800 mb-2 flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    スコアの根拠
+                                </h4>
+                                <div id="scoreRationale" class="text-sm text-blue-900 space-y-1"></div>
+                            </div>
                         </div>
-                        <div id="completenessDetails" class="space-y-3"></div>
-                        <div id="missingDataSuggestions" class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 hidden">
-                            <h4 class="font-bold text-yellow-800 mb-2">
-                                <i class="fas fa-exclamation-triangle mr-2"></i>
-                                推奨される追加検査
-                            </h4>
-                            <ul id="suggestionsList" class="list-disc list-inside text-sm text-yellow-700"></ul>
+
+                        <!-- Data Completeness Score -->
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold mb-4 text-gray-700 flex items-center justify-center">
+                                <i class="fas fa-clipboard-check text-blue-600 mr-2"></i>
+                                データ完全性スコア
+                            </h3>
+                            <div class="flex justify-center items-center mb-4">
+                                <div class="relative w-48 h-48">
+                                    <svg class="transform -rotate-90 w-full h-full">
+                                        <circle cx="96" cy="96" r="80" stroke="#e5e7eb" stroke-width="16" fill="transparent"/>
+                                        <circle id="completenessCircle" cx="96" cy="96" r="80" stroke="#10b981" stroke-width="16" 
+                                                fill="transparent" stroke-dasharray="502.4" stroke-dashoffset="502.4"
+                                                class="transition-all duration-1000 ease-out"/>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <div id="completenessValue" class="text-4xl font-bold text-green-600">--</div>
+                                            <div class="text-gray-500 text-xs">/ 100</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- データ完全性スコアの根拠 -->
+                            <div class="mt-4 p-4 bg-green-50 rounded-lg text-left">
+                                <h4 class="font-bold text-green-800 mb-2 flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    データの詳細
+                                </h4>
+                                <div id="completenessDetails" class="text-sm text-green-900 space-y-2"></div>
+                            </div>
+                            
+                            <!-- 推奨される追加検査 -->
+                            <div id="missingDataSuggestions" class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-left hidden">
+                                <h4 class="font-bold text-yellow-800 mb-2">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    推奨される追加検査
+                                </h4>
+                                <ul id="suggestionsList" class="list-disc list-inside text-sm text-yellow-700"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -956,6 +984,7 @@ analysisRoutes.get('/', (c) => {
                 const scoreCircle = document.getElementById('scoreCircle');
                 const scoreValue = document.getElementById('scoreValue');
                 const scoreAssessment = document.getElementById('scoreAssessment');
+                const scoreRationale = document.getElementById('scoreRationale');
 
                 // Animate score
                 let current = 0;
@@ -1003,6 +1032,72 @@ analysisRoutes.get('/', (c) => {
                     scoreAssessment.textContent = '注意が必要です';
                     scoreAssessment.classList.add('text-red-600');
                 }
+
+                // Display score rationale (根拠)
+                let rationaleHtml = '';
+                if (score >= 80) {
+                    rationaleHtml = \`
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mt-1 mr-2"></i>
+                            <div>検査値が基準範囲内に収まっています</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mt-1 mr-2"></i>
+                            <div>生活習慣に大きな問題は見られません</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mt-1 mr-2"></i>
+                            <div>このまま健康維持に努めましょう</div>
+                        </div>
+                    \`;
+                } else if (score >= 60) {
+                    rationaleHtml = \`
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-blue-600 mt-1 mr-2"></i>
+                            <div>多くの検査値が正常範囲内です</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-blue-600 mt-1 mr-2"></i>
+                            <div>一部の項目で注意が必要です</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-lightbulb text-blue-600 mt-1 mr-2"></i>
+                            <div>生活習慣の見直しで改善可能です</div>
+                        </div>
+                    \`;
+                } else if (score >= 40) {
+                    rationaleHtml = \`
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-orange-600 mt-1 mr-2"></i>
+                            <div>複数の検査値で注意が必要です</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-orange-600 mt-1 mr-2"></i>
+                            <div>生活習慣の改善が推奨されます</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-user-md text-orange-600 mt-1 mr-2"></i>
+                            <div>医師への相談を検討してください</div>
+                        </div>
+                    \`;
+                } else {
+                    rationaleHtml = \`
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-red-600 mt-1 mr-2"></i>
+                            <div>重要な検査値に異常が見られます</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-red-600 mt-1 mr-2"></i>
+                            <div>早急な対応が必要です</div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-hospital text-red-600 mt-1 mr-2"></i>
+                            <div>医療機関の受診を強く推奨します</div>
+                        </div>
+                    \`;
+                }
+                
+                scoreRationale.innerHTML = rationaleHtml;
             }
 
             let radarChartInstance = null;
