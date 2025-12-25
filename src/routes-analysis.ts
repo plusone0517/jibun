@@ -1331,10 +1331,14 @@ analysisRoutes.get('/', (c) => {
                     // Wait for fonts and images to load
                     await new Promise(resolve => setTimeout(resolve, 500));
 
-                    // Convert to canvas
+                    // Get actual height of content
+                    const actualHeight = tempContainer.firstElementChild.offsetHeight;
+                    console.log('📏 Infographic height:', actualHeight);
+                    
+                    // Convert to canvas with automatic height
                     const canvas = await html2canvas(tempContainer.firstElementChild, {
                         width: 1200,
-                        height: 675,
+                        height: Math.max(675, actualHeight), // Use actual height or minimum 675px
                         scale: 2,
                         backgroundColor: null,
                         logging: false
