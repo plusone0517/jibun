@@ -1335,13 +1335,14 @@ analysisRoutes.get('/', (c) => {
                     const actualHeight = tempContainer.firstElementChild.offsetHeight;
                     console.log('📏 Infographic height:', actualHeight);
                     
-                    // Convert to canvas with automatic height
+                    // Convert to canvas with automatic height (no height limit)
                     const canvas = await html2canvas(tempContainer.firstElementChild, {
                         width: 1200,
-                        height: Math.max(675, actualHeight), // Use actual height or minimum 675px
                         scale: 2,
                         backgroundColor: null,
-                        logging: false
+                        logging: false,
+                        windowWidth: 1200,
+                        windowHeight: actualHeight
                     });
 
                     // Remove temporary container
@@ -1374,77 +1375,77 @@ analysisRoutes.get('/', (c) => {
                 const scoreLabel = score >= 80 ? '非常に良好' : score >= 60 ? '良好' : score >= 40 ? '注意が必要' : '要改善';
 
                 return \`
-                <div style="width: 1200px; height: 675px; display: flex; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; position: relative; overflow: hidden;">
+                <div style="width: 1200px; min-height: 900px; display: flex; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; position: relative;">
                     <!-- Left Section -->
-                    <div style="width: 50%; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); padding: 40px; position: relative;">
+                    <div style="width: 50%; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); padding: 35px; position: relative; display: flex; flex-direction: column;">
                         <!-- Decorative circles -->
                         <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
                         <div style="position: absolute; bottom: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
                         
                         <!-- Title -->
-                        <h1 style="color: white; font-size: 28px; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">一目でわかる！</h1>
-                        <h2 style="color: white; font-size: 24px; font-weight: bold; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">あなたの健康改善アドバイス</h2>
+                        <h1 style="color: white; font-size: 26px; font-weight: bold; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">一目でわかる！</h1>
+                        <h2 style="color: white; font-size: 22px; font-weight: bold; margin-bottom: 18px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">あなたの健康改善アドバイス</h2>
                         
                         <!-- Status Card -->
-                        <div style="background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <h3 style="color: #1f2937; font-size: 20px; font-weight: bold; margin-bottom: 20px;">現状の診断と将来のリスク</h3>
+                        <div style="background: white; border-radius: 15px; padding: 22px; margin-bottom: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <h3 style="color: #1f2937; font-size: 18px; font-weight: bold; margin-bottom: 18px;">現状の診断と将来のリスク</h3>
                             
                             <!-- Score Display -->
-                            <div style="text-align: center; margin-bottom: 15px;">
-                                <div style="font-size: 48px; font-weight: bold; color: \${scoreColor};">\${score}</div>
-                                <div style="font-size: 18px; color: #6b7280;">/ 100</div>
-                                <div style="font-size: 16px; color: #374151; margin-top: 5px;">総合健康スコア</div>
-                                <div style="font-size: 14px; color: \${scoreColor}; margin-top: 5px; font-weight: 600;">\${scoreLabel}</div>
+                            <div style="text-align: center; margin-bottom: 14px;">
+                                <div style="font-size: 44px; font-weight: bold; color: \${scoreColor};">\${score}</div>
+                                <div style="font-size: 16px; color: #6b7280;">/ 100</div>
+                                <div style="font-size: 15px; color: #374151; margin-top: 4px;">総合健康スコア</div>
+                                <div style="font-size: 13px; color: \${scoreColor}; margin-top: 4px; font-weight: 600;">\${scoreLabel}</div>
                             </div>
                             
                             <div style="text-align: center; padding-top: 10px; border-top: 2px dashed #e5e7eb;">
-                                <div style="font-size: 14px; color: #6b7280;">データ完全性スコア</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">\${completenessScore}</div>
-                                <div style="font-size: 14px; color: #6b7280;">/ 100</div>
+                                <div style="font-size: 13px; color: #6b7280;">データ完全性スコア</div>
+                                <div style="font-size: 22px; font-weight: bold; color: #3b82f6;">\${completenessScore}</div>
+                                <div style="font-size: 13px; color: #6b7280;">/ 100</div>
                             </div>
                         </div>
                         
                         <!-- Risk Boxes -->
-                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="color: #dc2626; font-weight: bold; font-size: 14px; margin-bottom: 5px;">⚠️ 短期リスク（今後3ヶ月）</div>
-                            <div style="color: #1f2937; font-size: 13px;">\${risks.shortTerm}</div>
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="color: #dc2626; font-weight: bold; font-size: 15px; margin-bottom: 8px;">⚠️ 短期リスク（今後3ヶ月）</div>
+                            <div style="color: #1f2937; font-size: 13px; line-height: 1.6; word-wrap: break-word;">\${risks.shortTerm}</div>
                         </div>
                         
-                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="color: #dc2626; font-weight: bold; font-size: 14px; margin-bottom: 5px;">⚠️ 長期リスク（今後5-10年）</div>
-                            <div style="color: #1f2937; font-size: 13px;">\${risks.longTerm}</div>
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="color: #dc2626; font-weight: bold; font-size: 15px; margin-bottom: 8px;">⚠️ 長期リスク（今後5-10年）</div>
+                            <div style="color: #1f2937; font-size: 13px; line-height: 1.6; word-wrap: break-word;">\${risks.longTerm}</div>
                         </div>
                     </div>
                     
                     <!-- Right Section -->
-                    <div style="width: 50%; background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%); padding: 40px; position: relative;">
+                    <div style="width: 50%; background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%); padding: 35px; position: relative; display: flex; flex-direction: column;">
                         <!-- Decorative circles -->
                         <div style="position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
                         <div style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
                         
                         <!-- Title -->
-                        <h2 style="color: white; font-size: 24px; font-weight: bold; margin-bottom: 25px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">改善のための3つのアクションプラン</h2>
+                        <h2 style="color: white; font-size: 22px; font-weight: bold; margin-bottom: 22px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">改善のための3つのアクションプラン</h2>
                         
                         <!-- Action Card 1 -->
-                        <div style="background: white; border-left: 5px solid #10b981; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="font-size: 18px; font-weight: bold; color: #10b981; margin-bottom: 8px;">🚫 計画1: 塩分を減らす「減塩」を徹底する</div>
-                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[0]}</div>
+                        <div style="background: white; border-left: 5px solid #10b981; border-radius: 12px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 16px; font-weight: bold; color: #10b981; margin-bottom: 8px;">🚫 計画1: 塩分を減らす「減塩」を徹底する</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.6; word-wrap: break-word;">\${actionItems[0]}</div>
                         </div>
                         
                         <!-- Action Card 2 -->
-                        <div style="background: white; border-left: 5px solid #3b82f6; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="font-size: 18px; font-weight: bold; color: #3b82f6; margin-bottom: 8px;">🏃 計画2: 適度な「運動」を習慣にする</div>
-                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[1]}</div>
+                        <div style="background: white; border-left: 5px solid #3b82f6; border-radius: 12px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 16px; font-weight: bold; color: #3b82f6; margin-bottom: 8px;">🏃 計画2: 適度な「運動」を習慣にする</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.6; word-wrap: break-word;">\${actionItems[1]}</div>
                         </div>
                         
                         <!-- Action Card 3 -->
-                        <div style="background: white; border-left: 5px solid #8b5cf6; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="font-size: 18px; font-weight: bold; color: #8b5cf6; margin-bottom: 8px;">🥗 計画3: 「栄養バランス」を見直す</div>
-                            <div style="font-size: 13px; color: #374151; line-height: 1.5;">\${actionItems[2]}</div>
+                        <div style="background: white; border-left: 5px solid #8b5cf6; border-radius: 12px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="font-size: 16px; font-weight: bold; color: #8b5cf6; margin-bottom: 8px;">🥗 計画3: 「栄養バランス」を見直す</div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.6; word-wrap: break-word;">\${actionItems[2]}</div>
                         </div>
                         
                         <!-- Footer Note -->
-                        <div style="margin-top: 20px; padding: 12px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                        <div style="margin-top: auto; padding: 12px; background: rgba(255,255,255,0.2); border-radius: 8px;">
                             <div style="color: white; font-size: 11px; text-align: center;">※ 本アドバイスは医療機関の診断に代わるものではありません</div>
                         </div>
                     </div>
