@@ -1715,12 +1715,27 @@ ${supplementsCatalog}
     const aiData = await aiResponse.json()
     const analysisText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
+    // Check for incomplete responses
+    const finishReason = aiData.candidates?.[0]?.finishReason
+    console.log('🔍 Finish Reason:', finishReason)
+
     if (!analysisText) {
+      console.error('❌ Empty AI response:', JSON.stringify(aiData))
       return c.json({ 
         success: false, 
         error: 'AI解析の結果が空です',
-        debug: { aiData: JSON.stringify(aiData).substring(0, 500) }
+        debug: { 
+          finishReason: finishReason,
+          aiData: JSON.stringify(aiData).substring(0, 500) 
+        }
       }, 500)
+    }
+
+    // Check if response is suspiciously short (less than 2000 chars for detailed advice)
+    if (analysisText.length < 2000) {
+      console.warn('⚠️  AI response is unusually short:', analysisText.length, 'chars')
+      console.warn('⚠️  Finish reason:', finishReason)
+      console.warn('⚠️  This may indicate an incomplete response from Gemini API')
     }
 
     // DEBUG: Log full AI response text (first 2000 chars to see structure)
@@ -1729,9 +1744,26 @@ ${supplementsCatalog}
 
     // Parse AI response (simple parsing - in production, use structured output)
     const overallScore = parseScore(analysisText)
-    const healthAdvice = extractSection(analysisText, '健康アドバイス') || analysisText
-    const nutritionGuidance = extractSection(analysisText, '栄養指導') || analysisText
-    const riskAssessment = extractSection(analysisText, 'リスク評価') || analysisText
+    let healthAdvice = extractSection(analysisText, '健康アドバイス')
+    let nutritionGuidance = extractSection(analysisText, '栄養指導')
+    let riskAssessment = extractSection(analysisText, 'リスク評価')
+    
+    // Fallback: If sections not found, use full text as health advice
+    if (healthAdvice === '該当するセクションが見つかりませんでした') {
+      healthAdvice = analysisText
+      console.warn('⚠️  Using full AI response as health advice (section not found)')
+    }
+    
+    // If nutrition or risk sections are missing but health advice exists, provide helpful message
+    if (nutritionGuidance === '該当するセクションが見つかりませんでした' && healthAdvice.length > 100) {
+      nutritionGuidance = '申し訳ございません。AIの応答が不完全なため、栄養指導セクションを抽出できませんでした。もう一度AI解析を実行してください。'
+      console.error('❌ Nutrition guidance section not found in AI response')
+    }
+    
+    if (riskAssessment === '該当するセクションが見つかりませんでした' && healthAdvice.length > 100) {
+      riskAssessment = '申し訳ございません。AIの応答が不完全なため、健康リスク評価セクションを抽出できませんでした。もう一度AI解析を実行してください。'
+      console.error('❌ Risk assessment section not found in AI response')
+    }
     
     // DEBUG: Log extracted sections
     console.log('📊 Extracted - Score:', overallScore)
