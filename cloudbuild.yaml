@@ -31,7 +31,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/jibun-supple:$COMMIT_SHA'
       - '--region'
-      - 'asia-northeast1'
+      - 'europe-west1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
