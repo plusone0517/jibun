@@ -736,12 +736,9 @@ analysisRoutes.get('/', (c) => {
                     return;
                 }
 
-                // Check membership with latest data
-                const membershipType = currentUser?.membership_type || 'free';
-                if (membershipType !== 'premium') {
-                    alert('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
-                    return;
-                }
+                // Note: Membership check is handled on the backend
+                // Free users can analyze up to 3 times per day
+                // Premium users have unlimited access
 
                 // Hide selection sections
                 document.getElementById('examSelectionSection').style.display = 'none';
@@ -762,9 +759,11 @@ analysisRoutes.get('/', (c) => {
                         analysisData = response.data.analysis;
                         displayResults(analysisData);
                     } else {
-                        // Check if it's a premium requirement error
+                        // Check if it's a daily limit error
                         if (response.data.requires_premium) {
-                            showError('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
+                            const errorMessage = response.data.error || '無料会員の1日の解析回数上限に達しました。';
+                            const upgradeMessage = 'プレミアム会員にアップグレードすると無制限でご利用いただけます。';
+                            showError(errorMessage + '\\n\\n' + upgradeMessage);
                         } else {
                             showError(response.data.error || '解析に失敗しました');
                         }
@@ -773,7 +772,8 @@ analysisRoutes.get('/', (c) => {
                     console.error('Error loading analysis:', error);
                     const errorMsg = error.response?.data?.error || error.message;
                     if (error.response?.data?.requires_premium) {
-                        showError('AI解析機能は有料会員限定です。管理者にお問い合わせください。');
+                        const upgradeMessage = 'プレミアム会員にアップグレードすると無制限でご利用いただけます。';
+                        showError(errorMsg + '\\n\\n' + upgradeMessage);
                     } else {
                         showError('解析中にエラーが発生しました: ' + errorMsg);
                     }

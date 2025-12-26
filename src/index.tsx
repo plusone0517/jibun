@@ -1485,6 +1485,36 @@ async function performAnalysis(c: any) {
       return c.json({ success: false, error: 'Gemini APIキーが設定されていません。.dev.varsファイルを確認してください。' }, 500)
     }
 
+    // Check user membership type
+    const user = await db.prepare(
+      'SELECT membership_type FROM users WHERE id = ?'
+    ).bind(user_id).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    const membershipType = user.membership_type || 'free'
+
+    // Free users: Check analysis count limit (e.g., 3 per day)
+    if (membershipType === 'free') {
+      const today = new Date().toISOString().split('T')[0]
+      const analysisCount = await db.prepare(
+        'SELECT COUNT(*) as count FROM analysis_results WHERE user_id = ? AND DATE(created_at) = ?'
+      ).bind(user_id, today).first()
+
+      const dailyLimit = 3 // Free users get 3 analyses per day
+      if (analysisCount && analysisCount.count >= dailyLimit) {
+        return c.json({ 
+          success: false, 
+          error: `無料会員は1日${dailyLimit}回までAI解析をご利用いただけます。プレミアム会員にアップグレードすると無制限でご利用いただけます。`,
+          requires_premium: true,
+          daily_limit: dailyLimit,
+          used_today: analysisCount.count
+        }, 403)
+      }
+    }
+
     // Fetch exam data
     const examData = await db.prepare(
       `SELECT ed.*, GROUP_CONCAT(em.measurement_key || ':' || em.measurement_value || em.measurement_unit) as measurements
@@ -2250,15 +2280,16 @@ app.post('/api/auth/register', async (c) => {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Insert user with birthdate and plain password
+    // Insert user with birthdate, plain password, and membership_type (default: free)
     const result = await db.prepare(
-      'INSERT INTO users (name, email, password_hash, plain_password, birthdate, age, gender) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(name, email, passwordHash, password, birthdate, age, gender).run()
+      'INSERT INTO users (name, email, password_hash, plain_password, birthdate, age, gender, membership_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(name, email, passwordHash, password, birthdate, age, gender, 'free').run()
 
     return c.json({
       success: true,
       user_id: result.meta.last_row_id,
-      message: 'ユーザー登録が完了しました'
+      message: 'ユーザー登録が完了しました（無料会員として登録されました）',
+      membership_type: 'free'
     })
   } catch (error) {
     console.error('Error registering user:', error)
