@@ -881,17 +881,19 @@ analysisRoutes.get('/', (c) => {
                 });
                 
                 // Check questionnaire completeness
-                const expectedQuestions = 50;
+                const expectedQuestions = 45; // Total questions in questionnaire
                 const actualQuestions = questionnaireData.length;
                 const questionnaireRatio = Math.min(1, actualQuestions / expectedQuestions);
                 const questionnaireScore = questionnaire_weight * questionnaireRatio;
                 totalScore += questionnaireScore;
                 
                 // Add questionnaire details
+                const displayedAnswerCount = Math.min(actualQuestions, expectedQuestions); // Cap at 45
                 details.push({
                     name: '健康ヒアリング',
                     count: actualQuestions > 0 ? 1 : 0,
-                    avgMeasurements: actualQuestions,
+                    avgMeasurements: displayedAnswerCount,
+                    expectedMeasurements: expectedQuestions,
                     score: Math.round(questionnaireRatio * 100),
                     color: questionnaireRatio >= 0.8 ? 'green' : questionnaireRatio >= 0.5 ? 'yellow' : 'red',
                     isQuestionnaire: true
@@ -953,8 +955,8 @@ analysisRoutes.get('/', (c) => {
                     }[detail.color];
                     
                     const detailText = detail.isQuestionnaire 
-                        ? \`(\${detail.avgMeasurements}/50問回答済み)\`
-                        : \`(\${detail.count}件、平均\${detail.avgMeasurements}項目)\`;
+                        ? '(' + detail.avgMeasurements + '/' + detail.expectedMeasurements + '問回答済み)'
+                        : '(' + detail.count + '件、平均' + detail.avgMeasurements + '項目)';
                     
                     return \`
                         <div class="flex items-center justify-between p-3 border-l-4 \${colorClass} rounded">
