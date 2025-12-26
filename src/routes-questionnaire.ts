@@ -44,17 +44,12 @@ questionnaireRoutes.get('/', (c) => {
         </nav>
 
         <main class="max-w-4xl mx-auto px-4 pb-12">
-            <!-- Category Progress Cards -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="categoryCards">
-                <!-- Cards will be dynamically inserted here -->
-            </div>
-
             <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
                 <h2 class="text-3xl font-bold text-gray-800 mb-4">健康ヒアリング（45問）</h2>
                 <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。<br>
                 <span class="text-green-600 font-semibold">✅ 回答は自動保存されます。途中で離れても、いつでも続きから再開できます。</span></p>
                 
-                <!-- Question container (moved to top) -->
+                <!-- Question container (at top) -->
                 <div id="questionContainer" class="mb-8">
                     <!-- Questions will be dynamically inserted here -->
                 </div>
@@ -78,14 +73,22 @@ questionnaireRoutes.get('/', (c) => {
                     </button>
                 </div>
 
-                <!-- Progress bar (moved to bottom) -->
-                <div class="border-t pt-6">
+                <!-- Progress bar (at bottom) -->
+                <div class="border-t pt-6 mb-6">
                     <div class="flex justify-between mb-2">
                         <span class="text-sm font-medium text-gray-700">総合進捗</span>
                         <span class="text-sm font-medium text-gray-700"><span id="progressText">0</span>/45</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
                         <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Category Progress Cards (moved to bottom) -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📊 カテゴリー別進捗</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="categoryCards">
+                        <!-- Cards will be dynamically inserted here -->
                     </div>
                 </div>
             </div>
