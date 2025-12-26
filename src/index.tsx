@@ -3221,3 +3221,123 @@ app.get('/api/admin/export/questionnaire/:userId', async (c) => {
 })
 
 export default app
+
+// ============================================
+// ユーザー監査ログ API
+// ============================================
+
+// ログを記録する関数
+async function logUserAction(db: D1Database, userId: number, action: string, adminId: number | null = null, changes: any = null, ipAddress: string | null = null) {
+  try {
+    await db.prepare(
+      'INSERT INTO user_audit_log (user_id, action, admin_id, changes, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, action, adminId, changes ? JSON.stringify(changes) : null, ipAddress, new Date().toISOString()).run()
+  } catch (error) {
+    console.error('Error logging user action:', error)
+  }
+}
+
+// ユーザー監査ログ取得API
+app.get('/api/admin/audit-log/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    const { results: logs } = await db.prepare(
+      'SELECT * FROM user_audit_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 100'
+    ).bind(userId).all()
+
+    return c.json({
+      success: true,
+      logs: logs || []
+    })
+  } catch (error) {
+    console.error('Error fetching audit log:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ユーザー削除API（論理削除）
+app.delete('/api/admin/user/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    // ユーザーが存在するか確認
+    const user = await db.prepare(
+      'SELECT id, name, email FROM users WHERE id = ? AND is_deleted = 0'
+    ).bind(userId).first()
+
+    if (!user) {
+      return c.json({ success: false, error: 'ユーザーが見つかりません' }, 404)
+    }
+
+    // 論理削除（is_deleted = 1）
+    await db.prepare(
+      'UPDATE users SET is_deleted = 1, deleted_at = ? WHERE id = ?'
+    ).bind(new Date().toISOString(), userId).run()
+
+    // 監査ログに記録
+    await logUserAction(db, parseInt(userId), 'delete', null, { name: user.name, email: user.email })
+
+    return c.json({
+      success: true,
+      message: 'ユーザーを削除しました（論理削除）'
+    })
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// 削除されたユーザー一覧
+app.get('/api/admin/deleted-users', async (c) => {
+  try {
+    const db = c.env.DB
+
+    const { results: users } = await db.prepare(
+      'SELECT id, name, email, deleted_at FROM users WHERE is_deleted = 1 ORDER BY deleted_at DESC'
+    ).all()
+
+    return c.json({
+      success: true,
+      users: users || []
+    })
+  } catch (error) {
+    console.error('Error fetching deleted users:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// ユーザー復元API
+app.post('/api/admin/user/:userId/restore', async (c) => {
+  try {
+    const userId = c.req.param('userId')
+    const db = c.env.DB
+
+    // ユーザーが削除されているか確認
+    const user = await db.prepare(
+      'SELECT id, name, email FROM users WHERE id = ? AND is_deleted = 1'
+    ).bind(userId).first()
+
+    if (!user) {
+      return c.json({ success: false, error: '削除されたユーザーが見つかりません' }, 404)
+    }
+
+    // 復元（is_deleted = 0）
+    await db.prepare(
+      'UPDATE users SET is_deleted = 0, deleted_at = NULL, deleted_by = NULL WHERE id = ?'
+    ).bind(userId).run()
+
+    // 監査ログに記録
+    await logUserAction(db, parseInt(userId), 'restore', null, { name: user.name, email: user.email })
+
+    return c.json({
+      success: true,
+      message: 'ユーザーを復元しました'
+    })
+  } catch (error) {
+    console.error('Error restoring user:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
