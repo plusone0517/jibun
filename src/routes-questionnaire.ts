@@ -325,7 +325,8 @@ questionnaireRoutes.get('/', (c) => {
                 if (currentQuestion < questions.length - 1) {
                     currentQuestion++;
                     displayQuestion(currentQuestion);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Scroll to questionnaire section instead of top
+                    scrollToQuestionnaire();
                 }
             }
 
@@ -333,7 +334,15 @@ questionnaireRoutes.get('/', (c) => {
                 if (currentQuestion > 0) {
                     currentQuestion--;
                     displayQuestion(currentQuestion);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Scroll to questionnaire section instead of top
+                    scrollToQuestionnaire();
+                }
+            }
+
+            function scrollToQuestionnaire() {
+                const questionContainer = document.getElementById('questionContainer');
+                if (questionContainer) {
+                    questionContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }
 
