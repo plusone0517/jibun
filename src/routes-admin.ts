@@ -281,12 +281,18 @@ adminRoutes.get('/dashboard', (c) => {
                 if (!authenticated) return;
 
                 try {
+                    console.log('🔄 Loading admin dashboard data...');
                     const response = await axios.get('/api/admin/users');
+                    console.log('✅ API Response:', response.data);
                     
                     document.getElementById('loadingMessage').classList.add('hidden');
 
                     if (response.data.success) {
                         const data = response.data;
+                        
+                        // Log data for debugging
+                        console.log('📊 Users count:', data.users.length);
+                        console.log('👥 Users:', data.users);
                         
                         // Update statistics
                         document.getElementById('totalUsers').textContent = data.users.length;
@@ -298,31 +304,46 @@ adminRoutes.get('/dashboard', (c) => {
                         const tbody = document.getElementById('usersTableBody');
                         tbody.innerHTML = '';
 
-                        data.users.forEach(user => {
-                            const row = document.createElement('tr');
-                            // Remove any special styling for admin users
-                            const userName = user.name;
-                            row.innerHTML = \`
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.id}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${userName}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.email}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.age || '-'}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.gender || '-'}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${new Date(user.created_at).toLocaleDateString('ja-JP')}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <a href="/admin/user/\${user.id}" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-eye mr-1"></i>詳細
-                                    </a>
-                                </td>
+                        if (data.users.length === 0) {
+                            tbody.innerHTML = \`
+                                <tr>
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        ユーザーが登録されていません
+                                    </td>
+                                </tr>
                             \`;
-                            tbody.appendChild(row);
-                        });
+                        } else {
+                            data.users.forEach(user => {
+                                console.log('➕ Adding user to table:', user);
+                                const row = document.createElement('tr');
+                                const userName = user.name || '名前なし';
+                                row.innerHTML = \`
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.id}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${userName}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.email || '-'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.age || '-'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${user.gender || '-'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${new Date(user.created_at).toLocaleDateString('ja-JP')}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <a href="/admin/user/\${user.id}" class="text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-eye mr-1"></i>詳細
+                                        </a>
+                                    </td>
+                                \`;
+                                tbody.appendChild(row);
+                            });
+                            console.log('✅ All users added to table successfully');
+                        }
+                    } else {
+                        console.error('❌ API returned success: false');
+                        throw new Error(response.data.error || 'データの読み込みに失敗しました');
                     }
                 } catch (error) {
-                    console.error('Error loading data:', error);
+                    console.error('❌ Error loading data:', error);
+                    console.error('Error details:', error.response?.data);
                     document.getElementById('loadingMessage').innerHTML = \`
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        データの読み込みに失敗しました
+                        データの読み込みに失敗しました: \${error.message}
                     \`;
                     document.getElementById('loadingMessage').className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6';
                 }
