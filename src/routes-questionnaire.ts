@@ -54,24 +54,13 @@ questionnaireRoutes.get('/', (c) => {
                 <p class="text-gray-600 mb-6">あなたの生活習慣や健康状態について教えてください。<br>
                 <span class="text-green-600 font-semibold">✅ 回答は自動保存されます。途中で離れても、いつでも続きから再開できます。</span></p>
                 
-                <!-- Progress bar -->
-                <div class="mb-8">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-sm font-medium text-gray-700">総合進捗</span>
-                        <span class="text-sm font-medium text-gray-700"><span id="progressText">0</span>/45</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <!-- Question container -->
+                <!-- Question container (moved to top) -->
                 <div id="questionContainer" class="mb-8">
                     <!-- Questions will be dynamically inserted here -->
                 </div>
 
                 <!-- Navigation buttons -->
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center mb-8">
                     <button id="prevBtn" onclick="prevQuestion()" class="btn-3d bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-bold disabled:opacity-50" disabled>
                         <i class="fas fa-arrow-left mr-2"></i>前へ
                     </button>
@@ -87,6 +76,17 @@ questionnaireRoutes.get('/', (c) => {
                     <button id="submitBtn" onclick="submitQuestionnaire()" class="hidden btn-3d bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400">
                         <i class="fas fa-check mr-2"></i>完了して送信
                     </button>
+                </div>
+
+                <!-- Progress bar (moved to bottom) -->
+                <div class="border-t pt-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">総合進捗</span>
+                        <span class="text-sm font-medium text-gray-700"><span id="progressText">0</span>/45</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
 
